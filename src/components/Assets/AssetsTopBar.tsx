@@ -1,0 +1,340 @@
+'use client';
+
+import {
+  ViewModule as FolderIcon,
+  ViewModule as LargeIcon,
+  ViewList as ListIcon,
+  ViewModule as MediumIcon,
+  SwapVert as SortIcon,
+} from '@mui/icons-material';
+import {
+  Badge,
+  Box,
+  ClickAwayListener,
+  Grow,
+  IconButton,
+  MenuItem,
+  MenuList,
+  Paper,
+  Popper,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { useSetBreadcrumb } from '@/components/BreadcrumbContext';
+import { useGlobalTopbarContent } from '@/components/GlobalTopbarContentContext';
+import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
+import { NewAssetButton } from './NewAssetButton';
+
+type ViewMode = 'folder' | 'list';
+type FolderCardSize = 'medium' | 'large';
+type SortBy = 'dateCreated' | 'dateModified' | 'name' | 'type' | 'status';
+
+type AssetsTopBarProps = {
+  searchQuery: string;
+  viewMode: ViewMode;
+  cardSize: FolderCardSize;
+  sortBy: SortBy;
+  onSearchChange: (query: string) => void;
+  onViewModeChange: (mode: ViewMode) => void;
+  onCardSizeChange: (size: FolderCardSize) => void;
+  onSortByChange: (sort: SortBy) => void;
+  locale: string;
+  assetType?: string;
+};
+
+export function AssetsTopBar({
+  searchQuery,
+  viewMode,
+  cardSize,
+  sortBy,
+  onSearchChange,
+  onViewModeChange,
+  onCardSizeChange,
+  onSortByChange,
+  locale,
+  assetType,
+}: AssetsTopBarProps) {
+  const theme = useTheme();
+  const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
+  const sortOpen = Boolean(sortAnchorEl);
+  const t = useTranslations('Assets');
+  const dashboardT = useTranslations('DashboardLayout');
+  const isDesktop = useMediaQuery('(min-width:1200px)');
+  const { setRightContent } = useGlobalTopbarContent();
+
+  // Determine page title based on asset type
+  const getPageTitle = () => {
+    if (assetType) {
+      return (t as any)(`type_${assetType}`);
+    }
+    return t('page_title');
+  };
+
+  // Set breadcrumb in global topbar
+  useSetBreadcrumb([
+    { label: dashboardT('menu_dashboard'), href: `/${locale}/dashboard` },
+    { label: t('page_title'), href: `/${locale}/assets` },
+    ...(assetType ? [{ label: getPageTitle() }] : []),
+  ]);
+
+  // no-op
+
+  const handleViewModeChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+    if (newMode !== null) {
+      onViewModeChange(newMode);
+    }
+  };
+
+  const handleCardSizeChange = (_event: React.MouseEvent<HTMLElement>, newSize: FolderCardSize | null) => {
+    if (newSize !== null) {
+      onCardSizeChange(newSize);
+    }
+  };
+
+  const handleSortByChange = (newSort: SortBy) => {
+    onSortByChange(newSort);
+  };
+
+  const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+
+  const handleSortClose = () => {
+    setSortAnchorEl(null);
+  };
+
+  const handleSortSelect = (value: SortBy) => {
+    handleSortByChange(value);
+    handleSortClose();
+  };
+
+  const buttonGroupSx = getButtonGroupSx(theme);
+
+  // Icon button styling matching button group
+  const iconButtonSx = {
+    'height': 30,
+    'width': 30,
+    'border': 'none',
+    'bgcolor': 'transparent',
+    'borderRadius': '6px',
+    'transition': 'all 0.2s ease',
+    '&:hover': {
+      bgcolor: theme.palette.action.hover,
+    },
+  };
+
+  // Render controls component
+  const renderControls = () => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {/* Card Size Controls (only visible in folder view) */}
+      {viewMode === 'folder' && (
+        <>
+          <ToggleButtonGroup
+            value={cardSize}
+            exclusive
+            onChange={handleCardSizeChange}
+            size="small"
+            sx={buttonGroupSx}
+          >
+            <Tooltip title="Medium cards">
+              <ToggleButton value="medium" aria-label="medium cards">
+                <MediumIcon sx={{ fontSize: 18 }} />
+              </ToggleButton>
+            </Tooltip>
+            <Tooltip title="Large cards">
+              <ToggleButton value="large" aria-label="large cards">
+                <LargeIcon sx={{ fontSize: 20 }} />
+              </ToggleButton>
+            </Tooltip>
+          </ToggleButtonGroup>
+
+          {/* Vertical Divider */}
+          <Box
+            sx={{
+              // width: '1px',
+              height: 20,
+              bgcolor: 'grey.300',
+              mx: 1,
+            }}
+          />
+        </>
+      )}
+
+      {/* View Mode Controls */}
+      <ToggleButtonGroup
+        value={viewMode}
+        exclusive
+        onChange={handleViewModeChange}
+        size="small"
+        sx={buttonGroupSx}
+      >
+        <Tooltip title="Folder view">
+          <ToggleButton value="folder" aria-label="folder view">
+            <FolderIcon sx={{ fontSize: 18 }} />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title="List view">
+          <ToggleButton value="list" aria-label="list view">
+            <ListIcon sx={{ fontSize: 18 }} />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
+
+      {/* Sort Controls */}
+      <Tooltip title="Sort by">
+        <Badge
+          badgeContent="1"
+          invisible={sortBy === 'dateModified'}
+          overlap="circular"
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          onClick={handleSortClick}
+          sx={{
+            'cursor': 'pointer',
+            '& .MuiBadge-badge': {
+              bgcolor: 'primary.main',
+              color: 'white',
+              fontSize: '0.625rem',
+              fontWeight: 600,
+              width: 14,
+              height: 14,
+              minWidth: 16,
+              cursor: 'pointer',
+            },
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={handleSortClick}
+            sx={{ ...iconButtonSx, bgcolor: sortOpen ? theme.palette.action.hover : 'transparent' }}
+          >
+            <SortIcon sx={{ color: theme.palette.text.secondary, fontSize: 18 }} />
+          </IconButton>
+        </Badge>
+      </Tooltip>
+
+      <Popper
+        open={sortOpen}
+        anchorEl={sortAnchorEl}
+        role={undefined}
+        placement="bottom-end"
+        transition
+        disablePortal
+        style={{ zIndex: 1300 }}
+      >
+        {({ TransitionProps, placement }) => (
+          <Grow
+            {...TransitionProps}
+            style={{
+              transformOrigin:
+                  placement === 'bottom-start' ? 'left top' : 'right top',
+            }}
+          >
+            <Paper>
+              <ClickAwayListener onClickAway={handleSortClose}>
+                <MenuList autoFocusItem={sortOpen} id="sort-menu">
+                  <MenuItem
+                    onClick={() => handleSortSelect('dateModified')}
+                    selected={sortBy === 'dateModified'}
+                  >
+                    Date Modified
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleSortSelect('dateCreated')}
+                    selected={sortBy === 'dateCreated'}
+                  >
+                    Date Created
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleSortSelect('name')}
+                    selected={sortBy === 'name'}
+                  >
+                    Name
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleSortSelect('type')}
+                    selected={sortBy === 'type'}
+                  >
+                    Type
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => handleSortSelect('status')}
+                    selected={sortBy === 'status'}
+                  >
+                    Status
+                  </MenuItem>
+                </MenuList>
+              </ClickAwayListener>
+            </Paper>
+          </Grow>
+        )}
+      </Popper>
+
+      {/* Vertical Divider */}
+      <Box
+        sx={{
+          width: '1px',
+          height: 20,
+          bgcolor: theme.palette.action.selected,
+          mx: 1,
+        }}
+      />
+      <NewAssetButton locale={locale} iconButtonSx={iconButtonSx} />
+
+      <CollapsibleSearch
+        value={searchQuery}
+        onChange={onSearchChange}
+        placeholder="Search assets"
+        iconButtonSx={iconButtonSx}
+      />
+    </Box>
+  );
+
+  // Register controls in GlobalTopbar on mobile, render normally on desktop
+  useEffect(() => {
+    if (!isDesktop) {
+      setRightContent(renderControls());
+      return () => {
+        setRightContent(null);
+      };
+    }
+    return undefined;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesktop, viewMode, cardSize, sortBy, searchQuery, setRightContent]);
+
+  // On mobile, don't render the controls here (they're in GlobalTopbar)
+  if (!isDesktop) {
+    return null;
+  }
+
+  // On desktop, render the controls normally
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        mb: 3,
+        position: 'sticky',
+        top: 68, // Position directly below GlobalTopbar
+        zIndex: 100,
+        backdropFilter: 'blur(2px)',
+        // border: '1px solid',
+        bgcolor: theme.palette.mode === 'light'
+          ? 'rgba(248, 249, 250, 0.8)'
+          : 'rgba(37, 37, 38, 0.8)',
+        pb: 0,
+      }}
+    >
+      {renderControls()}
+    </Box>
+  );
+}

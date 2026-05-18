@@ -1,0 +1,132 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1764363117231,
+      "tag": "0000_secret_wolfpack",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764364792520,
+      "tag": "0001_quick_green_goblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764713114554,
+      "tag": "0002_adorable_havok",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769722153962,
+      "tag": "0003_striped_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770662410306,
+      "tag": "0004_past_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770664413435,
+      "tag": "0005_magenta_living_tribunal",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771803563920,
+      "tag": "0006_perfect_crusher_hogan",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773000000000,
+      "tag": "0007_remove_legacy_asset_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775985210173,
+      "tag": "0008_breezy_la_nuit",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776500924171,
+      "tag": "0009_faithful_adam_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776504728124,
+      "tag": "0010_cultured_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777017600000,
+      "tag": "0011_smart_finance_agreement",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777018200000,
+      "tag": "0012_add_user_currency_preference",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1777020000000,
+      "tag": "0013_cleanup_invalid_finance_agreements",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1777176000000,
+      "tag": "0014_add_finance_insurance_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777177800000,
+      "tag": "0015_add_finance_gas_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1777182000000,
+      "tag": "0016_add_finance_remaining_category_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777182300000,
+      "tag": "0017_migrate_income_category_to_other",
+      "breakpoints": true
+    }
+  ]
+}

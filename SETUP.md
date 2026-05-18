@@ -2,6 +2,26 @@
 
 Forked from manager-pro with a **clean start**: no database data, no shared Clerk app, and new secrets. Use this checklist after cloning the repo.
 
+## GitHub repository
+
+The local repo is initialized on branch `main` with `origin` set to `git@github.com:eduardo-dangelo/vintera.git`.
+
+If the remote repo does not exist yet, authenticate and create it:
+
+```bash
+gh auth login
+cd /Users/eduardodangelo/projects/vintera
+gh repo create eduardo-dangelo/vintera --private --source=. --remote=origin --push
+```
+
+If the repo already exists, push with:
+
+```bash
+git push -u origin main
+```
+
+---
+
 ## Quick start
 
 1. Copy the env template: `cp .env.example .env`

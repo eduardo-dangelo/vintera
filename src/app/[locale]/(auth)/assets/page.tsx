@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
+import type { AssetData } from '@/entities';
 import { currentUser } from '@clerk/nextjs/server';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import type { AssetData } from '@/entities';
 import { AssetService } from '@/services/assetService';
 import { AssetsPageClient } from './AssetsPageClient';
 

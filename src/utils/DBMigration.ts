@@ -7,8 +7,8 @@ import { createDbConnection } from './DBConnection';
 const db = createDbConnection();
 
 try {
-  console.log('🔄 Running database migrations...');
-  console.log('📁 Migrations folder:', path.join(process.cwd(), 'migrations'));
+  console.warn('🔄 Running database migrations...');
+  console.warn('📁 Migrations folder:', path.join(process.cwd(), 'migrations'));
 
   // Check if migrations table exists
   try {
@@ -20,40 +20,40 @@ try {
       );
     `);
     const migrationsTableExists = migrationsCheck.rows[0]?.exists;
-    console.log('📦 Migrations table exists:', migrationsTableExists);
+    console.warn('📦 Migrations table exists:', migrationsTableExists);
 
     if (migrationsTableExists) {
       const appliedMigrations = await db.execute(sql`
         SELECT hash, created_at FROM __drizzle_migrations ORDER BY created_at;
       `);
-      console.log(`📝 Found ${appliedMigrations.rows.length} applied migrations`);
+      console.warn(`📝 Found ${appliedMigrations.rows.length} applied migrations`);
       appliedMigrations.rows.forEach((m: any) => {
-        console.log(`   - ${m.hash} (${m.created_at})`);
+        console.warn(`   - ${m.hash} (${m.created_at})`);
       });
     }
-  } catch (checkError) {
-    console.log('⚠️  Could not check migrations table (this is OK if database is fresh)');
+  } catch {
+    console.warn('⚠️  Could not check migrations table (this is OK if database is fresh)');
   }
 
   const migrationsFolder = path.join(process.cwd(), 'migrations');
-  console.log('📂 Migrations folder path:', migrationsFolder);
+  console.warn('📂 Migrations folder path:', migrationsFolder);
 
   // Check if migrations folder exists and has files
   try {
     const fs = await import('node:fs/promises');
     const files = await fs.readdir(migrationsFolder);
     const sqlFiles = files.filter(f => f.endsWith('.sql'));
-    console.log(`📄 Found ${sqlFiles.length} SQL migration files:`, sqlFiles);
+    console.warn(`📄 Found ${sqlFiles.length} SQL migration files:`, sqlFiles);
   } catch (dirError) {
     console.error('❌ Error reading migrations folder:', dirError);
   }
 
   try {
-    console.log('🚀 Calling migrate() function...');
+    console.warn('🚀 Calling migrate() function...');
     await migrate(db, {
       migrationsFolder,
     });
-    console.log('✅ migrate() function completed without errors');
+    console.warn('✅ migrate() function completed without errors');
   } catch (migrateError) {
     console.error('❌ Error during migrate() call:', migrateError);
     if (migrateError instanceof Error) {
@@ -72,7 +72,7 @@ try {
     );
   `);
   const assetsExists = assetsCheck.rows[0]?.exists;
-  console.log('✅ Assets table exists:', assetsExists);
+  console.warn('✅ Assets table exists:', assetsExists);
 
   if (!assetsExists) {
     // Check what tables DO exist
@@ -82,7 +82,7 @@ try {
       WHERE table_schema = 'public' 
       ORDER BY table_name;
     `);
-    console.log('📋 Existing tables in database:', allTables.rows.map((r: any) => r.table_name));
+    console.warn('📋 Existing tables in database:', allTables.rows.map((r: any) => r.table_name));
 
     // Check if migrations table was created
     const migrationsTableCheck = await db.execute(sql`
@@ -92,12 +92,12 @@ try {
         AND table_name = '__drizzle_migrations'
       );
     `);
-    console.log('📦 Migrations table exists after migrate():', migrationsTableCheck.rows[0]?.exists);
+    console.warn('📦 Migrations table exists after migrate():', migrationsTableCheck.rows[0]?.exists);
 
     throw new Error('Assets table was not created after migrations!');
   }
 
-  console.log('✅ Migrations completed successfully');
+  console.warn('✅ Migrations completed successfully');
 } catch (error) {
   console.error('❌ Migration error:', error);
   if (error instanceof Error) {

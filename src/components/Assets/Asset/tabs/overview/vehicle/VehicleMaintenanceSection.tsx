@@ -52,11 +52,12 @@ type MaintenanceSectionItemProps = {
   label: string;
   icon?: ReactElement;
   value: ReactNode;
-  customSx?: SxProps<Theme>;
+  customSx?: SxProps<Theme> | (() => SxProps<Theme>);
   valueIcon?: ReactElement;
   tooltip?: string;
   onClick?: () => void;
   valueSx?: SxProps<Theme>;
+  renderCustom?: () => ReactNode;
 };
 
 // Reusable component for rendering maintenance section items
@@ -81,7 +82,10 @@ function MaintenanceSectionItemComponent({
     ...(onClick ? { 'cursor': 'pointer', '&:hover': { backgroundColor: 'action.hover' } } : {}),
   };
 
-  const mergedSx: SxProps<Theme> = customSx ? { ...defaultSx, ...customSx } : defaultSx;
+  const resolvedCustomSx = typeof customSx === 'function'
+    ? (customSx as () => SxProps<Theme>)()
+    : customSx;
+  const mergedSx: SxProps<Theme> = resolvedCustomSx ? { ...defaultSx, ...resolvedCustomSx } : defaultSx;
 
   // Extract color from customSx if it exists
   const getColorFromSx = (sx?: SxProps<Theme>): string | undefined => {
@@ -94,7 +98,7 @@ function MaintenanceSectionItemComponent({
     return undefined;
   };
 
-  const customColor = getColorFromSx(customSx);
+  const customColor = getColorFromSx(resolvedCustomSx);
 
   const content = (
     <Box sx={mergedSx} onClick={onClick}>
@@ -145,9 +149,9 @@ const buildMaintenanceCards = (
 ): Array<{ id: string; titleKey: string; hasData: () => boolean; sections: MaintenanceSectionItemProps[] }> => {
   const mot: MaintenanceItem = maintenance.mot || {};
   const tax: MaintenanceItem = maintenance.tax || {};
-  const _insurance: MaintenanceItem = maintenance.insurance || {};
-  const _finance: MaintenanceItem = maintenance.finance || {};
-  const _service: MaintenanceItem = maintenance.service || {};
+  void (maintenance.insurance || {});
+  void (maintenance.finance || {});
+  void (maintenance.service || {});
   const dvlaData = metadata.dvla || {};
 
   const hasMotData = Boolean(latestMotTest || mot.expires);
@@ -495,7 +499,9 @@ export function VehicleMaintenanceSection({
                               }
 
                               const customSx = section.customSx
-                                ? section.customSx(section.value)
+                                ? (typeof section.customSx === 'function'
+                                    ? (section.customSx as () => SxProps<Theme>)()
+                                    : section.customSx)
                                 : undefined;
 
                               // For service sections, render without icon boxes

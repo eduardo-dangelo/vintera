@@ -4,24 +4,6 @@ import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from '@mu
 import { usePathname } from 'next/navigation';
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 
-// Extend MUI theme to include custom sidebar colors
-declare module '@mui/material/styles' {
-  type Palette = {
-    sidebar: {
-      background: string;
-      textPrimary: string;
-      textSecondary: string;
-    };
-  };
-  type PaletteOptions = {
-    sidebar?: {
-      background?: string;
-      textPrimary?: string;
-      textSecondary?: string;
-    };
-  };
-}
-
 type ThemeMode = 'light' | 'dark';
 
 type ThemeContextType = {
@@ -42,7 +24,7 @@ export function useThemeMode() {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Initialize mode from localStorage if available, otherwise default to 'light'
+  // Initialize mode from localStorage if available, otherwise default to 'dark'
   const [mode, setMode] = useState<ThemeMode>(() => {
     if (typeof window !== 'undefined') {
       const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
@@ -50,7 +32,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return storedTheme;
       }
     }
-    return 'light';
+    return 'dark';
   });
 
   const [loading, setLoading] = useState(true);
@@ -81,10 +63,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         })
         .then((data) => {
           if (data?.theme) {
-            // Handle 'system' theme by checking system preference
+            // Resolve 'system' to dark for now (Vintera defaults to dark)
             if (data.theme === 'system') {
-              const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              const effectiveTheme: ThemeMode = systemPrefersDark ? 'dark' : 'light';
+              const effectiveTheme: ThemeMode = 'dark';
               setMode(effectiveTheme);
               localStorage.setItem('theme', effectiveTheme);
             } else if (data.theme === 'light' || data.theme === 'dark') {

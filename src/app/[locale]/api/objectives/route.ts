@@ -20,13 +20,21 @@ export const POST = async (request: Request) => {
       return NextResponse.json(z.treeifyError(parse.error), { status: 422 });
     }
 
-    const objective = await ObjectiveService.createObjective(parse.data, user.id);
+    const { projectId, ...objectiveFields } = parse.data;
+    const objective = await ObjectiveService.createObjective(
+      { ...objectiveFields, assetId: projectId },
+      user.id,
+    );
+
+    if (!objective) {
+      return NextResponse.json({ error: 'Failed to create objective' }, { status: 500 });
+    }
 
     logger.info('Objective has been created', { objectiveId: objective.id });
 
     return NextResponse.json({ objective }, { status: 201 });
   } catch (error: any) {
-    logger.error('Error creating objective:', error);
+    logger.error(`Error creating objective: ${error instanceof Error ? error.message : String(error)}`);
 
     if (error.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: error.message }, { status: 403 });

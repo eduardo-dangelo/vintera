@@ -3,11 +3,11 @@
 import type { FilePreviewItem } from '../FilePreviewPopover';
 import type { FileItem, FolderItem } from '../types';
 import { UploadFile as UploadFileIcon } from '@mui/icons-material';
-import { alpha, useTheme } from '@mui/material/styles';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import Image from 'next/image';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Asset as AssetEntity } from '@/entities';
 import { useUpdateAsset } from '@/queries/hooks/assets/useUpdateAsset';

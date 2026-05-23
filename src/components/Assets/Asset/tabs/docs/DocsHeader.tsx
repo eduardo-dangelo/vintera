@@ -49,7 +49,7 @@ export function DocsHeader({
                   <ArrowBackIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Typography variant="title" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
+              <Typography variant="subtitle2" color="text.secondary" noWrap sx={{ maxWidth: 200 }}>
                 {currentFolderName}
               </Typography>
             </>

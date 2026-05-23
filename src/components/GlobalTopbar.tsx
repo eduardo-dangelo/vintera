@@ -10,8 +10,6 @@ import { useBreadcrumb } from './BreadcrumbContext';
 import { useGlobalTopbarContent } from './GlobalTopbarContentContext';
 import { TopbarActions } from './TopbarActions';
 
-const DRAWER_WIDTH = 230;
-
 export function GlobalTopbar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));

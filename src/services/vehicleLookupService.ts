@@ -207,7 +207,7 @@ export async function fetchMotHistory(
   try {
     const url = new URL(`${Env.MOT_HISTORY_VEHICLE_URL}/${normalizedRegistration}`);
     url.searchParams.set('registration', normalizedRegistration);
-    console.log('MOT history URL:', url.toString());
+    console.warn('MOT history URL:', url.toString());
 
     const response = await fetch(url.toString(), {
       method: 'GET',

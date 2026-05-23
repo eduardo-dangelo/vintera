@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/libs/Logger';
 import { CalendarEventService } from '@/services/calendarEventService';
@@ -9,7 +10,7 @@ const GRACE_MS = 60 * 60 * 1000; // 1 hour
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const isDev = process.env.NODE_ENV === 'development';
   if (!isDev) {
     const authHeader = request.headers.get('authorization');

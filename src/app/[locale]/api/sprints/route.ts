@@ -20,19 +20,25 @@ export const POST = async (request: Request) => {
       return NextResponse.json(z.treeifyError(parse.error), { status: 422 });
     }
 
+    const { projectId, ...sprintFields } = parse.data;
     const sprintData = {
-      ...parse.data,
+      ...sprintFields,
+      assetId: projectId,
       startDate: parse.data.startDate ? new Date(parse.data.startDate) : null,
       endDate: parse.data.endDate ? new Date(parse.data.endDate) : null,
     };
 
     const sprint = await SprintService.createSprint(sprintData, user.id);
 
+    if (!sprint) {
+      return NextResponse.json({ error: 'Failed to create sprint' }, { status: 500 });
+    }
+
     logger.info('Sprint has been created', { sprintId: sprint.id });
 
     return NextResponse.json({ sprint }, { status: 201 });
   } catch (error: any) {
-    logger.error('Error creating sprint:', error);
+    logger.error(`Error creating sprint: ${error instanceof Error ? error.message : String(error)}`);
 
     if (error.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: error.message }, { status: 403 });

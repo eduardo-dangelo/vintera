@@ -1,14 +1,14 @@
 'use client';
 
 import type { useTranslations } from 'next-intl';
+import type { FolderItem } from '../types';
 import { Box, Button, Typography } from '@mui/material';
 import { Popover } from '@/components/common/Popover';
-import type { FolderItem } from '../types';
 
 type DeleteFolderPopoverProps = {
   open: boolean;
   anchorEl: HTMLElement | null;
-  item: FolderItem | null; // eslint-disable-line @typescript-eslint/no-unused-vars -- used for future enhancements
+  item: FolderItem | null;
   onClose: () => void;
   onConfirm: () => void;
   t: ReturnType<typeof useTranslations<'Assets'>>;

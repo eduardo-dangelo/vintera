@@ -44,7 +44,7 @@ export const PUT = async (
 
     return NextResponse.json({ objective });
   } catch (error) {
-    logger.error('Error updating objective:', error);
+    logger.error(`Error updating objective: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to update objective' },
       { status: 500 },
@@ -76,7 +76,7 @@ export const DELETE = async (
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting objective:', error);
+    logger.error(`Error deleting objective: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to delete objective' },
       { status: 500 },

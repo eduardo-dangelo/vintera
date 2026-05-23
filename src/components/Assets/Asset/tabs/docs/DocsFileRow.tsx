@@ -144,7 +144,7 @@ export function DocsFileRow({
 
                     saving={saving}
                     size="body2"
-                    autoFocus
+                    focusOnMount
                     lockedSuffix={isPdf(file) ? '.pdf' : undefined}
                   />
                 )

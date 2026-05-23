@@ -1,6 +1,7 @@
 'use client';
 
 import type { useTranslations } from 'next-intl';
+import type { FilePreviewItem } from '../FilePreviewPopover';
 import { Close as CloseIcon, Download as DownloadIcon } from '@mui/icons-material';
 import {
   Box,
@@ -11,7 +12,6 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import type { FilePreviewItem } from '../FilePreviewPopover';
 
 type DocsPreviewDialogProps = {
   open: boolean;

@@ -27,10 +27,11 @@ export function AssetsList({ assets, locale, viewMode, cardSize, sortBy, searchQ
   // Sort assets based on sortBy
   const sortedAssets = [...filteredAssets].sort((a, b) => {
     switch (sortBy) {
-      case 'name':
+      case 'name': {
         const nameA = a.name || '';
         const nameB = b.name || '';
         return nameA.localeCompare(nameB);
+      }
       case 'type':
         return a.type.localeCompare(b.type);
       case 'status':

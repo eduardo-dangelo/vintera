@@ -29,6 +29,7 @@ export default antfu(
     // Ignored paths
     ignores: [
       'migrations/**/*',
+      'src/types/mui-theme.d.ts',
     ],
   },
   // --- Accessibility Rules ---

@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Box,
   Button,
@@ -5,50 +7,131 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export const Hero = () => {
+  const t = useTranslations('Index');
+
   return (
     <Box
+      component="section"
       sx={{
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)',
-        py: { xs: 8, md: 10 },
-        px: 2,
+        position: 'relative',
+        width: '100%',
+        overflow: 'hidden',
+        minHeight: { xs: '85vh', md: '90vh' },
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
-      <Container maxWidth="xl">
-        <Box sx={{ textAlign: 'center', maxWidth: '4xl', mx: 'auto' }}>
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+        }}
+      >
+        <Image
+          src="/assets/images/landing-hero.jpg"
+          alt={t('hero_image_alt')}
+          fill
+          priority
+          sizes="100vw"
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          background: `
+            linear-gradient(
+              to bottom,
+              rgba(10, 10, 15, 0.55) 0%,
+              rgba(10, 10, 15, 0.35) 45%,
+              rgba(10, 10, 15, 0.75) 100%
+            ),
+            radial-gradient(
+              ellipse 80% 50% at 50% 20%,
+              rgba(139, 92, 246, 0.2),
+              transparent
+            )
+          `,
+        }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          opacity: 0.04,
+          pointerEvents: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 2,
+          py: { xs: 12, md: 16 },
+          px: { xs: 2, sm: 3 },
+        }}
+      >
+        <Box sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto' }}>
           <Typography
-            variant="h2"
-            component="h1"
+            variant="overline"
             sx={{
-              fontSize: { xs: '3rem', md: '4rem' },
-              fontWeight: 'bold',
-              color: 'grey.900',
-              mb: 3,
-              lineHeight: 1.1,
+              color: 'primary.light',
+              letterSpacing: 3,
+              fontWeight: 600,
+              mb: 2,
+              display: 'block',
             }}
           >
-            Lorem Ipsum SaaS Platform
+            {t('hero_eyebrow')}
           </Typography>
           <Typography
-            variant="h5"
+            variant="h1"
+            component="h1"
             sx={{
-              fontSize: { xs: '1.25rem', md: '1.5rem' },
-              color: 'grey.600',
-              mb: 4,
-              lineHeight: 1.6,
-              maxWidth: '3xl',
-              mx: 'auto',
+              fontSize: { xs: '2.75rem', md: '4.25rem' },
+              fontWeight: 700,
+              lineHeight: 1.05,
+              mb: 3,
+              background: 'linear-gradient(135deg, #f4f4f5 0%, #a78bfa 50%, #60a5fa 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
             }}
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            {t('hero_title')}
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: { xs: '1.125rem', md: '1.35rem' },
+              color: 'rgba(244, 244, 245, 0.85)',
+              mb: 5,
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
+            {t('hero_subtitle')}
           </Typography>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
             justifyContent="center"
-            sx={{ mt: 4 }}
           >
             <Button
               component={Link}
@@ -56,40 +139,44 @@ export const Hero = () => {
               variant="contained"
               size="large"
               sx={{
-                'bgcolor': 'primary.main',
                 'borderRadius': 2,
                 'px': 4,
                 'py': 1.5,
-                'fontSize': '1.125rem',
                 'fontWeight': 600,
                 'textTransform': 'none',
-                '&:hover': { bgcolor: 'primary.dark' },
-              }}
-            >
-              Get Started Free
-            </Button>
-            <Button
-              href="#features"
-              variant="outlined"
-              size="large"
-              sx={{
-                'border': 2,
-                'borderColor': 'primary.main',
-                'color': 'primary.main',
-                'borderRadius': 2,
-                'px': 4,
-                'py': 1.5,
-                'fontSize': '1.125rem',
-                'fontWeight': 600,
-                'textTransform': 'none',
+                'fontSize': '1rem',
+                'background': 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
+                'boxShadow': '0 8px 32px rgba(139, 92, 246, 0.4)',
                 '&:hover': {
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  borderColor: 'primary.main',
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
                 },
               }}
             >
-              Learn More
+              {t('hero_cta_primary')}
+            </Button>
+            <Button
+              component={Link}
+              href="/sign-in"
+              variant="outlined"
+              size="large"
+              sx={{
+                'borderRadius': 2,
+                'px': 4,
+                'py': 1.5,
+                'fontWeight': 600,
+                'textTransform': 'none',
+                'fontSize': '1rem',
+                'borderColor': 'rgba(255, 255, 255, 0.4)',
+                'color': '#f4f4f5',
+                'bgcolor': 'rgba(10, 10, 15, 0.35)',
+                'backdropFilter': 'blur(8px)',
+                '&:hover': {
+                  borderColor: 'primary.light',
+                  bgcolor: 'rgba(139, 92, 246, 0.2)',
+                },
+              }}
+            >
+              {t('hero_cta_secondary')}
             </Button>
           </Stack>
         </Box>

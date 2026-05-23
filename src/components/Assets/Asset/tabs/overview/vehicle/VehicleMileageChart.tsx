@@ -45,10 +45,7 @@ export const VehicleMileageChart: FC<VehicleMileageChartProps> = ({
     height: 154,
     margin: { top: -20, right: 0, bottom: -5, left: -15 },
     grid: { horizontal: true, vertical: false },
-    slotProps: {
-      legend: { hidden: true },
-    },
-  } as const;
+  };
 
   const content
     = view === 'over_time'

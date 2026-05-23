@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // This file defines the structure of your database tables using the Drizzle ORM.
 
@@ -36,7 +36,7 @@ export const usersSchema = pgTable('users', {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  theme: text('theme').notNull().default('system'),
+  theme: text('theme').notNull().default('dark'),
   hoverSoundEnabled: text('hover_sound_enabled').notNull().default('true'),
   currency: text('currency').notNull().default('GBP'),
 });
@@ -200,9 +200,67 @@ export const assetActivitiesSchema = pgTable('asset_activities', {
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+export const musicProjectsSchema = pgTable('music_projects', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').references(() => usersSchema.id).notNull(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull(),
+  description: text('description'),
+  genre: text('genre'),
+  color: text('color'),
+  status: text('status').notNull().default('active'),
+  coverImageUrl: text('cover_image_url'),
+  metadata: jsonb('metadata'),
+  linkedAssetId: integer('linked_asset_id').references(() => assetsSchema.id),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, table => [
+  uniqueIndex('music_projects_user_slug_idx').on(table.userId, table.slug),
+]);
+
+export const albumsSchema = pgTable('albums', {
+  id: serial('id').primaryKey(),
+  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  releaseDate: timestamp('release_date', { mode: 'date' }),
+  coverImageUrl: text('cover_image_url'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  status: text('status').notNull().default('draft'),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const songsSchema = pgTable('songs', {
+  id: serial('id').primaryKey(),
+  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'cascade' }).notNull(),
+  albumId: integer('album_id').references(() => albumsSchema.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  trackNumber: integer('track_number'),
+  durationSeconds: integer('duration_seconds'),
+  key: text('key'),
+  bpm: integer('bpm'),
+  lyrics: text('lyrics'),
+  chordsOrTabs: text('chords_or_tabs'),
+  metadata: jsonb('metadata'),
+  status: text('status').notNull().default('idea'),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
 // Define relationships
 export const userRelations = relations(usersSchema, ({ many }) => ({
   assets: many(assetsSchema),
+  musicProjects: many(musicProjectsSchema),
   objectives: many(objectivesSchema),
   createdTodos: many(todosSchema, { relationName: 'createdTodos' }),
   assignedTodos: many(todosSchema, { relationName: 'assignedTodos' }),
@@ -227,6 +285,7 @@ export const assetsRelations = relations(assetsSchema, ({ many, one }) => ({
   calendarEvents: many(calendarEventsSchema),
   financeEntries: many(financeEntriesSchema),
   assetActivities: many(assetActivitiesSchema),
+  linkedMusicProjects: many(musicProjectsSchema),
   user: one(usersSchema, {
     fields: [assetsSchema.userId],
     references: [usersSchema.id],
@@ -328,5 +387,37 @@ export const assetActivitiesRelations = relations(assetActivitiesSchema, ({ one 
   user: one(usersSchema, {
     fields: [assetActivitiesSchema.userId],
     references: [usersSchema.id],
+  }),
+}));
+
+export const musicProjectsRelations = relations(musicProjectsSchema, ({ one, many }) => ({
+  user: one(usersSchema, {
+    fields: [musicProjectsSchema.userId],
+    references: [usersSchema.id],
+  }),
+  linkedAsset: one(assetsSchema, {
+    fields: [musicProjectsSchema.linkedAssetId],
+    references: [assetsSchema.id],
+  }),
+  albums: many(albumsSchema),
+  songs: many(songsSchema),
+}));
+
+export const albumsRelations = relations(albumsSchema, ({ one, many }) => ({
+  musicProject: one(musicProjectsSchema, {
+    fields: [albumsSchema.musicProjectId],
+    references: [musicProjectsSchema.id],
+  }),
+  songs: many(songsSchema),
+}));
+
+export const songsRelations = relations(songsSchema, ({ one }) => ({
+  musicProject: one(musicProjectsSchema, {
+    fields: [songsSchema.musicProjectId],
+    references: [musicProjectsSchema.id],
+  }),
+  album: one(albumsSchema, {
+    fields: [songsSchema.albumId],
+    references: [albumsSchema.id],
   }),
 }));

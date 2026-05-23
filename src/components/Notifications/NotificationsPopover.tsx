@@ -15,10 +15,10 @@ import { useCallback, useState } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { CreateEventPopover } from '@/components/Calendar/CreateEventPopover';
 import { EventDetailsPopover } from '@/components/Calendar/EventDetailsPopover';
-import { NotificationItem } from './NotificationItem';
 import { Popover } from '@/components/common/Popover';
 import { useGetAssets } from '@/queries/hooks/assets';
 import { useGetNotifications, useMarkNotificationRead } from '@/queries/hooks/notifications';
+import { NotificationItem } from './NotificationItem';
 
 const POPOVER_WIDTH = 360;
 const POPOVER_MAX_HEIGHT = 400;

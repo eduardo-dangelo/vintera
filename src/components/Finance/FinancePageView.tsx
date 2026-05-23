@@ -13,12 +13,12 @@ import type {
   FinanceEntryFlow,
   FinanceEntryKind,
   GasDetails,
+  InsuranceDetails,
   MotDetails,
   OtherDetails,
   RepairDetails,
   ServiceDetails,
   TaxDetails,
-  InsuranceDetails,
 } from '@/entities';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -57,8 +57,8 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { BarChart, LineChart, PieChart } from '@mui/x-charts';
 import { useInteractionItemProps } from '@mui/x-charts/internals';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import z from 'zod';
@@ -1035,18 +1035,18 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
     const rawAmount = values.category === 'insurance'
       ? (values.insurancePremium ?? 0)
       : values.category === 'repair'
-          ? (values.repairValue ?? 0)
-          : values.category === 'tax'
-              ? (values.taxValue ?? 0)
-              : values.category === 'service'
-                  ? (values.serviceValue ?? 0)
-                  : values.category === 'mot'
-                      ? (values.motValue ?? 0)
-                      : values.category === 'other'
-                          ? (values.otherValue ?? 0)
-                          : values.category === 'gas'
-                              ? (values.gasValue ?? 0)
-                              : values.amount;
+        ? (values.repairValue ?? 0)
+        : values.category === 'tax'
+          ? (values.taxValue ?? 0)
+          : values.category === 'service'
+            ? (values.serviceValue ?? 0)
+            : values.category === 'mot'
+              ? (values.motValue ?? 0)
+              : values.category === 'other'
+                ? (values.otherValue ?? 0)
+                : values.category === 'gas'
+                  ? (values.gasValue ?? 0)
+                  : values.amount;
     const amountCents = values.kind === 'manual_recurring' && rawAmount <= 0
       ? 0
       : Math.round(rawAmount * 100);
@@ -1080,87 +1080,87 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
           : null,
       financeAgreement: values.category === 'finance_agreement'
         ? {
-            provider: values.financeProvider?.trim() ?? '',
-            totalCashPriceCents: toCents(values.totalCashPrice),
-            advancePaymentsCents: toCents(values.advancePayments),
-            durationMonths: Math.max(1, Math.round(values.durationMonths ?? 1)),
-            frequency: 'monthly',
-            amountCents,
-            amountOfCreditCents: toCents(values.amountOfCredit),
-            interestChargesCents: toCents(values.interestCharges),
-            acceptanceFeeCents: toCents(values.acceptanceFee),
-            titleTransferFeeCents: toCents(values.titleTransferFee),
-            totalChargeForCreditCents: toCents(values.totalChargeForCredit),
-            totalAmountPayableCents: toCents(values.totalAmountPayable),
-            interestRatePercent: values.interestRate ?? 0,
-          } satisfies FinanceAgreementDetails
+          provider: values.financeProvider?.trim() ?? '',
+          totalCashPriceCents: toCents(values.totalCashPrice),
+          advancePaymentsCents: toCents(values.advancePayments),
+          durationMonths: Math.max(1, Math.round(values.durationMonths ?? 1)),
+          frequency: 'monthly',
+          amountCents,
+          amountOfCreditCents: toCents(values.amountOfCredit),
+          interestChargesCents: toCents(values.interestCharges),
+          acceptanceFeeCents: toCents(values.acceptanceFee),
+          titleTransferFeeCents: toCents(values.titleTransferFee),
+          totalChargeForCreditCents: toCents(values.totalChargeForCredit),
+          totalAmountPayableCents: toCents(values.totalAmountPayable),
+          interestRatePercent: values.interestRate ?? 0,
+        } satisfies FinanceAgreementDetails
         : null,
       insurance: values.category === 'insurance'
         ? {
-            insuranceType: values.insuranceType ?? 'comprehensive',
-            provider: values.insuranceProvider?.trim() ?? '',
-            frequency: values.insuranceFrequency ?? 'annual',
-            premiumCents: amountCents,
-            validFrom: dateInputToIso(values.insuranceValidFrom) ?? new Date().toISOString(),
-            validUntil: values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null,
-            policyNumber: values.insurancePolicyNumber?.trim() || null,
-            insurerContact: values.insuranceContact?.trim() || null,
-          } satisfies InsuranceDetails
+          insuranceType: values.insuranceType ?? 'comprehensive',
+          provider: values.insuranceProvider?.trim() ?? '',
+          frequency: values.insuranceFrequency ?? 'annual',
+          premiumCents: amountCents,
+          validFrom: dateInputToIso(values.insuranceValidFrom) ?? new Date().toISOString(),
+          validUntil: values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null,
+          policyNumber: values.insurancePolicyNumber?.trim() || null,
+          insurerContact: values.insuranceContact?.trim() || null,
+        } satisfies InsuranceDetails
         : null,
       gas: values.category === 'gas'
         ? {
-            valueCents: amountCents,
-            litres: values.gasLitres ?? 0,
-            pricePerLitreCents: (values.gasPricePerLitre ?? 0) > 0
-              ? toCents(values.gasPricePerLitre)
-              : (values.gasLitres ?? 0) > 0
-                  ? Math.round(amountCents / (values.gasLitres ?? 1))
-                  : null,
-            date: dateInputToIso(values.gasDate) ?? new Date().toISOString(),
-          } satisfies GasDetails
+          valueCents: amountCents,
+          litres: values.gasLitres ?? 0,
+          pricePerLitreCents: (values.gasPricePerLitre ?? 0) > 0
+            ? toCents(values.gasPricePerLitre)
+            : (values.gasLitres ?? 0) > 0
+                ? Math.round(amountCents / (values.gasLitres ?? 1))
+                : null,
+          date: dateInputToIso(values.gasDate) ?? new Date().toISOString(),
+        } satisfies GasDetails
         : null,
       repair: values.category === 'repair'
         ? {
-            valueCents: amountCents,
-            date: dateInputToIso(values.repairDate) ?? new Date().toISOString(),
-            provider: values.repairProvider?.trim() || null,
-            repairType: values.repairType?.trim() || null,
-            notes: values.repairNotes?.trim() || null,
-          } satisfies RepairDetails
+          valueCents: amountCents,
+          date: dateInputToIso(values.repairDate) ?? new Date().toISOString(),
+          provider: values.repairProvider?.trim() || null,
+          repairType: values.repairType?.trim() || null,
+          notes: values.repairNotes?.trim() || null,
+        } satisfies RepairDetails
         : null,
       tax: values.category === 'tax'
         ? {
-            valueCents: amountCents,
-            validFrom: dateInputToIso(values.taxValidFrom) ?? new Date().toISOString(),
-            validUntil: values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null,
-            reference: values.taxReference?.trim() || null,
-          } satisfies TaxDetails
+          valueCents: amountCents,
+          validFrom: dateInputToIso(values.taxValidFrom) ?? new Date().toISOString(),
+          validUntil: values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null,
+          reference: values.taxReference?.trim() || null,
+        } satisfies TaxDetails
         : null,
       service: values.category === 'service'
         ? {
-            valueCents: amountCents,
-            date: dateInputToIso(values.serviceDate) ?? new Date().toISOString(),
-            provider: values.serviceProvider?.trim() || null,
-            serviceType: values.serviceType?.trim() || null,
-            notes: values.serviceNotes?.trim() || null,
-          } satisfies ServiceDetails
+          valueCents: amountCents,
+          date: dateInputToIso(values.serviceDate) ?? new Date().toISOString(),
+          provider: values.serviceProvider?.trim() || null,
+          serviceType: values.serviceType?.trim() || null,
+          notes: values.serviceNotes?.trim() || null,
+        } satisfies ServiceDetails
         : null,
       mot: values.category === 'mot'
         ? {
-            valueCents: amountCents,
-            date: dateInputToIso(values.motDate) ?? new Date().toISOString(),
-            result: values.motResult ?? 'pass',
-            provider: values.motProvider?.trim() || null,
-            notes: values.motNotes?.trim() || null,
-          } satisfies MotDetails
+          valueCents: amountCents,
+          date: dateInputToIso(values.motDate) ?? new Date().toISOString(),
+          result: values.motResult ?? 'pass',
+          provider: values.motProvider?.trim() || null,
+          notes: values.motNotes?.trim() || null,
+        } satisfies MotDetails
         : null,
       other: values.category === 'other'
         ? {
-            valueCents: amountCents,
-            date: dateInputToIso(values.otherDate) ?? new Date().toISOString(),
-            description: values.otherDescription?.trim() ?? '',
-            direction: values.otherDirection ?? 'expense',
-          } satisfies OtherDetails
+          valueCents: amountCents,
+          date: dateInputToIso(values.otherDate) ?? new Date().toISOString(),
+          description: values.otherDescription?.trim() ?? '',
+          direction: values.otherDirection ?? 'expense',
+        } satisfies OtherDetails
         : null,
     };
 
@@ -1168,27 +1168,27 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
       payload.effectiveDate = values.category === 'gas'
         ? dateInputToIso(values.gasDate)
         : values.category === 'repair'
-            ? dateInputToIso(values.repairDate)
-            : values.category === 'service'
-                ? dateInputToIso(values.serviceDate)
-                : values.category === 'mot'
-                    ? dateInputToIso(values.motDate)
-                    : values.category === 'other'
-                        ? dateInputToIso(values.otherDate)
-                        : dateInputToIso(values.effectiveDate);
+          ? dateInputToIso(values.repairDate)
+          : values.category === 'service'
+            ? dateInputToIso(values.serviceDate)
+            : values.category === 'mot'
+              ? dateInputToIso(values.motDate)
+              : values.category === 'other'
+                ? dateInputToIso(values.otherDate)
+                : dateInputToIso(values.effectiveDate);
     } else {
       payload.recurringFrequency = 'monthly';
       payload.recurringStart = values.category === 'insurance'
         ? dateInputToIso(values.insuranceValidFrom)
         : values.category === 'tax'
-            ? dateInputToIso(values.taxValidFrom)
-        : dateInputToIso(values.recurringStart);
+          ? dateInputToIso(values.taxValidFrom)
+          : dateInputToIso(values.recurringStart);
       payload.recurringEnd = values.category === 'finance_agreement'
         ? null
         : values.category === 'insurance'
-            ? (values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null)
-            : values.category === 'tax'
-                ? (values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null)
+          ? (values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null)
+          : values.category === 'tax'
+            ? (values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null)
             : (values.recurringEnd ? dateInputToIso(values.recurringEnd) : null);
     }
 
@@ -1205,101 +1205,101 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
         manualAmounts: effectiveKind === 'manual_recurring' ? manualAmounts : null,
         financeAgreement: values.category === 'finance_agreement'
           ? {
-              provider: values.financeProvider?.trim() ?? '',
-              totalCashPriceCents: toCents(values.totalCashPrice),
-              advancePaymentsCents: toCents(values.advancePayments),
-              durationMonths: Math.max(1, Math.round(values.durationMonths ?? 1)),
-              frequency: 'monthly',
-              amountCents,
-              amountOfCreditCents: toCents(values.amountOfCredit),
-              interestChargesCents: toCents(values.interestCharges),
-              acceptanceFeeCents: toCents(values.acceptanceFee),
-              titleTransferFeeCents: toCents(values.titleTransferFee),
-              totalChargeForCreditCents: toCents(values.totalChargeForCredit),
-              totalAmountPayableCents: toCents(values.totalAmountPayable),
-              interestRatePercent: values.interestRate ?? 0,
-            } satisfies FinanceAgreementDetails
+            provider: values.financeProvider?.trim() ?? '',
+            totalCashPriceCents: toCents(values.totalCashPrice),
+            advancePaymentsCents: toCents(values.advancePayments),
+            durationMonths: Math.max(1, Math.round(values.durationMonths ?? 1)),
+            frequency: 'monthly',
+            amountCents,
+            amountOfCreditCents: toCents(values.amountOfCredit),
+            interestChargesCents: toCents(values.interestCharges),
+            acceptanceFeeCents: toCents(values.acceptanceFee),
+            titleTransferFeeCents: toCents(values.titleTransferFee),
+            totalChargeForCreditCents: toCents(values.totalChargeForCredit),
+            totalAmountPayableCents: toCents(values.totalAmountPayable),
+            interestRatePercent: values.interestRate ?? 0,
+          } satisfies FinanceAgreementDetails
           : null,
         insurance: values.category === 'insurance'
           ? {
-              insuranceType: values.insuranceType ?? 'comprehensive',
-              provider: values.insuranceProvider?.trim() ?? '',
-              frequency: values.insuranceFrequency ?? 'annual',
-              premiumCents: amountCents,
-              validFrom: dateInputToIso(values.insuranceValidFrom) ?? new Date().toISOString(),
-              validUntil: values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null,
-              policyNumber: values.insurancePolicyNumber?.trim() || null,
-              insurerContact: values.insuranceContact?.trim() || null,
-            } satisfies InsuranceDetails
+            insuranceType: values.insuranceType ?? 'comprehensive',
+            provider: values.insuranceProvider?.trim() ?? '',
+            frequency: values.insuranceFrequency ?? 'annual',
+            premiumCents: amountCents,
+            validFrom: dateInputToIso(values.insuranceValidFrom) ?? new Date().toISOString(),
+            validUntil: values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null,
+            policyNumber: values.insurancePolicyNumber?.trim() || null,
+            insurerContact: values.insuranceContact?.trim() || null,
+          } satisfies InsuranceDetails
           : null,
         gas: values.category === 'gas'
           ? {
-              valueCents: amountCents,
-              litres: values.gasLitres ?? 0,
-              pricePerLitreCents: (values.gasPricePerLitre ?? 0) > 0
-                ? toCents(values.gasPricePerLitre)
-                : (values.gasLitres ?? 0) > 0
-                    ? Math.round(amountCents / (values.gasLitres ?? 1))
-                    : null,
-              date: dateInputToIso(values.gasDate) ?? new Date().toISOString(),
-            } satisfies GasDetails
+            valueCents: amountCents,
+            litres: values.gasLitres ?? 0,
+            pricePerLitreCents: (values.gasPricePerLitre ?? 0) > 0
+              ? toCents(values.gasPricePerLitre)
+              : (values.gasLitres ?? 0) > 0
+                  ? Math.round(amountCents / (values.gasLitres ?? 1))
+                  : null,
+            date: dateInputToIso(values.gasDate) ?? new Date().toISOString(),
+          } satisfies GasDetails
           : null,
         repair: values.category === 'repair'
           ? {
-              valueCents: amountCents,
-              date: dateInputToIso(values.repairDate) ?? new Date().toISOString(),
-              provider: values.repairProvider?.trim() || null,
-              repairType: values.repairType?.trim() || null,
-              notes: values.repairNotes?.trim() || null,
-            } satisfies RepairDetails
+            valueCents: amountCents,
+            date: dateInputToIso(values.repairDate) ?? new Date().toISOString(),
+            provider: values.repairProvider?.trim() || null,
+            repairType: values.repairType?.trim() || null,
+            notes: values.repairNotes?.trim() || null,
+          } satisfies RepairDetails
           : null,
         tax: values.category === 'tax'
           ? {
-              valueCents: amountCents,
-              validFrom: dateInputToIso(values.taxValidFrom) ?? new Date().toISOString(),
-              validUntil: values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null,
-              reference: values.taxReference?.trim() || null,
-            } satisfies TaxDetails
+            valueCents: amountCents,
+            validFrom: dateInputToIso(values.taxValidFrom) ?? new Date().toISOString(),
+            validUntil: values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null,
+            reference: values.taxReference?.trim() || null,
+          } satisfies TaxDetails
           : null,
         service: values.category === 'service'
           ? {
-              valueCents: amountCents,
-              date: dateInputToIso(values.serviceDate) ?? new Date().toISOString(),
-              provider: values.serviceProvider?.trim() || null,
-              serviceType: values.serviceType?.trim() || null,
-              notes: values.serviceNotes?.trim() || null,
-            } satisfies ServiceDetails
+            valueCents: amountCents,
+            date: dateInputToIso(values.serviceDate) ?? new Date().toISOString(),
+            provider: values.serviceProvider?.trim() || null,
+            serviceType: values.serviceType?.trim() || null,
+            notes: values.serviceNotes?.trim() || null,
+          } satisfies ServiceDetails
           : null,
         mot: values.category === 'mot'
           ? {
-              valueCents: amountCents,
-              date: dateInputToIso(values.motDate) ?? new Date().toISOString(),
-              result: values.motResult ?? 'pass',
-              provider: values.motProvider?.trim() || null,
-              notes: values.motNotes?.trim() || null,
-            } satisfies MotDetails
+            valueCents: amountCents,
+            date: dateInputToIso(values.motDate) ?? new Date().toISOString(),
+            result: values.motResult ?? 'pass',
+            provider: values.motProvider?.trim() || null,
+            notes: values.motNotes?.trim() || null,
+          } satisfies MotDetails
           : null,
         other: values.category === 'other'
           ? {
-              valueCents: amountCents,
-              date: dateInputToIso(values.otherDate) ?? new Date().toISOString(),
-              description: values.otherDescription?.trim() ?? '',
-              direction: values.otherDirection ?? 'expense',
-            } satisfies OtherDetails
+            valueCents: amountCents,
+            date: dateInputToIso(values.otherDate) ?? new Date().toISOString(),
+            description: values.otherDescription?.trim() ?? '',
+            direction: values.otherDirection ?? 'expense',
+          } satisfies OtherDetails
           : null,
       };
       if (effectiveKind === 'one_time') {
         updatePayload.effectiveDate = values.category === 'gas'
           ? dateInputToIso(values.gasDate)
           : values.category === 'repair'
-              ? dateInputToIso(values.repairDate)
-              : values.category === 'service'
-                  ? dateInputToIso(values.serviceDate)
-                  : values.category === 'mot'
-                      ? dateInputToIso(values.motDate)
-                      : values.category === 'other'
-                          ? dateInputToIso(values.otherDate)
-                          : dateInputToIso(values.effectiveDate);
+            ? dateInputToIso(values.repairDate)
+            : values.category === 'service'
+              ? dateInputToIso(values.serviceDate)
+              : values.category === 'mot'
+                ? dateInputToIso(values.motDate)
+                : values.category === 'other'
+                  ? dateInputToIso(values.otherDate)
+                  : dateInputToIso(values.effectiveDate);
         updatePayload.recurringFrequency = null;
         updatePayload.recurringStart = null;
         updatePayload.recurringEnd = null;
@@ -1309,14 +1309,14 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
         updatePayload.recurringStart = values.category === 'insurance'
           ? dateInputToIso(values.insuranceValidFrom)
           : values.category === 'tax'
-              ? dateInputToIso(values.taxValidFrom)
-          : dateInputToIso(values.recurringStart);
+            ? dateInputToIso(values.taxValidFrom)
+            : dateInputToIso(values.recurringStart);
         updatePayload.recurringEnd = values.category === 'finance_agreement'
           ? null
           : values.category === 'insurance'
-              ? (values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null)
-              : values.category === 'tax'
-                  ? (values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null)
+            ? (values.insuranceValidUntil ? dateInputToIso(values.insuranceValidUntil) : null)
+            : values.category === 'tax'
+              ? (values.taxValidUntil ? dateInputToIso(values.taxValidUntil) : null)
               : (values.recurringEnd ? dateInputToIso(values.recurringEnd) : null);
       }
       await updateFinanceEntry.mutateAsync(updatePayload);
@@ -2322,14 +2322,38 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                   </Typography>
                 )
               : selectedCategory === 'insurance'
+                ? (
+                    <Typography variant="caption" color="text.secondary">
+                      Upload your insurance document or
+                      {' '}
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={() => setShowInsuranceDetails(true)}
+                        sx={{
+                          border: 'none',
+                          backgroundColor: 'transparent',
+                          p: 0,
+                          m: 0,
+                          font: 'inherit',
+                          color: 'primary.main',
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        add details manually
+                      </Box>
+                    </Typography>
+                  )
+                : selectedCategory === 'gas'
                   ? (
                       <Typography variant="caption" color="text.secondary">
-                        Upload your insurance document or
+                        Upload your gas receipt or
                         {' '}
                         <Box
                           component="button"
                           type="button"
-                          onClick={() => setShowInsuranceDetails(true)}
+                          onClick={() => setShowGasDetails(true)}
                           sx={{
                             border: 'none',
                             backgroundColor: 'transparent',
@@ -2345,41 +2369,17 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                         </Box>
                       </Typography>
                     )
-                  : selectedCategory === 'gas'
-                      ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Upload your gas receipt or
-                            {' '}
-                            <Box
-                              component="button"
-                              type="button"
-                              onClick={() => setShowGasDetails(true)}
-                              sx={{
-                                border: 'none',
-                                backgroundColor: 'transparent',
-                                p: 0,
-                                m: 0,
-                                font: 'inherit',
-                                color: 'primary.main',
-                                cursor: 'pointer',
-                                textDecoration: 'none',
-                              }}
-                            >
-                              add details manually
-                            </Box>
-                          </Typography>
-                        )
                   : selectedCategory === 'repair'
-                      ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Upload your repair receipt or
-                            {' '}
-                            <Box component="button" type="button" onClick={() => setShowRepairDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
-                              add details manually
-                            </Box>
-                          </Typography>
-                        )
-                  : selectedCategory === 'tax'
+                    ? (
+                        <Typography variant="caption" color="text.secondary">
+                          Upload your repair receipt or
+                          {' '}
+                          <Box component="button" type="button" onClick={() => setShowRepairDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                            add details manually
+                          </Box>
+                        </Typography>
+                      )
+                    : selectedCategory === 'tax'
                       ? (
                           <Typography variant="caption" color="text.secondary">
                             Upload your tax document or
@@ -2389,41 +2389,41 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                             </Box>
                           </Typography>
                         )
-                  : selectedCategory === 'service'
-                      ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Upload your service receipt or
-                            {' '}
-                            <Box component="button" type="button" onClick={() => setShowServiceDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
-                              add details manually
-                            </Box>
-                          </Typography>
-                        )
-                  : selectedCategory === 'mot'
-                      ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Upload your MOT document or
-                            {' '}
-                            <Box component="button" type="button" onClick={() => setShowMotDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
-                              add details manually
-                            </Box>
-                          </Typography>
-                        )
-                  : selectedCategory === 'other'
-                      ? (
-                          <Typography variant="caption" color="text.secondary">
-                            Upload your document or fill in the details below.
-                          </Typography>
-                        )
-                  : (
-                  <Typography variant="caption" color="text.secondary">
-                    Upload
-                    {' '}
-                    {uploadContext.attachmentNoun}
-                    {' '}
-                    first, then complete the entry manually.
-                  </Typography>
-                )}
+                      : selectedCategory === 'service'
+                        ? (
+                            <Typography variant="caption" color="text.secondary">
+                              Upload your service receipt or
+                              {' '}
+                              <Box component="button" type="button" onClick={() => setShowServiceDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                                add details manually
+                              </Box>
+                            </Typography>
+                          )
+                        : selectedCategory === 'mot'
+                          ? (
+                              <Typography variant="caption" color="text.secondary">
+                                Upload your MOT document or
+                                {' '}
+                                <Box component="button" type="button" onClick={() => setShowMotDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                                  add details manually
+                                </Box>
+                              </Typography>
+                            )
+                          : selectedCategory === 'other'
+                            ? (
+                                <Typography variant="caption" color="text.secondary">
+                                  Upload your document or fill in the details below.
+                                </Typography>
+                              )
+                            : (
+                                <Typography variant="caption" color="text.secondary">
+                                  Upload
+                                  {' '}
+                                  {uploadContext.attachmentNoun}
+                                  {' '}
+                                  first, then complete the entry manually.
+                                </Typography>
+                              )}
             <Box
               data-upload-category={uploadContext.category ?? ''}
               data-upload-ai-hint={uploadContext.aiHint}

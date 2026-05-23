@@ -61,7 +61,7 @@ export function SettingsContent() {
             mb: 2,
           }}
         >
-          {t('sound_settings_title', { defaultValue: 'Sound Settings' })}
+          {t('sound_settings_title')}
         </Typography>
         <Typography
           variant="body2"
@@ -71,9 +71,7 @@ export function SettingsContent() {
             fontSize: '0.875rem',
           }}
         >
-          {t('hover_sound_description', {
-            defaultValue: 'Play a subtle sound when hovering over buttons and links',
-          })}
+          {t('hover_sound_description')}
         </Typography>
         <FormControlLabel
           control={(
@@ -83,7 +81,7 @@ export function SettingsContent() {
               disabled={isLoading || isUpdating}
             />
           )}
-          label={t('hover_sound_label', { defaultValue: 'Hover Sound' })}
+          label={t('hover_sound_label')}
           sx={{
             '& .MuiFormControlLabel-label': {
               fontSize: '0.875rem',

@@ -75,7 +75,7 @@ export function DocsCard({ asset, onNavigateToTab, onOpenFilePreview }: DocsCard
       </Box>
       <Box sx={{ flex: 1, minHeight: 0, px: 2, pb: 2, overflow: 'hidden' }}>
         {items.map((item) => {
-          const isFolder = item.type === 'folder';
+          const isFolder = 'type' in item && item.type === 'folder';
           return (
             <ListItem
               key={item.id}

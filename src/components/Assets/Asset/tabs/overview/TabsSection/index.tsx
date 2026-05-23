@@ -1,9 +1,9 @@
 'use client';
 
 import type { FilePreviewItem } from '@/components/Assets/Asset/tabs/FilePreviewPopover';
-import { getItemsInFolder, normalizeDocsMetadata, normalizeGalleryMetadata } from '@/components/Assets/Asset/tabs/types';
 import { Box } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { getItemsInFolder, normalizeDocsMetadata, normalizeGalleryMetadata } from '@/components/Assets/Asset/tabs/types';
 import { CalendarCard } from './CalendarCard';
 import { DocsCard } from './DocsCard';
 import { GalleryCard } from './GalleryCard';
@@ -30,7 +30,9 @@ export function TabsSection({ asset, locale, onNavigateToTab, onOpenFilePreview 
   const [hasUpcomingEvents, setHasUpcomingEvents] = useState<boolean | null>(null);
 
   const hasDocsItems = useMemo(() => {
-    if (!hasDocs) return false;
+    if (!hasDocs) {
+      return false;
+    }
     const { folders, files } = normalizeDocsMetadata(asset.metadata?.docs);
     const { subfolders, folderFiles } = getItemsInFolder(folders, files, null);
     return subfolders.length + folderFiles.length > 0;
@@ -41,10 +43,10 @@ export function TabsSection({ asset, locale, onNavigateToTab, onOpenFilePreview 
     [asset.metadata?.gallery],
   );
 
-  const showSection =
-    (hasCalendar && hasUpcomingEvents !== false) ||
-    (hasDocs && hasDocsItems) ||
-    (hasGallery && hasGalleryItems);
+  const showSection
+    = (hasCalendar && hasUpcomingEvents !== false)
+      || (hasDocs && hasDocsItems)
+      || (hasGallery && hasGalleryItems);
   if (!showSection) {
     return null;
   }

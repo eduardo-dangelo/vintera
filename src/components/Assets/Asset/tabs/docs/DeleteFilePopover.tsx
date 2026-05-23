@@ -1,9 +1,9 @@
 'use client';
 
 import type { useTranslations } from 'next-intl';
+import type { FileItem } from '../types';
 import { Box, Button, Typography } from '@mui/material';
 import { Popover } from '@/components/common/Popover';
-import type { FileItem } from '../types';
 
 type DeleteFilePopoverProps = {
   open: boolean;

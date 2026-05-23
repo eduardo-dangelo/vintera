@@ -49,7 +49,7 @@ export const PricingSection = () => {
         </Box>
         <Grid container spacing={4} justifyContent="center">
           {/* Starter Plan */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card
               elevation={1}
               sx={{
@@ -154,7 +154,7 @@ export const PricingSection = () => {
           </Grid>
 
           {/* Professional Plan */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card
               elevation={3}
               sx={{
@@ -263,7 +263,7 @@ export const PricingSection = () => {
           </Grid>
 
           {/* Enterprise Plan */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card
               elevation={1}
               sx={{

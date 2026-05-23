@@ -164,7 +164,7 @@ export const PUT = async (
     }
 
     if (eventChanges.length > 0) {
-      const firstChange = eventChanges[0];
+      const firstChange = eventChanges[0]!;
       const legacyTypeByField: Record<string, string> = {
         name: 'renamed',
         start: 'start_time_changed',
@@ -212,7 +212,7 @@ export const PUT = async (
 
     if (parse.data.reminders !== undefined) {
       const oldOverrides = (existingEvent.reminders as { overrides?: { minutes: number }[] } | null)?.overrides ?? [];
-      const newOverrides = parse.data.reminders.overrides ?? [];
+      const newOverrides = parse.data.reminders?.overrides ?? [];
       const oldMinutes = [...oldOverrides].map(o => o.minutes).sort((a, b) => a - b).join(',');
       const newMinutes = [...newOverrides].map(o => o.minutes).sort((a, b) => a - b).join(',');
       const remindersChanged = oldMinutes !== newMinutes && newOverrides.length > 0;

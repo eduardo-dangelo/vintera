@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
 import type { AssetMediaItem, MediaKind } from './types';
+import { useMemo } from 'react';
 import { normalizeDocsMetadata, normalizeGalleryMetadata } from '@/components/Assets/Asset/tabs/types';
 
 export function useFilteredAssetsWithMedia(

@@ -1,6 +1,8 @@
 import moment from 'moment';
 
 export type AssetMetadata = {
+  docs?: Record<string, unknown>;
+  gallery?: Record<string, unknown>;
   specs?: {
     registration?: string;
     year?: string;
@@ -8,6 +10,8 @@ export type AssetMetadata = {
     color?: string;
     colour?: string;
     mileage?: string | number;
+    make?: string;
+    model?: string;
   };
   maintenance?: {
     mot?: { expires?: string };

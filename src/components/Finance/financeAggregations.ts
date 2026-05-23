@@ -162,7 +162,7 @@ export function aggregateMonthlyTotals(entries: FinanceEntryData[], year: number
     const series = monthlyCentsForEntry(entry, year);
     const bucket = entry.flow === 'income' ? income : expense;
     for (let m = 0; m < 12; m++) {
-      bucket[m] = (bucket[m] ?? 0) + series[m];
+      bucket[m] = (bucket[m] ?? 0) + (series[m] ?? 0);
     }
   });
 

@@ -31,6 +31,7 @@ import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
+import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
 import { TopbarActions } from './TopbarActions';
 
 type MenuItem = {
@@ -65,10 +66,7 @@ export function Sidebar({
   const { playHoverSound } = useHoverSound();
 
   // Extract locale from pathname once
-  const locale = (() => {
-    const match = pathname.match(/^\/([a-z]{2})\//);
-    return match ? match[1] : 'en';
-  })();
+  const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -183,34 +181,41 @@ export function Sidebar({
   }, [pathname]);
 
   // Helper function to extract asset type from href
-  const extractAssetTypeFromHref = (href: string, locale: string): string | null => {
+  const extractAssetTypeFromHref = (href: string): string | null => {
     const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
-    const assetsPattern = new RegExp(`^/assets/(vehicles|properties|persons)$`);
-    const match = hrefWithoutLocale.match(assetsPattern);
+    const match = hrefWithoutLocale.match(/^\/assets\/(vehicles|properties|persons)$/);
 
     if (match) {
       const pluralType = match[1];
+      if (!pluralType) {
+        return null;
+      }
       // Reverse mapping from plural to singular
       const typeMap: Record<string, string> = {
         vehicles: 'vehicle',
         properties: 'property',
         persons: 'person',
       };
-      return typeMap[pluralType] || null;
+      return typeMap[pluralType] ?? null;
     }
 
     return null;
   };
 
   // Helper function to check if item is parent Assets item
-  const isAssetsParentItem = (href: string, locale: string): boolean => {
+  const isAssetsParentItem = (href: string): boolean => {
     const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
     return hrefWithoutLocale === '/assets';
   };
 
+  const isMusicProjectsParentItem = (href: string): boolean => {
+    const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
+    return hrefWithoutLocale === '/projects' || hrefWithoutLocale.startsWith('/projects/');
+  };
+
   // Helper function to check if item is an asset subitem
-  const isAssetSubItem = (href: string, locale: string): boolean => {
-    return extractAssetTypeFromHref(href, locale) !== null;
+  const isAssetSubItem = (href: string): boolean => {
+    return extractAssetTypeFromHref(href) !== null;
   };
 
   const drawerContent = (
@@ -232,7 +237,8 @@ export function Sidebar({
           const hasChildren = children.length > 0;
           const hasActiveChild = children.some(child => isActive(child.href));
 
-          const isAssetsParent = isAssetsParentItem(parent.href, locale);
+          const isAssetsParent = isAssetsParentItem(parent.href);
+          const isMusicProjectsParent = isMusicProjectsParentItem(parent.href);
           const isHovered = hoveredHref === parent.href;
 
           return (
@@ -241,7 +247,7 @@ export function Sidebar({
                 <ListItemButton
                   component={Link}
                   href={parent.href}
-                  onMouseEnter={(e) => {
+                  onMouseEnter={() => {
                     playHoverSound();
                     setHoveredHref(parent.href);
                   }}
@@ -290,6 +296,35 @@ export function Sidebar({
                     }}
                   />
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    {isMusicProjectsParent && (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          lineHeight: 0,
+                          height: 'fit-content',
+                          opacity: isHovered ? 1 : 0,
+                          transition: 'opacity 0.3s ease',
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <NewMusicProjectButton
+                          locale={locale}
+                          iconButtonSx={{
+                            'color': theme.palette.sidebar.textSecondary,
+                            'bgcolor': 'transparent',
+                            'borderRadius': '50%',
+                            '&:hover': {
+                              color: theme.palette.sidebar.textPrimary,
+                              bgcolor: theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
+                            },
+                          }}
+                        />
+                      </Box>
+                    )}
                     {isAssetsParent && (
                       <Box
                         sx={{
@@ -350,8 +385,8 @@ export function Sidebar({
                     {children.map((child) => {
                       const ChildIcon = child.icon;
                       const childActive = isActive(child.href);
-                      const assetType = extractAssetTypeFromHref(child.href, locale);
-                      const isAssetSub = isAssetSubItem(child.href, locale);
+                      const assetType = extractAssetTypeFromHref(child.href);
+                      const isAssetSub = isAssetSubItem(child.href);
                       const isChildHovered = hoveredHref === child.href;
 
                       return (
@@ -359,7 +394,7 @@ export function Sidebar({
                           <ListItemButton
                             component={Link}
                             href={child.href}
-                            onMouseEnter={(e) => {
+                            onMouseEnter={() => {
                               playHoverSound();
                               setHoveredHref(child.href);
                             }}
@@ -456,7 +491,6 @@ export function Sidebar({
       <Box>
         <List sx={{ px: 2, py: 2 }}>
           <ListItem disablePadding>
-            {/* eslint-disable-next-line react/component-name-casing */}
             <SignOutButton>
               <ListItemButton
                 onMouseEnter={playHoverSound}

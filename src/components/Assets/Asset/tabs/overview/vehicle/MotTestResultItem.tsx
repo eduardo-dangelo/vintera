@@ -57,10 +57,12 @@ export function MotTestResultItem({
       case 'MAJOR':
       case 'DANGEROUS':
         return 'Fail';
+      default:
+        return type;
     }
   };
 
-  const getChipColor = (type: string) => {
+  const getChipColor = (type: string): 'default' | 'error' => {
     switch (type) {
       case 'ADVISORY':
         return 'default';
@@ -68,6 +70,8 @@ export function MotTestResultItem({
       case 'MAJOR':
       case 'DANGEROUS':
         return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -79,6 +83,8 @@ export function MotTestResultItem({
       case 'MAJOR':
       case 'DANGEROUS':
         return 'rgba(255, 0, 0, 0.05)';
+      default:
+        return undefined;
     }
   };
 
@@ -189,15 +195,15 @@ export function MotTestResultItem({
                 {item.text}
               </Typography>
               <Chip
-                label={formatDefectType(item.type)}
+                label={formatDefectType(item.type ?? '')}
                 size="small"
-                color={getChipColor(item.type)}
+                color={getChipColor(item.type ?? '')}
                 variant="outlined"
                 sx={{
                   height: 16,
                   fontSize: '0.625rem',
                   borderRadius: 1,
-                  backgroundColor: getChipBackgroundColor(item.type),
+                  backgroundColor: getChipBackgroundColor(item.type ?? ''),
                 }}
               />
             </Box>

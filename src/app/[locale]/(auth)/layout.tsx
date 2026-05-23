@@ -1,14 +1,15 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { currentUser } from '@clerk/nextjs/server';
 import {
-  AccountBalanceWallet as FinanceIcon,
   History as ActivityIcon,
   CalendarMonth,
   Dashboard as DashboardIcon,
   DirectionsCar,
   Folder as DocsIcon,
+  AccountBalanceWallet as FinanceIcon,
   PhotoLibrary as GalleryIcon,
   HomeWork,
+  MusicNote as MusicNoteIcon,
   Person,
   Settings as SettingsIcon,
   Storage,
@@ -83,6 +84,11 @@ export default async function AuthLayout(props: {
       icon: DashboardIcon,
       label: t('menu_dashboard'),
       href: `/${locale}/dashboard`,
+    },
+    {
+      icon: MusicNoteIcon,
+      label: t('menu_music_projects'),
+      href: `/${locale}/projects`,
     },
     {
       icon: CalendarMonth,

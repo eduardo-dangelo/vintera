@@ -1,4 +1,5 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
+import { MarketingThemeProvider } from '@/components/landingPage/MarketingThemeProvider';
 
 export default async function Layout(props: {
   children: React.ReactNode;
@@ -6,14 +7,10 @@ export default async function Layout(props: {
 }) {
   const { locale } = await props.params;
   setRequestLocale(locale);
-  const _t = await getTranslations({
-    locale,
-    namespace: 'RootLayout',
-  });
 
   return (
-    <>
-      <div className=" text-xl [&_p]:my-6">{props.children}</div>
-    </>
+    <MarketingThemeProvider>
+      {props.children}
+    </MarketingThemeProvider>
   );
 }

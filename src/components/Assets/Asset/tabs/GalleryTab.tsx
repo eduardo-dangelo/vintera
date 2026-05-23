@@ -9,10 +9,10 @@ import {
   DeleteOutlined as DeleteIcon,
   Download as DownloadIcon,
   FileUploadOutlined as FileUploadOutlinedIcon,
-  UploadFile as UploadFileIcon,
   ViewModule as LargeIcon,
   ViewModule as MediumIcon,
   ViewModule as SmallIcon,
+  UploadFile as UploadFileIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -28,8 +28,8 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Popover } from '@/components/common/Popover';
 import { useUpdateAsset } from '@/queries/hooks/assets/useUpdateAsset';

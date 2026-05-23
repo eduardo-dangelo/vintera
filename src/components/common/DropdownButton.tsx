@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { MoreVert as MoreVertIcon } from '@mui/icons-material';
-import { useCallback, useEffect, useState } from 'react';
 import {
   IconButton,
   ListItemIcon,
@@ -11,6 +10,7 @@ import {
   MenuItem,
   Tooltip,
 } from '@mui/material';
+import { useCallback, useEffect, useState } from 'react';
 
 export type DropdownOption = {
   label: string;
@@ -103,7 +103,7 @@ export function DropdownButton({
           >
             <span>
               <MenuItem
-                onClick={(e) => handleOptionClick(option, e)}
+                onClick={e => handleOptionClick(option, e)}
                 disabled={option.disabled}
                 sx={{
                   fontSize: '0.875rem',

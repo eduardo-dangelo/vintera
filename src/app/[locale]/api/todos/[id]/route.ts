@@ -45,7 +45,7 @@ export const PUT = async (
 
     return NextResponse.json({ todo });
   } catch (error) {
-    logger.error('Error updating todo:', error);
+    logger.error(`Error updating todo: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to update todo' },
       { status: 500 },
@@ -77,7 +77,7 @@ export const DELETE = async (
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting todo:', error);
+    logger.error(`Error deleting todo: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to delete todo' },
       { status: 500 },

@@ -10,11 +10,13 @@ const handleI18nRouting = createMiddleware(routing);
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
+  '/projects(.*)',
   '/assets(.*)',
   '/activity(.*)',
   '/calendar(.*)',
   '/settings(.*)',
   '/:locale/dashboard(.*)',
+  '/:locale/projects(.*)',
   '/:locale/assets(.*)',
   '/:locale/activity(.*)',
   '/:locale/calendar(.*)',
@@ -23,6 +25,7 @@ const isProtectedRoute = createRouteMatcher([
 
 const isProtectedApiRoute = createRouteMatcher([
   '/api/assets(.*)',
+  '/api/music-projects(.*)',
   '/api/activities(.*)',
   '/api/calendar-events(.*)',
   '/api/notifications(.*)',
@@ -32,6 +35,7 @@ const isProtectedApiRoute = createRouteMatcher([
   '/api/users(.*)',
   '/api/vehicles(.*)',
   '/:locale/api/assets(.*)',
+  '/:locale/api/music-projects(.*)',
   '/:locale/api/activities(.*)',
   '/:locale/api/calendar-events(.*)',
   '/:locale/api/notifications(.*)',

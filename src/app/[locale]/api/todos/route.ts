@@ -26,18 +26,24 @@ export const POST = async (request: Request) => {
       return NextResponse.json(z.treeifyError(parse.error), { status: 422 });
     }
 
+    const { projectId, ...todoFields } = parse.data;
     const todoData = {
-      ...parse.data,
+      ...todoFields,
+      assetId: projectId,
       dueDate: parse.data.dueDate ? new Date(parse.data.dueDate) : null,
     };
 
     const todo = await TodoService.createTodo(todoData, user.id);
 
+    if (!todo) {
+      return NextResponse.json({ error: 'Failed to create todo' }, { status: 500 });
+    }
+
     logger.info('Todo has been created', { todoId: todo.id });
 
     return NextResponse.json({ todo }, { status: 201 });
   } catch (error: any) {
-    logger.error('Error creating todo:', error);
+    logger.error(`Error creating todo: ${error instanceof Error ? error.message : String(error)}`);
 
     if (error.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: error.message }, { status: 403 });

@@ -243,7 +243,7 @@ export function PropertyInfoSection({ asset, locale, onUpdateAsset }: PropertyIn
 
               <Grid container spacing={0}>
                 {visibleItems.map(item => (
-                  <Grid item key={item.key} sx={{ width: { xs: '100%', md: '50%' } }}>
+                  <Grid key={item.key} size={{ xs: 12, md: 6 }} sx={{ width: { xs: '100%', md: '50%' } }}>
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: 140, flexShrink: 0 }}>
                         {item.label}
@@ -318,7 +318,7 @@ export function PropertyInfoSection({ asset, locale, onUpdateAsset }: PropertyIn
                   <Collapse in={showMore}>
                     <Grid container spacing={0} sx={{ mt: 1 }}>
                       {hiddenItems.map(item => (
-                        <Grid item key={item.key} sx={{ width: { xs: '100%', md: '50%' } }}>
+                        <Grid key={item.key} size={{ xs: 12, md: 6 }} sx={{ width: { xs: '100%', md: '50%' } }}>
                           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', minWidth: 140, flexShrink: 0 }}>
                               {item.label}

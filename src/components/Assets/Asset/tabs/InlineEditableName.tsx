@@ -23,7 +23,7 @@ export type InlineEditableNameProps = {
   placeholder?: string;
   saving?: boolean;
   disabled?: boolean;
-  autoFocus?: boolean;
+  focusOnMount?: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
   size?: 'body2' | 'subtitle2';
   /** When set (e.g. ".pdf"), only the base name is editable; the suffix is preserved on save. */
@@ -39,7 +39,7 @@ export function InlineEditableName({
   placeholder,
   saving = false,
   disabled = false,
-  autoFocus = false,
+  focusOnMount = false,
   inputRef: externalInputRef,
   size = 'body2',
   lockedSuffix,
@@ -88,14 +88,14 @@ export function InlineEditableName({
   }, [displayValue]);
 
   useEffect(() => {
-    if (!autoFocus) {
+    if (!focusOnMount) {
       return;
     }
     const raf = window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
     return () => window.cancelAnimationFrame(raf);
-  }, [autoFocus]);
+  }, [focusOnMount]);
 
   useEffect(() => {
     return () => {

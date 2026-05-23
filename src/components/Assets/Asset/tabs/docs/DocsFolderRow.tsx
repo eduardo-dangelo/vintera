@@ -179,7 +179,7 @@ export function DocsFolderRow({
                     placeholder={folder.id === newFolderId ? t('folder_new_placeholder') : undefined}
                     saving={saving}
                     size="body2"
-                    autoFocus
+                    focusOnMount
                   />
                 )
               : (

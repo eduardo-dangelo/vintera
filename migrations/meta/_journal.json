@@ -127,6 +127,13 @@
       "when": 1777182300000,
       "tag": "0017_migrate_income_category_to_other",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1779000000000,
+      "tag": "0018_music_projects_domain",
+      "breakpoints": true
     }
   ]
 }

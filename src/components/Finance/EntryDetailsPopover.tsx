@@ -242,45 +242,114 @@ export function EntryDetailsPopover({
           )}
           {entry.category === 'repair' && entry.repair && (
             <>
-              <Box><Typography variant="caption" color="text.secondary">Value</Typography><Typography variant="body2">{formatCurrency(entry.repair.valueCents, selectedCurrency)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Date</Typography><Typography variant="body2">{formatDateString(entry.repair.date)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Provider</Typography><Typography variant="body2">{entry.repair.provider || '-'}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Repair type</Typography><Typography variant="body2">{entry.repair.repairType || '-'}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Notes</Typography><Typography variant="body2">{entry.repair.notes || '-'}</Typography></Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Value</Typography>
+                <Typography variant="body2">{formatCurrency(entry.repair.valueCents, selectedCurrency)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Date</Typography>
+                <Typography variant="body2">{formatDateString(entry.repair.date)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Provider</Typography>
+                <Typography variant="body2">{entry.repair.provider || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Repair type</Typography>
+                <Typography variant="body2">{entry.repair.repairType || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Notes</Typography>
+                <Typography variant="body2">{entry.repair.notes || '-'}</Typography>
+              </Box>
             </>
           )}
           {entry.category === 'tax' && entry.tax && (
             <>
-              <Box><Typography variant="caption" color="text.secondary">Value</Typography><Typography variant="body2">{formatCurrency(entry.tax.valueCents, selectedCurrency)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Valid from</Typography><Typography variant="body2">{formatDateString(entry.tax.validFrom)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Valid until</Typography><Typography variant="body2">{formatDateString(entry.tax.validUntil ?? null)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Reference</Typography><Typography variant="body2">{entry.tax.reference || '-'}</Typography></Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Value</Typography>
+                <Typography variant="body2">{formatCurrency(entry.tax.valueCents, selectedCurrency)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Valid from</Typography>
+                <Typography variant="body2">{formatDateString(entry.tax.validFrom)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Valid until</Typography>
+                <Typography variant="body2">{formatDateString(entry.tax.validUntil ?? null)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Reference</Typography>
+                <Typography variant="body2">{entry.tax.reference || '-'}</Typography>
+              </Box>
             </>
           )}
           {entry.category === 'service' && entry.service && (
             <>
-              <Box><Typography variant="caption" color="text.secondary">Value</Typography><Typography variant="body2">{formatCurrency(entry.service.valueCents, selectedCurrency)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Date</Typography><Typography variant="body2">{formatDateString(entry.service.date)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Provider</Typography><Typography variant="body2">{entry.service.provider || '-'}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Service type</Typography><Typography variant="body2">{entry.service.serviceType || '-'}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Notes</Typography><Typography variant="body2">{entry.service.notes || '-'}</Typography></Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Value</Typography>
+                <Typography variant="body2">{formatCurrency(entry.service.valueCents, selectedCurrency)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Date</Typography>
+                <Typography variant="body2">{formatDateString(entry.service.date)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Provider</Typography>
+                <Typography variant="body2">{entry.service.provider || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Service type</Typography>
+                <Typography variant="body2">{entry.service.serviceType || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Notes</Typography>
+                <Typography variant="body2">{entry.service.notes || '-'}</Typography>
+              </Box>
             </>
           )}
           {entry.category === 'mot' && entry.mot && (
             <>
-              <Box><Typography variant="caption" color="text.secondary">Value</Typography><Typography variant="body2">{formatCurrency(entry.mot.valueCents, selectedCurrency)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Date</Typography><Typography variant="body2">{formatDateString(entry.mot.date)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Result</Typography><Typography variant="body2">{entry.mot.result}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Provider</Typography><Typography variant="body2">{entry.mot.provider || '-'}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Notes</Typography><Typography variant="body2">{entry.mot.notes || '-'}</Typography></Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Value</Typography>
+                <Typography variant="body2">{formatCurrency(entry.mot.valueCents, selectedCurrency)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Date</Typography>
+                <Typography variant="body2">{formatDateString(entry.mot.date)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Result</Typography>
+                <Typography variant="body2">{entry.mot.result}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Provider</Typography>
+                <Typography variant="body2">{entry.mot.provider || '-'}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Notes</Typography>
+                <Typography variant="body2">{entry.mot.notes || '-'}</Typography>
+              </Box>
             </>
           )}
           {entry.category === 'other' && entry.other && (
             <>
-              <Box><Typography variant="caption" color="text.secondary">Value</Typography><Typography variant="body2">{formatCurrency(entry.other.valueCents, selectedCurrency)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Date</Typography><Typography variant="body2">{formatDateString(entry.other.date)}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Direction</Typography><Typography variant="body2">{entry.other.direction}</Typography></Box>
-              <Box><Typography variant="caption" color="text.secondary">Description</Typography><Typography variant="body2">{entry.other.description}</Typography></Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Value</Typography>
+                <Typography variant="body2">{formatCurrency(entry.other.valueCents, selectedCurrency)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Date</Typography>
+                <Typography variant="body2">{formatDateString(entry.other.date)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Direction</Typography>
+                <Typography variant="body2">{entry.other.direction}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Description</Typography>
+                <Typography variant="body2">{entry.other.description}</Typography>
+              </Box>
             </>
           )}
         </Stack>

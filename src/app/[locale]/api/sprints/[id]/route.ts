@@ -46,7 +46,7 @@ export const PUT = async (
 
     return NextResponse.json({ sprint });
   } catch (error) {
-    logger.error('Error updating sprint:', error);
+    logger.error(`Error updating sprint: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to update sprint' },
       { status: 500 },
@@ -78,7 +78,7 @@ export const DELETE = async (
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting sprint:', error);
+    logger.error(`Error deleting sprint: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json(
       { error: 'Failed to delete sprint' },
       { status: 500 },

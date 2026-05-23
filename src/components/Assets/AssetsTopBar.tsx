@@ -23,10 +23,10 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useSetBreadcrumb } from '@/components/BreadcrumbContext';
+import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
 import { useGlobalTopbarContent } from '@/components/GlobalTopbarContentContext';
 import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
 import { NewAssetButton } from './NewAssetButton';

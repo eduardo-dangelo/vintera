@@ -7,6 +7,7 @@ const LIST_LIMIT = 50;
 export type NotificationMetadata = {
   eventId?: number;
   eventName?: string;
+  eventStart?: string;
   assetId?: number;
   type?: string;
   reminderMinutes?: number;

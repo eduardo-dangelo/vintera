@@ -25,7 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   canMoveFolderTo,
   getItemsInFolder,
@@ -164,7 +164,7 @@ export function FolderTreeView({
   onMove,
   onCreateFolder,
   onDeleteFolder,
-  onRenameFolder,
+  onRenameFolder: _onRenameFolder,
   renderFile,
   renderFolderActions,
   fileContainerSx,
@@ -174,6 +174,13 @@ export function FolderTreeView({
   const [createFolderParent, setCreateFolderParent] = useState<string | null | 'root'>('root');
   const [newFolderName, setNewFolderName] = useState('');
   const [showCreateInput, setShowCreateInput] = useState(false);
+  const createFolderInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showCreateInput) {
+      createFolderInputRef.current?.focus();
+    }
+  }, [showCreateInput]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -411,8 +418,8 @@ export function FolderTreeView({
                   setNewFolderName('');
                 }
               }}
+              ref={createFolderInputRef}
               placeholder={t('folder_name')}
-              autoFocus
               style={{
                 flex: 1,
                 padding: '8px 12px',

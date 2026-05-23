@@ -127,18 +127,21 @@ describe('financeAggregations', () => {
   it('buildFutureMonthFlags: past year has no future months', () => {
     const now = new Date(2026, 5, 15);
     const flags = buildFutureMonthFlags(2025, now);
+
     expect(flags.every(f => !f)).toBe(true);
   });
 
   it('buildFutureMonthFlags: future year marks every month', () => {
     const now = new Date(2026, 5, 15);
     const flags = buildFutureMonthFlags(2027, now);
+
     expect(flags.every(f => f)).toBe(true);
   });
 
   it('buildFutureMonthFlags: current year marks months after current month only', () => {
     const now = new Date(2026, 5, 15);
     const flags = buildFutureMonthFlags(2026, now);
+
     expect(flags.slice(0, 5).every(f => !f)).toBe(true);
     expect(flags[5]).toBe(false);
     expect(flags[6]).toBe(true);
@@ -148,6 +151,7 @@ describe('financeAggregations', () => {
   it('sumMonthlyCentsWithFutureMask sums realized months only', () => {
     const monthly = [100, 200, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const flags = [false, false, true, true, true, true, true, true, true, true, true, true];
+
     expect(sumMonthlyCentsWithFutureMask(monthly, flags, 'realized')).toBe(300);
     expect(sumMonthlyCentsWithFutureMask(monthly, flags, 'all')).toBe(600);
   });

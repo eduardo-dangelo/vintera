@@ -73,7 +73,7 @@ export default async function Dashboard() {
 
         {/* Stats Cards */}
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card>
               <CardContent>
                 <Typography
@@ -111,7 +111,7 @@ export default async function Dashboard() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card>
               <CardContent>
                 <Typography
@@ -149,7 +149,7 @@ export default async function Dashboard() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card>
               <CardContent>
                 <Typography
@@ -187,7 +187,7 @@ export default async function Dashboard() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} lg={3}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card>
               <CardContent>
                 <Typography

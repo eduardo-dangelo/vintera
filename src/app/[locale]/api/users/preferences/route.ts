@@ -18,7 +18,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      theme: user.theme || 'light',
+      theme: user.theme || 'dark',
       hoverSoundEnabled: user.hoverSoundEnabled || 'true',
       currency: user.currency || 'GBP',
     });

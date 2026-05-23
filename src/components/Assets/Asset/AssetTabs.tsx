@@ -632,7 +632,7 @@ export function AssetTabs({ asset, locale, onUpdateAsset }: AssetTabsProps) {
           <OverviewTab
             asset={asset}
             locale={locale}
-            onUpdateAsset={onUpdateAsset}
+            onUpdateAsset={updates => onUpdateAsset(updates as AssetUpdateInput)}
             onCalendarRefreshRequested={() => calendarRefreshRef.current?.()}
             onNavigateToTab={updateUrlForTab}
             onOpenFilePreview={file => setPreviewFile(file)}

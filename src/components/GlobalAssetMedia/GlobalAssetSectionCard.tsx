@@ -1,8 +1,8 @@
 'use client';
 
+import type { AssetMediaItem } from './types';
 import { Box, Typography } from '@mui/material';
 import Link from 'next/link';
-import type { AssetMediaItem } from './types';
 import { Asset } from '@/entities';
 
 type GlobalAssetSectionCardProps = {
@@ -21,9 +21,9 @@ export function GlobalAssetSectionCard({ asset, locale, children }: GlobalAssetS
         href={href}
         variant="h6"
         sx={{
-          textDecoration: 'none',
-          color: 'text.primary',
-          fontWeight: 600,
+          'textDecoration': 'none',
+          'color': 'text.primary',
+          'fontWeight': 600,
           '&:hover': { textDecoration: 'underline' },
         }}
       >

@@ -1,4 +1,5 @@
 import { setRequestLocale } from 'next-intl/server';
+import { AuthPageLayout } from '@/components/auth/AuthPageLayout';
 
 export default async function CenteredLayout(props: {
   children: React.ReactNode;
@@ -8,8 +9,8 @@ export default async function CenteredLayout(props: {
   setRequestLocale(locale);
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <AuthPageLayout>
       {props.children}
-    </div>
+    </AuthPageLayout>
   );
 }

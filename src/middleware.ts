@@ -10,12 +10,18 @@ const handleI18nRouting = createMiddleware(routing);
 
 const isProtectedRoute = createRouteMatcher([
   '/projects(.*)',
+  '/songs(.*)',
+  '/albums(.*)',
   '/:locale/projects(.*)',
+  '/:locale/songs(.*)',
+  '/:locale/albums(.*)',
 ]);
 
 const isProtectedApiRoute = createRouteMatcher([
   '/api/assets(.*)',
   '/api/music-projects(.*)',
+  '/api/songs(.*)',
+  '/api/albums(.*)',
   '/api/activities(.*)',
   '/api/calendar-events(.*)',
   '/api/notifications(.*)',
@@ -27,6 +33,8 @@ const isProtectedApiRoute = createRouteMatcher([
   '/api/vehicles(.*)',
   '/:locale/api/assets(.*)',
   '/:locale/api/music-projects(.*)',
+  '/:locale/api/songs(.*)',
+  '/:locale/api/albums(.*)',
   '/:locale/api/activities(.*)',
   '/:locale/api/calendar-events(.*)',
   '/:locale/api/notifications(.*)',

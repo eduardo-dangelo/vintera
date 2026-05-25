@@ -54,7 +54,7 @@ export default async function AuthLayout(props: {
               drawerWidth={DRAWER_WIDTH}
               signOutLabel={t('sign_out')}
               sectionLabels={{
-                musicProjects: t('sidebar_music_projects'),
+                projects: t('sidebar_projects'),
                 songs: t('sidebar_songs'),
                 albums: t('sidebar_albums'),
                 viewAll: t('sidebar_view_all'),

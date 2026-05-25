@@ -1,22 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
+import { albumKeys, musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
 
-type UpdateSongInput = {
-  projectId: number;
-  songId: number;
-  data: Record<string, unknown>;
-};
-
-export function useUpdateSong(locale: string) {
+export function useUpdateSongById(locale: string) {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
-    mutationFn: async ({ projectId, songId, data }: UpdateSongInput) => {
-      const res = await fetch(`/${locale}/api/music-projects/${projectId}/songs/${songId}`, {
+    mutationFn: async ({ songId, data }: { songId: number; data: Record<string, unknown> }) => {
+      const res = await fetch(`/${locale}/api/songs/${songId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -24,14 +16,16 @@ export function useUpdateSong(locale: string) {
       if (!res.ok) {
         throw new Error('Failed to update song');
       }
-      return (await res.json()) as { song: unknown };
+      return (await res.json()) as { song: { musicProjectId: number } };
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: songKeys.detail(variables.songId) });
       queryClient.invalidateQueries({ queryKey: songKeys.list() });
       queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
-      router.refresh();
+      if (_data?.song?.musicProjectId) {
+        queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(_data.song.musicProjectId) });
+      }
+      queryClient.invalidateQueries({ queryKey: albumKeys.all });
     },
   });
 }

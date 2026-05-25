@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { musicProjectKeys, sidebarKeys } from '@/queries/keys';
+import { albumKeys, musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
 
 type CreateSongInput = {
   projectId: number;
@@ -27,11 +27,14 @@ export function useCreateSong(locale: string) {
       if (!res.ok) {
         throw new Error('Failed to create song');
       }
-      return (await res.json()) as { song: unknown };
+      const { song } = (await res.json()) as { song: { id: number } };
+      return song;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: songKeys.list() });
+      queryClient.invalidateQueries({ queryKey: albumKeys.list() });
       queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
       router.refresh();
     },

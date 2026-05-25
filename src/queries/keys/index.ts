@@ -1,8 +1,10 @@
 export { activityKeys } from './activities';
+export { albumKeys } from './albums';
 export { assetKeys } from './assets';
 export { calendarEventKeys } from './calendar-events';
 export { financeEntryKeys } from './finance-entries';
 export { musicProjectKeys } from './music-projects';
 export { notificationKeys } from './notifications';
 export { sidebarKeys } from './sidebar';
+export { songKeys } from './songs';
 export { userKeys } from './users';

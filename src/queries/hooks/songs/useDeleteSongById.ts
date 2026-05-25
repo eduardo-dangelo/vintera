@@ -3,12 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
 
-export function useDeleteSong(locale: string) {
+export function useDeleteSongById(locale: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ projectId, songId }: { projectId: number; songId: number }) => {
-      const res = await fetch(`/${locale}/api/music-projects/${projectId}/songs/${songId}`, {
+    mutationFn: async ({ songId }: { songId: number }) => {
+      const res = await fetch(`/${locale}/api/songs/${songId}`, {
         method: 'DELETE',
       });
       if (!res.ok) {
@@ -16,10 +16,9 @@ export function useDeleteSong(locale: string) {
       }
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
-      queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
       queryClient.invalidateQueries({ queryKey: songKeys.detail(variables.songId) });
       queryClient.invalidateQueries({ queryKey: songKeys.list() });
+      queryClient.invalidateQueries({ queryKey: musicProjectKeys.all });
       queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
     },
   });

@@ -35,7 +35,9 @@ import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
+import { NewAlbumButton } from './MusicProjects/NewAlbumButton';
 import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
+import { NewSongButton } from './MusicProjects/NewSongButton';
 import { TopbarActions } from './TopbarActions';
 
 type SidebarItem = {
@@ -192,7 +194,7 @@ type SidebarProps = {
   drawerWidth: number;
   signOutLabel: string;
   sectionLabels: {
-    musicProjects: string;
+    projects: string;
     songs: string;
     albums: string;
     viewAll: string;
@@ -258,17 +260,29 @@ export function Sidebar({
 
   const songItems: SidebarItem[] = recents.songs.map(song => ({
     key: `song-${song.id}`,
-    href: `/${locale}/projects/${song.musicProjectId}?song=${song.id}`,
+    href: `/${locale}/songs/${song.id}`,
     label: `${song.title} (${song.projectName})`,
     icon: SongIcon,
   }));
 
   const albumItems: SidebarItem[] = recents.albums.map(album => ({
     key: `album-${album.id}`,
-    href: `/${locale}/projects/${album.musicProjectId}?album=${album.id}`,
-    label: album.name,
+    href: `/${locale}/albums/${album.id}`,
+    label: `${album.name} (${album.projectName})`,
     icon: AlbumIcon,
   }));
+
+  const sectionHeaderButtonSx = {
+    'color': theme.palette.sidebar.textSecondary,
+    'bgcolor': 'transparent',
+    'borderRadius': 1,
+    'height': 22,
+    'width': 22,
+    '&:hover': {
+      color: theme.palette.sidebar.textPrimary,
+      bgcolor: 'rgba(255, 255, 255, 0.06)',
+    },
+  };
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -294,53 +308,42 @@ export function Sidebar({
 
       <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 3 : 1, mt: isMobile ? 5 : 0, overflowY: 'auto' }}>
         <SidebarSection
-          title={sectionLabels.musicProjects}
-          viewAllHref={projectItems.length > 0 ? `/${locale}/projects` : undefined}
+          title={sectionLabels.projects}
+          viewAllHref={`/${locale}/projects`}
           viewAllLabel={sectionLabels.viewAll}
           items={projectItems}
           isActive={isActive}
           onItemClick={setClickedHref}
           onItemHover={() => {}}
           emptyAction={<NewMusicProjectButton locale={locale} variant="listItem" />}
-          headerAction={projectItems.length > 0
-            ? (
-                <NewMusicProjectButton
-                  locale={locale}
-                  iconButtonSx={{
-                    'color': theme.palette.sidebar.textSecondary,
-                    'bgcolor': 'transparent',
-                    'borderRadius': 1,
-                    'height': 22,
-                    'width': 22,
-                    '&:hover': {
-                      color: theme.palette.sidebar.textPrimary,
-                      bgcolor: 'rgba(255, 255, 255, 0.06)',
-                    },
-                  }}
-                />
-              )
-            : undefined}
+          headerAction={(
+            <NewMusicProjectButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />
+          )}
         />
 
-        {songItems.length > 0 && (
-          <SidebarSection
-            title={sectionLabels.songs}
-            items={songItems}
-            isActive={isActive}
-            onItemClick={setClickedHref}
-            onItemHover={() => {}}
-          />
-        )}
+        <SidebarSection
+          title={sectionLabels.songs}
+          viewAllHref={`/${locale}/songs`}
+          viewAllLabel={sectionLabels.viewAll}
+          items={songItems}
+          isActive={isActive}
+          onItemClick={setClickedHref}
+          onItemHover={() => {}}
+          emptyAction={<NewSongButton locale={locale} variant="listItem" />}
+          headerAction={<NewSongButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />}
+        />
 
-        {albumItems.length > 0 && (
-          <SidebarSection
-            title={sectionLabels.albums}
-            items={albumItems}
-            isActive={isActive}
-            onItemClick={setClickedHref}
-            onItemHover={() => {}}
-          />
-        )}
+        <SidebarSection
+          title={sectionLabels.albums}
+          viewAllHref={`/${locale}/albums`}
+          viewAllLabel={sectionLabels.viewAll}
+          items={albumItems}
+          isActive={isActive}
+          onItemClick={setClickedHref}
+          onItemHover={() => {}}
+          emptyAction={<NewAlbumButton locale={locale} variant="listItem" />}
+          headerAction={<NewAlbumButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />}
+        />
       </Box>
 
       <Box>

@@ -5,6 +5,57 @@ import { albumsSchema, musicProjectsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
 
 export class AlbumService {
+  static async getAlbumsByUserId(userId: string) {
+    return db
+      .select({
+        id: albumsSchema.id,
+        name: albumsSchema.name,
+        musicProjectId: albumsSchema.musicProjectId,
+        status: albumsSchema.status,
+        updatedAt: albumsSchema.updatedAt,
+        projectName: musicProjectsSchema.name,
+        projectColor: musicProjectsSchema.color,
+      })
+      .from(albumsSchema)
+      .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
+      .where(eq(musicProjectsSchema.userId, userId))
+      .orderBy(desc(albumsSchema.updatedAt));
+  }
+
+  static async getAlbumByIdForUser(albumId: number, userId: string) {
+    const [row] = await db
+      .select({
+        album: albumsSchema,
+        projectId: musicProjectsSchema.id,
+        projectName: musicProjectsSchema.name,
+        projectColor: musicProjectsSchema.color,
+        projectSlug: musicProjectsSchema.slug,
+      })
+      .from(albumsSchema)
+      .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
+      .where(
+        and(
+          eq(albumsSchema.id, albumId),
+          eq(musicProjectsSchema.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      album: row.album,
+      project: {
+        id: row.projectId,
+        name: row.projectName,
+        color: row.projectColor,
+        slug: row.projectSlug,
+      },
+    };
+  }
+
   static async getRecentAlbumsByUserId(userId: string, limit = 5) {
     return db
       .select({

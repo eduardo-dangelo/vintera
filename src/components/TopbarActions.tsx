@@ -1,10 +1,7 @@
 'use client';
 
-import { SignOutButton, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import {
-  DarkMode,
-  LightMode,
-  Logout,
   NotificationsOutlined,
   Settings,
 } from '@mui/icons-material';
@@ -14,32 +11,52 @@ import {
   Box,
   IconButton,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { useGetNotifications } from '@/queries/hooks/notifications';
-import { getI18nPath } from '@/utils/Helpers';
 import { NotificationsPopover } from './Notifications/NotificationsPopover';
-import { useThemeMode } from './ThemeProvider';
+import { SettingsPopover } from './Settings/SettingsPopover';
 import { UserProfileModal } from './UserProfileModal';
 
-export function TopbarActions() {
+type TopbarActionsProps = {
+  variant?: 'default' | 'sidebar';
+};
+
+export function TopbarActions({ variant = 'default' }: TopbarActionsProps) {
   const { user } = useUser();
   const pathname = usePathname();
+  const theme = useTheme();
   const t = useTranslations('GlobalTopbar');
+  const isSidebar = variant === 'sidebar';
 
   const locale = pathname?.match(/^\/([a-z]{2})\//)?.[1] || 'en';
 
-  const { mode, toggleTheme } = useThemeMode();
   const { playHoverSound } = useHoverSound();
   const { data: notifications = [], refetch } = useGetNotifications(locale);
   const [userProfileModalOpen, setUserProfileModalOpen] = useState(false);
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState<HTMLElement | null>(null);
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const iconColor = isSidebar ? theme.palette.sidebar.textSecondary : 'text.secondary';
+  const iconHoverBg = isSidebar ? 'rgba(255, 255, 255, 0.06)' : 'action.hover';
+  const iconHoverColor = isSidebar ? theme.palette.sidebar.textPrimary : undefined;
+  const iconSize = isSidebar ? 16 : undefined;
+  const avatarSize = isSidebar ? 22 : 26;
+  const gap = isSidebar ? 0.25 : 1;
+
+  const iconButtonSx = {
+    'color': iconColor,
+    '&:hover': {
+      bgcolor: iconHoverBg,
+      ...(iconHoverColor && { color: iconHoverColor }),
+    },
+  };
 
   useEffect(() => {
     const handleFocus = () => {
@@ -51,19 +68,13 @@ export function TopbarActions() {
 
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {/* Notifications */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap }}>
         <Tooltip title={t('tooltip_notifications')}>
           <IconButton
             onClick={e => setNotificationsAnchorEl(e.currentTarget)}
             onMouseEnter={playHoverSound}
             size="small"
-            sx={{
-              'color': 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
+            sx={iconButtonSx}
           >
             <Badge
               badgeContent={unreadCount}
@@ -72,29 +83,11 @@ export function TopbarActions() {
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-              <NotificationsOutlined fontSize="small" />
+              <NotificationsOutlined sx={{ fontSize: iconSize }} fontSize={isSidebar ? undefined : 'small'} />
             </Badge>
           </IconButton>
         </Tooltip>
 
-        {/* Theme Switcher */}
-        <Tooltip title={mode === 'light' ? t('tooltip_dark_mode') : t('tooltip_light_mode')}>
-          <IconButton
-            onClick={toggleTheme}
-            onMouseEnter={playHoverSound}
-            size="small"
-            sx={{
-              'color': 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            {mode === 'light' ? <DarkMode fontSize="small" /> : <LightMode fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-
-        {/* User Avatar */}
         <Tooltip title={t('tooltip_user_profile')}>
           <IconButton
             onClick={() => setUserProfileModalOpen(true)}
@@ -111,8 +104,8 @@ export function TopbarActions() {
               src={user?.imageUrl}
               alt={user?.firstName || 'User'}
               sx={{
-                width: 26,
-                height: 26,
+                width: avatarSize,
+                height: avatarSize,
               }}
             >
               {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress?.[0] || 'U'}
@@ -120,44 +113,18 @@ export function TopbarActions() {
           </IconButton>
         </Tooltip>
 
-        {/* Settings */}
         <Tooltip title={t('tooltip_settings')}>
           <IconButton
-            component={Link}
-            href={getI18nPath('/settings', locale)}
+            onClick={e => setSettingsAnchorEl(e.currentTarget)}
             onMouseEnter={playHoverSound}
             size="small"
-            sx={{
-              'color': 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
+            sx={iconButtonSx}
           >
-            <Settings fontSize="small" />
+            <Settings sx={{ fontSize: iconSize }} fontSize={isSidebar ? undefined : 'small'} />
           </IconButton>
-        </Tooltip>
-
-        {/* Logout */}
-        <Tooltip title={t('tooltip_logout')}>
-          <SignOutButton>
-            <IconButton
-              onMouseEnter={playHoverSound}
-              size="small"
-              sx={{
-                'color': 'text.secondary',
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <Logout fontSize="small" />
-            </IconButton>
-          </SignOutButton>
         </Tooltip>
       </Box>
 
-      {/* Notifications Popover */}
       <NotificationsPopover
         open={Boolean(notificationsAnchorEl)}
         anchorEl={notificationsAnchorEl}
@@ -165,7 +132,12 @@ export function TopbarActions() {
         locale={locale}
       />
 
-      {/* User Profile Modal */}
+      <SettingsPopover
+        open={Boolean(settingsAnchorEl)}
+        anchorEl={settingsAnchorEl}
+        onClose={() => setSettingsAnchorEl(null)}
+      />
+
       <UserProfileModal
         open={userProfileModalOpen}
         onClose={() => setUserProfileModalOpen(false)}

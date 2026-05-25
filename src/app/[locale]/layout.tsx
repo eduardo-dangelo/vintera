@@ -66,9 +66,14 @@ export default async function RootLayout(props: {
 
   setRequestLocale(locale);
 
+  const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');var m=(t==='dark'||t==='light')?t:'light';document.documentElement.dataset.theme=m;document.documentElement.style.colorScheme=m;}catch(e){document.documentElement.dataset.theme='light';document.documentElement.style.colorScheme='light';}})();`;
+
   return (
-    <html lang={locale}>
-      <body className={`${nunito.variable} ${oswald.variable}`}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className={`${nunito.variable} ${oswald.variable}`} suppressHydrationWarning>
         <NextIntlClientProvider>
           <PostHogProvider>
             <QueryProvider>

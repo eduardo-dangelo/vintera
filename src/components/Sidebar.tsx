@@ -3,9 +3,11 @@
 import type { ReactNode } from 'react';
 import { SignOutButton } from '@clerk/nextjs';
 import {
-  ChevronRight,
+  Album as AlbumIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
+  MusicNote as MusicNoteIcon,
+  QueueMusic as SongIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -19,14 +21,16 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { TransitionGroup } from 'react-transition-group';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { NewAssetButton } from './Assets/NewAssetButton';
+import { useGetSidebarRecents } from '@/queries/hooks/sidebar';
 import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
@@ -34,492 +38,343 @@ import { Logo } from './Logo';
 import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
 import { TopbarActions } from './TopbarActions';
 
-type MenuItem = {
-  icon: React.ComponentType<any>;
-  label: string;
+type SidebarItem = {
+  key: string;
   href: string;
-  isSubItem?: boolean;
+  label: string;
+  icon: React.ComponentType<{ sx?: object }>;
 };
+
+type SidebarSectionProps = {
+  title: string;
+  headerAction?: ReactNode;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  items: SidebarItem[];
+  emptyAction?: ReactNode;
+  isActive: (href: string) => boolean;
+  onItemClick: (href: string) => void;
+  onItemHover: (href: string | null) => void;
+};
+
+function SidebarSection({
+  title,
+  headerAction,
+  viewAllHref,
+  viewAllLabel,
+  items,
+  emptyAction,
+  isActive,
+  onItemClick,
+  onItemHover,
+}: SidebarSectionProps) {
+  const theme = useTheme();
+  const { playHoverSound } = useHoverSound();
+
+  const menuItemIconColor = 'rgba(200, 200, 210, 0.9)';
+  const menuItemIconColorActive = 'rgba(244, 244, 245, 0.95)';
+
+  const rowSx = (active: boolean) => ({
+    'borderRadius': 1,
+    'color': active ? theme.palette.sidebar.textPrimary : theme.palette.sidebar.textSecondary,
+    'bgcolor': active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+    'pl': 1,
+    'pr': 1,
+    'py': 0.25,
+    'minHeight': 28,
+    'transition': 'background-color 0.15s ease-in-out, color 0.15s ease-in-out',
+    '&:hover': {
+      'bgcolor': 'rgba(255, 255, 255, 0.06)',
+      'color': theme.palette.sidebar.textPrimary,
+      '& .MuiListItemIcon-root svg': {
+        color: menuItemIconColorActive,
+      },
+    },
+  });
+
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 0.5,
+          mb: 0.5,
+        }}
+      >
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 500,
+            color: theme.palette.sidebar.textSecondary,
+            fontSize: '0.6875rem',
+          }}
+        >
+          {title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+          {headerAction}
+          {viewAllHref && viewAllLabel && (
+            <Typography
+              component={Link}
+              href={viewAllHref}
+              variant="caption"
+              onMouseEnter={playHoverSound}
+              sx={{
+                'color': theme.palette.sidebar.textSecondary,
+                'textDecoration': 'none',
+                'fontSize': '0.6875rem',
+                'px': 0.5,
+                '&:hover': { color: theme.palette.sidebar.textPrimary },
+              }}
+            >
+              {viewAllLabel}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      {items.length === 0
+        ? emptyAction
+        : (
+            <List disablePadding>
+              <TransitionGroup component={null}>
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+
+                  return (
+                    <Collapse key={item.key} timeout={200}>
+                      <ListItem disablePadding sx={{ mb: 0.125 }}>
+                        <ListItemButton
+                          component={Link}
+                          href={item.href}
+                          onMouseEnter={() => {
+                            playHoverSound();
+                            onItemHover(item.href);
+                          }}
+                          onMouseLeave={() => onItemHover(null)}
+                          onClick={() => onItemClick(item.href)}
+                          sx={rowSx(active)}
+                        >
+                          <ListItemIcon sx={{ minWidth: 24 }}>
+                            <Icon
+                              sx={{
+                                fontSize: 16,
+                                color: active ? menuItemIconColorActive : menuItemIconColor,
+                              }}
+                            />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={item.label}
+                            primaryTypographyProps={{
+                              fontSize: '0.75rem',
+                              fontWeight: 400,
+                              noWrap: true,
+                              sx: { textOverflow: 'ellipsis' },
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    </Collapse>
+                  );
+                })}
+              </TransitionGroup>
+            </List>
+          )}
+    </Box>
+  );
+}
 
 type SidebarProps = {
   children: ReactNode;
   drawerWidth: number;
-  menuItems: MenuItem[];
-  appName: string;
   signOutLabel: string;
+  sectionLabels: {
+    musicProjects: string;
+    songs: string;
+    albums: string;
+    viewAll: string;
+  };
 };
 
 export function Sidebar({
   children,
   drawerWidth,
-  menuItems,
-  appName: _appName,
   signOutLabel,
+  sectionLabels,
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
   const [clickedHref, setClickedHref] = useState<string | null>(null);
-  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { playHoverSound } = useHoverSound();
 
-  // Extract locale from pathname once
   const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
+  const { data: recentsData } = useGetSidebarRecents(locale);
+  const recents = recentsData ?? { projects: [], songs: [], albums: [] };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const toggleExpanded = (href: string) => {
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(href)) {
-        next.delete(href);
-      } else {
-        next.add(href);
-      }
-      return next;
-    });
-  };
-
   const isActive = (href: string) => {
-    // Remove locale prefix from both pathname and href for comparison
     const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}\//, '/');
     const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
+    const hrefPath = hrefWithoutLocale.split('?')[0] ?? hrefWithoutLocale;
+    const hrefQuery = hrefWithoutLocale.includes('?') ? hrefWithoutLocale.split('?')[1] : null;
 
-    // If an item was clicked, only that item should be active (optimistic UI update)
-    // This ensures the previous active item loses its active state immediately
     if (clickedHref) {
-      const clickedHrefWithoutLocale = clickedHref.replace(/^\/[a-z]{2}\//, '/');
-      return hrefWithoutLocale === clickedHrefWithoutLocale;
+      const clickedWithoutLocale = clickedHref.replace(/^\/[a-z]{2}\//, '/');
+      return hrefWithoutLocale === clickedWithoutLocale
+        || clickedWithoutLocale.startsWith(`${hrefPath}?`);
     }
 
-    // Exact match
-    if (pathnameWithoutLocale === hrefWithoutLocale) {
-      return true;
+    if (pathnameWithoutLocale !== hrefPath && !pathnameWithoutLocale.startsWith(`${hrefPath}/`)) {
+      return false;
     }
 
-    // For sub-routes, only highlight the most specific matching route
-    // This prevents multiple parent routes from being highlighted
-    if (pathnameWithoutLocale.startsWith(`${hrefWithoutLocale}/`)) {
-      // Check if there's a more specific route in the menu that also matches
-      // If we're on /assets/vehicles/123, we want to highlight /assets/vehicles, not /assets
-      const allMenuHrefs = menuItems.map(item => item.href.replace(/^\/[a-z]{2}\//, '/'));
-
-      // Find the most specific matching route
-      const matchingRoutes = allMenuHrefs.filter(menuHref =>
-        pathnameWithoutLocale.startsWith(`${menuHref}/`) || pathnameWithoutLocale === menuHref,
-      );
-
-      // Only highlight if this is the most specific match
-      return matchingRoutes.length > 0 && hrefWithoutLocale === matchingRoutes.sort((a, b) => b.length - a.length)[0];
+    if (hrefQuery) {
+      const [paramKey, paramValue] = hrefQuery.split('=');
+      return searchParams.get(paramKey ?? '') === paramValue;
     }
 
-    return false;
+    return pathnameWithoutLocale === hrefPath;
   };
 
-  // Group menu items by parent-child relationship
-  const groupMenuItems = useCallback(() => {
-    const groupedItems: Array<{ parent: MenuItem; children: MenuItem[] }> = [];
-    let currentParent: MenuItem | null = null;
-    let currentChildren: MenuItem[] = [];
-
-    menuItems.forEach((item) => {
-      if (item.isSubItem) {
-        if (currentParent) {
-          currentChildren.push(item);
-        }
-      } else {
-        if (currentParent) {
-          groupedItems.push({ parent: currentParent, children: currentChildren });
-        }
-        const itemIndex = menuItems.indexOf(item);
-        const nextItemsAreSubItems = menuItems
-          .slice(itemIndex + 1)
-          .some(nextItem => nextItem.isSubItem);
-
-        if (nextItemsAreSubItems) {
-          currentParent = item;
-          currentChildren = [];
-        } else {
-          groupedItems.push({ parent: item, children: [] });
-          currentParent = null;
-          currentChildren = [];
-        }
-      }
-    });
-
-    if (currentParent) {
-      groupedItems.push({ parent: currentParent, children: currentChildren });
-    }
-
-    return groupedItems;
-  }, [menuItems]);
-
-  // Auto-expand parent items if any child is active
-  useEffect(() => {
-    const groupedItems = groupMenuItems();
-    groupedItems.forEach((group) => {
-      const hasActiveChild = group.children.some(child => isActive(child.href));
-      if (hasActiveChild) {
-        setExpandedItems((prev) => {
-          if (!prev.has(group.parent.href)) {
-            return new Set(prev).add(group.parent.href);
-          }
-          return prev;
-        });
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, groupMenuItems]);
-
-  // Clear clicked state when pathname changes (navigation completes)
   useEffect(() => {
     setClickedHref(null);
   }, [pathname]);
 
-  // Helper function to extract asset type from href
-  const extractAssetTypeFromHref = (href: string): string | null => {
-    const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
-    const match = hrefWithoutLocale.match(/^\/assets\/(vehicles|properties|persons)$/);
+  const projectItems: SidebarItem[] = recents.projects.map(project => ({
+    key: `project-${project.id}`,
+    href: `/${locale}/projects/${project.id}`,
+    label: project.name,
+    icon: MusicNoteIcon,
+  }));
 
-    if (match) {
-      const pluralType = match[1];
-      if (!pluralType) {
-        return null;
-      }
-      // Reverse mapping from plural to singular
-      const typeMap: Record<string, string> = {
-        vehicles: 'vehicle',
-        properties: 'property',
-        persons: 'person',
-      };
-      return typeMap[pluralType] ?? null;
-    }
+  const songItems: SidebarItem[] = recents.songs.map(song => ({
+    key: `song-${song.id}`,
+    href: `/${locale}/projects/${song.musicProjectId}?song=${song.id}`,
+    label: `${song.title} (${song.projectName})`,
+    icon: SongIcon,
+  }));
 
-    return null;
-  };
-
-  // Helper function to check if item is parent Assets item
-  const isAssetsParentItem = (href: string): boolean => {
-    const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
-    return hrefWithoutLocale === '/assets';
-  };
-
-  const isMusicProjectsParentItem = (href: string): boolean => {
-    const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
-    return hrefWithoutLocale === '/projects' || hrefWithoutLocale.startsWith('/projects/');
-  };
-
-  // Helper function to check if item is an asset subitem
-  const isAssetSubItem = (href: string): boolean => {
-    return extractAssetTypeFromHref(href) !== null;
-  };
+  const albumItems: SidebarItem[] = recents.albums.map(album => ({
+    key: `album-${album.id}`,
+    href: `/${locale}/projects/${album.musicProjectId}?album=${album.id}`,
+    label: album.name,
+    icon: AlbumIcon,
+  }));
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Logo - Hidden on mobile */}
       {!isMobile && (
-        <Box sx={{ px: 3, pt: 2, pb: 0 }}>
-          <Logo variant={isMobile ? 'dark' : 'light'} />
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            px: 1.25,
+            pt: 1.5,
+            pb: 1,
+            gap: 1,
+            minWidth: 0,
+          }}
+        >
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Logo variant="light" compact />
+          </Box>
+          <TopbarActions variant="sidebar" />
         </Box>
       )}
 
-      {/* Navigation */}
-      <List sx={{ flexGrow: 1, px: 2, py: isMobile ? 3 : 2, mt: isMobile ? 5 : 0 }}>
-        {groupMenuItems().map((group) => {
-          const { parent, children } = group;
-          const Icon = parent.icon;
-          const active = isActive(parent.href);
-          const isExpanded = expandedItems.has(parent.href);
-          const hasChildren = children.length > 0;
-          const hasActiveChild = children.some(child => isActive(child.href));
-
-          const isAssetsParent = isAssetsParentItem(parent.href);
-          const isMusicProjectsParent = isMusicProjectsParentItem(parent.href);
-          const isHovered = hoveredHref === parent.href;
-
-          return (
-            <Box key={parent.href}>
-              <ListItem disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  component={Link}
-                  href={parent.href}
-                  onMouseEnter={() => {
-                    playHoverSound();
-                    setHoveredHref(parent.href);
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredHref(null);
-                  }}
-                  onClick={() => {
-                    setClickedHref(parent.href);
-                    toggleExpanded(parent.href);
-                  }}
-                  sx={{
-                    'borderRadius': 2,
-                    'color': active ? theme.palette.sidebar.textPrimary : theme.palette.sidebar.textSecondary,
-                    'bgcolor': active ? (theme.palette.mode === 'dark' ? theme.palette.action.selected : 'rgba(255, 255, 255, 0.12)') : 'transparent',
-                    'pl': 2,
-                    'pr': hasChildren ? 0.5 : 2,
-                    'py': 0.5,
-                    'minHeight': 40,
-                    'height': 40,
-                    'boxShadow': active ? theme.shadows[8] : 'none',
-                    'transition': 'boxShadow 0.3s ease-in-out, background-color 0.3s ease-in-out',
+      <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 3 : 1, mt: isMobile ? 5 : 0, overflowY: 'auto' }}>
+        <SidebarSection
+          title={sectionLabels.musicProjects}
+          viewAllHref={projectItems.length > 0 ? `/${locale}/projects` : undefined}
+          viewAllLabel={sectionLabels.viewAll}
+          items={projectItems}
+          isActive={isActive}
+          onItemClick={setClickedHref}
+          onItemHover={() => {}}
+          emptyAction={<NewMusicProjectButton locale={locale} variant="listItem" />}
+          headerAction={projectItems.length > 0
+            ? (
+                <NewMusicProjectButton
+                  locale={locale}
+                  iconButtonSx={{
+                    'color': theme.palette.sidebar.textSecondary,
+                    'bgcolor': 'transparent',
+                    'borderRadius': 1,
+                    'height': 22,
+                    'width': 22,
                     '&:hover': {
-                      'bgcolor': theme.palette.mode === 'dark' ? theme.palette.action.selected : 'rgba(255, 255, 255, 0.12)',
-                      'color': theme.palette.sidebar.textPrimary,
-                      'boxShadow': active ? theme.shadows[8] : 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
-                      '& .MuiListItemIcon-root': {
-                        color: theme.palette.primary.main,
-                      },
+                      color: theme.palette.sidebar.textPrimary,
+                      bgcolor: 'rgba(255, 255, 255, 0.06)',
                     },
                   }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    <Icon
-                      sx={{
-                        fontSize: 20,
-                        color: theme.palette.primary.main,
-                        transition: 'color 0.2s',
-                      }}
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={parent.label}
-                    primaryTypographyProps={{
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                    }}
-                  />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {isMusicProjectsParent && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          lineHeight: 0,
-                          height: 'fit-content',
-                          opacity: isHovered ? 1 : 0,
-                          transition: 'opacity 0.3s ease',
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <NewMusicProjectButton
-                          locale={locale}
-                          iconButtonSx={{
-                            'color': theme.palette.sidebar.textSecondary,
-                            'bgcolor': 'transparent',
-                            'borderRadius': '50%',
-                            '&:hover': {
-                              color: theme.palette.sidebar.textPrimary,
-                              bgcolor: theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
-                            },
-                          }}
-                        />
-                      </Box>
-                    )}
-                    {isAssetsParent && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          lineHeight: 0,
-                          height: 'fit-content',
-                          opacity: isHovered ? 1 : 0,
-                          transition: 'opacity 0.3s ease',
-                        }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <NewAssetButton
-                          locale={locale}
-                          iconButtonSx={{
-                            'color': theme.palette.sidebar.textSecondary,
-                            'bgcolor': 'transparent',
-                            'borderRadius': '50%',
-                            '& > svg': {
-                              color: theme.palette.sidebar.textSecondary,
-                            },
-                            '&:hover': {
-                              color: theme.palette.sidebar.textPrimary,
-                              bgcolor: theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
-                            },
-                          }}
-                        />
-                      </Box>
-                    )}
-                    {hasChildren && (
-                      <IconButton
-                        size="small"
-                        onMouseEnter={playHoverSound}
-                        sx={{
-                          'color': theme.palette.sidebar.textSecondary,
-                          'p': 0.5,
-                          'mr': 0.5,
-                          'transition': 'transform 0.2s, color 0.2s',
-                          'transform': isExpanded || hasActiveChild ? 'rotate(90deg)' : 'rotate(0deg)',
-                          '&:hover': {
-                            color: theme.palette.sidebar.textPrimary,
-                            bgcolor: theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
-                          },
-                        }}
-                      >
-                        <ChevronRight sx={{ fontSize: 20 }} />
-                      </IconButton>
-                    )}
-                  </Box>
-                </ListItemButton>
-              </ListItem>
-              {hasChildren && (
-                <Collapse in={isExpanded || hasActiveChild} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {children.map((child) => {
-                      const ChildIcon = child.icon;
-                      const childActive = isActive(child.href);
-                      const assetType = extractAssetTypeFromHref(child.href);
-                      const isAssetSub = isAssetSubItem(child.href);
-                      const isChildHovered = hoveredHref === child.href;
+                />
+              )
+            : undefined}
+        />
 
-                      return (
-                        <ListItem key={child.href} disablePadding sx={{ mb: 0.5 }}>
-                          <ListItemButton
-                            component={Link}
-                            href={child.href}
-                            onMouseEnter={() => {
-                              playHoverSound();
-                              setHoveredHref(child.href);
-                            }}
-                            onMouseLeave={() => {
-                              setHoveredHref(null);
-                            }}
-                            onClick={() => {
-                              setClickedHref(child.href);
-                            }}
-                            sx={{
-                              'borderRadius': 2,
-                              'color': childActive ? theme.palette.sidebar.textPrimary : theme.palette.sidebar.textSecondary,
-                              'bgcolor': childActive ? (theme.palette.mode === 'dark' ? theme.palette.action.selected : 'rgba(255, 255, 255, 0.12)') : 'transparent',
-                              'pl': 4,
-                              'pr': 2,
-                              'py': 0.5,
-                              'minHeight': 40,
-                              'height': 40,
-                              'boxShadow': childActive ? theme.shadows[8] : 'none',
-                              'transition': 'boxShadow 0.3s ease-in-out, background-color 0.3s ease-in-out',
-                              '&:hover': {
-                                'bgcolor': theme.palette.mode === 'dark' ? theme.palette.action.selected : 'rgba(255, 255, 255, 0.12)',
-                                'color': theme.palette.sidebar.textPrimary,
-                                'boxShadow': childActive ? theme.shadows[8] : 'inset 0 2px 4px rgba(0, 0, 0, 0.1)',
-                                '& .MuiListItemIcon-root': {
-                                  color: theme.palette.primary.main,
-                                },
-                              },
-                            }}
-                          >
-                            <ListItemIcon sx={{ minWidth: 40 }}>
-                              <ChildIcon
-                                sx={{
-                                  fontSize: 20,
-                                  color: theme.palette.primary.main,
-                                  transition: 'color 0.2s',
-                                }}
-                              />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={child.label}
-                              primaryTypographyProps={{
-                                fontSize: '0.875rem',
-                                fontWeight: 500,
-                              }}
-                            />
-                            {isAssetSub && assetType && (
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  lineHeight: 0,
-                                  height: 'fit-content',
-                                  opacity: isChildHovered ? 1 : 0,
-                                  transition: 'opacity 0.3s ease',
-                                  ml: 'auto',
-                                }}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                }}
-                              >
-                                <NewAssetButton
-                                  locale={locale}
-                                  preSelectedType={assetType}
-                                  iconButtonSx={{
-                                    'color': theme.palette.sidebar.textSecondary,
-                                    'bgcolor': 'transparent',
-                                    'borderRadius': '50%',
-                                    '& > svg': {
-                                      color: theme.palette.sidebar.textSecondary,
-                                    },
-                                    '&:hover': {
-                                      color: theme.palette.sidebar.textPrimary,
-                                      bgcolor: theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
-                                    },
-                                  }}
-                                />
-                              </Box>
-                            )}
-                          </ListItemButton>
-                        </ListItem>
-                      );
-                    })}
-                  </List>
-                </Collapse>
-              )}
-            </Box>
-          );
-        })}
-      </List>
+        {songItems.length > 0 && (
+          <SidebarSection
+            title={sectionLabels.songs}
+            items={songItems}
+            isActive={isActive}
+            onItemClick={setClickedHref}
+            onItemHover={() => {}}
+          />
+        )}
 
-      {/* Footer - Logout */}
+        {albumItems.length > 0 && (
+          <SidebarSection
+            title={sectionLabels.albums}
+            items={albumItems}
+            isActive={isActive}
+            onItemClick={setClickedHref}
+            onItemHover={() => {}}
+          />
+        )}
+      </Box>
+
       <Box>
-        <List sx={{ px: 2, py: 2 }}>
+        <List sx={{ px: 1.25, py: 1.5 }}>
           <ListItem disablePadding>
             <SignOutButton>
               <ListItemButton
                 onMouseEnter={playHoverSound}
                 sx={{
-                  'borderRadius': 2,
+                  'borderRadius': 1,
                   'color': theme.palette.sidebar.textSecondary,
+                  'pl': 1,
+                  'pr': 1,
+                  'py': 0.25,
+                  'minHeight': 28,
                   '&:hover': {
-                    'bgcolor': theme.palette.mode === 'dark' ? theme.palette.action.hover : 'rgba(255, 255, 255, 0.08)',
-                    'color': theme.palette.sidebar.textPrimary,
-                    '& .MuiListItemIcon-root': {
-                      color: theme.palette.primary.main,
-                    },
+                    bgcolor: 'rgba(255, 255, 255, 0.06)',
+                    color: theme.palette.sidebar.textPrimary,
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40 }}>
+                <ListItemIcon sx={{ minWidth: 24 }}>
                   <LogoutIcon
                     sx={{
-                      fontSize: 20,
-                      color: theme.palette.primary.main,
-                      transition: 'color 0.2s',
+                      fontSize: 16,
+                      color: 'rgba(200, 200, 210, 0.9)',
                     }}
                   />
                 </ListItemIcon>
                 <ListItemText
                   primary={signOutLabel}
                   primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 500,
+                    fontSize: '0.75rem',
+                    fontWeight: 400,
                   }}
                 />
               </ListItemButton>
@@ -532,7 +387,6 @@ export function Sidebar({
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: theme.palette.background.default, overflow: 'hidden' }}>
-      {/* Mobile App Bar */}
       {isMobile && (
         <AppBar
           position="fixed"
@@ -546,15 +400,12 @@ export function Sidebar({
             display: { xs: 'block', lg: 'none' },
             zIndex: theme => theme.zIndex.drawer + 1,
             transition: 'background-color 0.3s ease',
-            // border: '1px solid red',
             backdropFilter: mobileOpen ? 'none' : 'blur(2px)',
-
           }}
         >
           <Toolbar
             sx={{ justifyContent: 'space-between' }}
             onClick={(e) => {
-              // Prevent closing when clicking on toolbar content
               if (mobileOpen) {
                 handleDrawerToggle();
               } else {
@@ -570,17 +421,16 @@ export function Sidebar({
                 sx={{
                   mr: 0.5,
                   color: mobileOpen
-                    ? theme.palette.text.primary // When drawer is open, use primary text color (light on dark background)
-                    : (theme.palette.mode === 'dark' ? theme.palette.text.primary : '#1a1a1a'), // When closed, match the main background
+                    ? theme.palette.text.primary
+                    : (theme.palette.mode === 'dark' ? theme.palette.text.primary : '#1a1a1a'),
                 }}
               >
                 <MenuIcon />
               </IconButton>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Logo variant={mobileOpen ? 'light' : (theme.palette.mode === 'dark' ? 'light' : 'dark')} />
+                <Logo variant={mobileOpen ? 'light' : (theme.palette.mode === 'dark' ? 'light' : 'dark')} compact />
               </Box>
             </Box>
-            {/* Actions on mobile - same level as logo */}
             <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center' }}>
               <TopbarActions />
             </Box>
@@ -588,18 +438,16 @@ export function Sidebar({
         </AppBar>
       )}
 
-      {/* Sidebar Drawer */}
       <Box
         component="nav"
         sx={{ width: { lg: drawerWidth }, flexShrink: { lg: 0 } }}
       >
-        {/* Mobile Drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile
+            keepMounted: true,
           }}
           sx={{
             'display': { xs: 'block', lg: 'none' },
@@ -614,7 +462,6 @@ export function Sidebar({
           <Box>{drawerContent}</Box>
         </Drawer>
 
-        {/* Desktop Drawer */}
         <Drawer
           variant="permanent"
           sx={{
@@ -632,7 +479,6 @@ export function Sidebar({
         </Drawer>
       </Box>
 
-      {/* Main Content */}
       <BreadcrumbProvider>
         <GlobalTopbarContentProvider>
           <Box
@@ -642,9 +488,7 @@ export function Sidebar({
               'height': '100vh',
               'overflow': 'auto',
               'bgcolor': 'background.default',
-              // Custom thin overlay scrollbar styling
               '&::-webkit-scrollbar': {
-                // width: '8px',
                 border: '1px solid red',
                 position: 'absolute',
                 top: 0,
@@ -670,7 +514,6 @@ export function Sidebar({
               'scrollbarColor': theme.palette.mode === 'dark'
                 ? 'rgba(255, 255, 255, 0.2) transparent'
                 : 'rgba(0, 0, 0, 0.2) transparent',
-              // Reserve space for scrollbar to prevent layout shift
               'scrollbarGutter': 'unset',
             }}
           >
@@ -680,17 +523,13 @@ export function Sidebar({
                 pb: { xs: 2, sm: 3 },
               }}
             >
-              {/* Global Topbar */}
               <GlobalTopbar />
-
-              {/* Content with topbar spacing */}
               <Box
                 sx={{
                   width: '100%',
                   maxWidth: 1400,
                   mx: 'auto',
-                  pt: { xs: 8, lg: 0 }, // ~96px mobile, ~72px desktop
-
+                  pt: { xs: 8, lg: 0 },
                 }}
               >
                 {children}

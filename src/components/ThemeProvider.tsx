@@ -2,16 +2,55 @@
 
 import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from '@mui/material';
 import { usePathname } from 'next/navigation';
-import { createContext, use, useEffect, useMemo, useState } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
+import { useGetUserPreferences, useUpdateUserPreferences } from '@/queries/hooks/users';
 
 type ThemeMode = 'light' | 'dark';
 
 type ThemeContextType = {
   mode: ThemeMode;
   toggleTheme: () => void;
+  setTheme: (mode: ThemeMode) => Promise<void>;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+function resolveThemeMode(theme: string | undefined): ThemeMode {
+  if (theme === 'dark') {
+    return 'dark';
+  }
+  if (theme === 'light') {
+    return 'light';
+  }
+  if (theme === 'system') {
+    return 'light';
+  }
+  return 'light';
+}
+
+function getStoredTheme(): ThemeMode | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const fromDataset = document.documentElement.dataset.theme;
+  if (fromDataset === 'light' || fromDataset === 'dark') {
+    return fromDataset;
+  }
+  const stored = localStorage.getItem('theme');
+  if (stored === 'light' || stored === 'dark') {
+    return stored;
+  }
+  return null;
+}
+
+function applyThemeToDocument(mode: ThemeMode) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  document.documentElement.dataset.theme = mode;
+  document.documentElement.style.colorScheme = mode;
+  localStorage.setItem('theme', mode);
+}
 
 export function useThemeMode() {
   const context = use(ThemeContext);
@@ -23,82 +62,43 @@ export function useThemeMode() {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  // Initialize mode from localStorage if available, otherwise default to 'dark'
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
-      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
-        return storedTheme;
-      }
-    }
-    return 'dark';
-  });
-
-  const [loading, setLoading] = useState(true);
-
-  // Extract locale from pathname
   const locale = pathname?.match(/^\/([a-z]{2})\//)?.[1] || 'en';
 
-  // Initialize theme from localStorage (if not already set in useState initializer)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedTheme = localStorage.getItem('theme') as ThemeMode | null;
-      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark') && storedTheme !== mode) {
-        setMode(storedTheme);
-      }
-      setLoading(() => false);
-    }
-  }, [mode]);
+  const [mode, setMode] = useState<ThemeMode>(() => getStoredTheme() ?? 'light');
+  const [themeReady, setThemeReady] = useState(false);
 
-  // Fetch user theme preference from API (works if user is authenticated, fails silently if not)
-  useEffect(() => {
-    if (!loading) {
-      fetch(`/${locale}/api/users/preferences`)
-        .then((res) => {
-          if (res.ok) {
-            return res.json();
-          }
-          return null;
-        })
-        .then((data) => {
-          if (data?.theme) {
-            // Resolve 'system' to dark for now (Vintera defaults to dark)
-            if (data.theme === 'system') {
-              const effectiveTheme: ThemeMode = 'dark';
-              setMode(effectiveTheme);
-              localStorage.setItem('theme', effectiveTheme);
-            } else if (data.theme === 'light' || data.theme === 'dark') {
-              setMode(data.theme);
-              localStorage.setItem('theme', data.theme);
-            }
-          }
-        })
-        .catch(() => {
-          // If API fails (user not authenticated or API not available), keep current theme from localStorage
-        });
-    }
-  }, [loading, locale]);
+  const { data: preferences, isFetched } = useGetUserPreferences(locale);
+  const updateUserPreferences = useUpdateUserPreferences(locale);
 
-  const toggleTheme = useMemo(() => async () => {
-    const newMode: ThemeMode = mode === 'light' ? 'dark' : 'light';
+  useEffect(() => {
+    if (!isFetched) {
+      return;
+    }
+    const resolved = preferences?.theme
+      ? resolveThemeMode(preferences.theme)
+      : (getStoredTheme() ?? 'light');
+    setMode(resolved);
+    applyThemeToDocument(resolved);
+    setThemeReady(true);
+  }, [isFetched, preferences?.theme]);
+
+  const persistTheme = useCallback(async (newMode: ThemeMode) => {
     setMode(newMode);
-    localStorage.setItem('theme', newMode);
-
-    // Update user preference in database if user is authenticated (API will handle auth check)
+    applyThemeToDocument(newMode);
     try {
-      await fetch(`/${locale}/api/users/preferences`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme: newMode }),
-      });
+      await updateUserPreferences.mutateAsync({ theme: newMode });
     } catch {
-      // Silently fail if user is not authenticated or API is not available
-      // Theme is already saved to localStorage, so it will persist
+      // Theme already applied locally; API may fail when unauthenticated
     }
-  }, [mode, locale]);
+  }, [updateUserPreferences]);
+
+  const toggleTheme = useCallback(async () => {
+    await persistTheme(mode === 'light' ? 'dark' : 'light');
+  }, [mode, persistTheme]);
+
+  const setTheme = useCallback(async (newMode: ThemeMode) => {
+    await persistTheme(newMode);
+  }, [persistTheme]);
 
   const theme = useMemo(
     () =>
@@ -107,7 +107,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           mode,
           ...(mode === 'light'
             ? {
-                // Light mode palette
                 background: {
                   default: '#f8f9fa',
                   paper: '#ffffff',
@@ -128,10 +127,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                 },
               }
             : {
-                // Dark mode palette - Cursor theme
                 background: {
-                  default: '#252526', // Grayer color for main content
-                  paper: '#1e1e1e', // Darker color for panels/cards
+                  default: '#252526',
+                  paper: '#1e1e1e',
                 },
                 text: {
                   primary: '#cccccc',
@@ -148,24 +146,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                   contrastText: '#ffffff',
                 },
               }),
-          // Custom sidebar colors
           sidebar: {
-            background: mode === 'dark' ? '#1e1e1e' : '#1a1d24', // Very dark, slightly less desaturated blue-gray
-            textPrimary: mode === 'dark' ? '#cccccc' : '#ffffff', // Light text for dark sidebar in light mode
-            textSecondary: mode === 'dark' ? 'rgba(204, 204, 204, 0.7)' : 'rgba(255, 255, 255, 0.7)', // Light secondary text for dark sidebar in light mode
+            background: '#120e1c',
+            textPrimary: '#f4f4f5',
+            textSecondary: 'rgba(244, 244, 245, 0.65)',
           },
         },
       }),
     [mode],
   );
 
-  // Provide theme context value
   const themeContextValue = useMemo(() => ({
     mode,
     toggleTheme,
-  }), [mode, toggleTheme]);
+    setTheme,
+  }), [mode, toggleTheme, setTheme]);
 
-  // Always provide the context, even during loading
+  const placeholderBg = mode === 'light' ? '#f8f9fa' : '#252526';
+
+  if (!themeReady) {
+    return (
+      <div style={{ backgroundColor: placeholderBg, minHeight: '100vh' }} />
+    );
+  }
+
   return (
     <MUIThemeProvider theme={theme}>
       <CssBaseline />

@@ -1,14 +1,14 @@
 'use client';
 
-import type { AssetsListFolderCardSize, AssetsListSortBy, AssetsListViewMode } from './assetsListPrefs';
+import type { AssetsListFolderCardSize, AssetsListSortBy, AssetsListViewMode } from '@/components/Assets/assetsListPrefs';
 import type { AssetData } from '@/entities';
 import { Add as AddIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { loadAssetsListPrefs, saveAssetsListPrefs } from '@/components/Assets/assetsListPrefs';
 import { AssetsTopBar } from '@/components/Assets/AssetsTopBar';
 import { AssetsList } from '@/components/Assets/Views/AssetsList';
-import { loadAssetsListPrefs, saveAssetsListPrefs } from './assetsListPrefs';
 
 type AssetsPageClientProps = {
   assets: AssetData[];

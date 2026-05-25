@@ -9,6 +9,9 @@ export function useGetUserPreferences(locale: string) {
     queryKey: userKeys.preferences(),
     queryFn: async () => {
       const res = await fetch(`/${locale}/api/users/preferences`);
+      if (res.status === 401) {
+        return null;
+      }
       if (!res.ok) {
         throw new Error('Failed to fetch user preferences');
       }

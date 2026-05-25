@@ -7,6 +7,21 @@ import { ensureUniqueSlug, slugify } from '@/utils/slugify';
 export type MusicProjectData = MusicProjectInput | UpdateMusicProjectInput;
 
 export class MusicProjectService {
+  static async getRecentProjectsByUserId(userId: string, limit = 5) {
+    return db
+      .select({
+        id: musicProjectsSchema.id,
+        name: musicProjectsSchema.name,
+        slug: musicProjectsSchema.slug,
+        color: musicProjectsSchema.color,
+        updatedAt: musicProjectsSchema.updatedAt,
+      })
+      .from(musicProjectsSchema)
+      .where(eq(musicProjectsSchema.userId, userId))
+      .orderBy(desc(musicProjectsSchema.updatedAt))
+      .limit(limit);
+  }
+
   static async getProjectsByUserId(userId: string) {
     const projects = await db
       .select()

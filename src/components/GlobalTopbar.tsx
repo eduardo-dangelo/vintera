@@ -31,9 +31,9 @@ export function GlobalTopbar() {
         justifyContent: 'space-between',
         py: { xs: 0, lg: 2 },
         backdropFilter: 'blur(2px)',
-        bgcolor: theme.palette.mode === 'light'
-          ? 'rgba(248, 249, 250, 0.8)'
-          : 'rgba(37, 37, 38, 0.8)',
+        bgcolor: theme => (theme.palette.mode === 'light'
+          ? 'rgba(248, 249, 250, 0.85)'
+          : 'rgba(37, 37, 38, 0.85)'),
         zIndex: theme.zIndex.appBar - 1,
         gap: 1,
         // border: '1px solid',
@@ -62,9 +62,9 @@ export function GlobalTopbar() {
         </Box>
       )}
 
-      {/* Actions - right side, only on desktop when no registered content */}
+      {/* Actions - mobile only; desktop actions live in sidebar header */}
       {!rightContent && (
-        <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', flexShrink: 0 }}>
+        <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', flexShrink: 0 }}>
           <TopbarActions />
         </Box>
       )}

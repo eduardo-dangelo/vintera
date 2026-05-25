@@ -1,10 +1,26 @@
 import type { SongInput, UpdateSongInput } from '@/validations/SongValidation';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/libs/DB';
-import { albumsSchema, songsSchema } from '@/models/Schema';
+import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
 
 export class SongService {
+  static async getRecentSongsByUserId(userId: string, limit = 5) {
+    return db
+      .select({
+        id: songsSchema.id,
+        title: songsSchema.title,
+        musicProjectId: songsSchema.musicProjectId,
+        updatedAt: songsSchema.updatedAt,
+        projectName: musicProjectsSchema.name,
+      })
+      .from(songsSchema)
+      .innerJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .where(eq(musicProjectsSchema.userId, userId))
+      .orderBy(desc(songsSchema.updatedAt))
+      .limit(limit);
+  }
+
   static async verifyProjectAccess(projectId: number, userId: string) {
     const project = await MusicProjectService.getProjectById(projectId, userId);
     return project !== null;

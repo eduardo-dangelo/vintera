@@ -26,7 +26,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateAlbum } from '@/queries/hooks/music-projects/useCreateAlbum';
 import { useCreateSong } from '@/queries/hooks/music-projects/useCreateSong';
@@ -43,6 +43,7 @@ type ProjectDetailClientProps = {
 export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientProps) {
   const t = useTranslations('MusicProjects');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data, isLoading, error } = useMusicProject(locale, projectId);
   const deleteProject = useDeleteMusicProject(locale);
   const createAlbum = useCreateAlbum(locale);
@@ -58,10 +59,12 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
   const [songTitle, setSongTitle] = useState('');
   const [songAlbumId, setSongAlbumId] = useState<number | ''>('');
   const [expandedSongId, setExpandedSongId] = useState<number | null>(null);
+  const [highlightedAlbumId, setHighlightedAlbumId] = useState<number | null>(null);
   const [editLyrics, setEditLyrics] = useState('');
   const [editChords, setEditChords] = useState('');
   const albumNameInputRef = useRef<HTMLInputElement>(null);
   const songTitleInputRef = useRef<HTMLInputElement>(null);
+  const deepLinkHandled = useRef(false);
 
   useEffect(() => {
     if (albumDialogOpen) {
@@ -74,6 +77,42 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
       songTitleInputRef.current?.focus();
     }
   }, [songDialogOpen]);
+
+  useEffect(() => {
+    if (!data || deepLinkHandled.current) {
+      return;
+    }
+
+    const songParam = searchParams.get('song');
+    const albumParam = searchParams.get('album');
+
+    if (songParam) {
+      const songId = Number.parseInt(songParam, 10);
+      const song = data.songs.find(s => s.id === songId);
+      if (song) {
+        setExpandedSongId(song.id);
+        setEditLyrics(song.lyrics || '');
+        setEditChords(song.chordsOrTabs || '');
+        deepLinkHandled.current = true;
+        requestAnimationFrame(() => {
+          document.getElementById(`song-${songId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      return;
+    }
+
+    if (albumParam) {
+      const albumId = Number.parseInt(albumParam, 10);
+      const album = data.albums.find(a => a.id === albumId);
+      if (album) {
+        setHighlightedAlbumId(album.id);
+        deepLinkHandled.current = true;
+        requestAnimationFrame(() => {
+          document.getElementById(`album-${albumId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+    }
+  }, [data, searchParams]);
 
   if (isLoading) {
     return (
@@ -230,14 +269,16 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                   <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
                     {albums.map(album => (
                       <Box
+                        id={`album-${album.id}`}
                         key={album.id}
                         sx={{
                           minWidth: 160,
                           p: 2,
                           borderRadius: 2,
-                          border: '1px solid',
-                          borderColor: 'divider',
+                          border: '2px solid',
+                          borderColor: highlightedAlbumId === album.id ? accent : 'divider',
                           bgcolor: 'background.paper',
+                          transition: 'border-color 0.3s ease',
                         }}
                       >
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -276,6 +317,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                       const isExpanded = expandedSongId === song.id;
                       return (
                         <Box
+                          id={`song-${song.id}`}
                           key={song.id}
                           sx={{
                             borderRadius: 2,

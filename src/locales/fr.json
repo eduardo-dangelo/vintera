@@ -143,7 +143,10 @@
     "page_description": "Gérez les paramètres et préférences de votre compte",
     "sound_settings_title": "Paramètres sonores",
     "hover_sound_description": "Jouer un son discret au survol des boutons et des liens",
-    "hover_sound_label": "Son au survol"
+    "hover_sound_label": "Son au survol",
+    "theme_settings_title": "Apparence",
+    "theme_light": "Mode clair",
+    "theme_dark": "Mode sombre"
   },
   "DashboardLayout": {
     "dashboard_link": "Tableau de bord",
@@ -160,7 +163,12 @@
     "menu_vehicle": "Véhicules",
     "menu_property": "Propriétés",
     "menu_person": "Personnes",
-    "menu_settings": "Paramètres"
+    "menu_settings": "Paramètres",
+    "sidebar_music_projects": "Projets musicaux",
+    "sidebar_songs": "Chansons",
+    "sidebar_albums": "Albums",
+    "sidebar_view_all": "Tout voir",
+    "sidebar_empty": "Rien pour l'instant"
   },
   "Assets": {
     "meta_title": "Actifs",

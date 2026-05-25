@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { musicProjectKeys } from '@/queries/keys';
+import { useRouter } from 'next/navigation';
+import { musicProjectKeys, sidebarKeys } from '@/queries/keys';
 
 type CreateMusicProjectInput = {
   name: string;
@@ -12,6 +13,7 @@ type CreateMusicProjectInput = {
 
 export function useCreateMusicProject(locale: string) {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async (input: CreateMusicProjectInput) => {
@@ -28,6 +30,8 @@ export function useCreateMusicProject(locale: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
+      router.refresh();
     },
   });
 }

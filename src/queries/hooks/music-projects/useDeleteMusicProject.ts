@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { musicProjectKeys } from '@/queries/keys';
+import { musicProjectKeys, sidebarKeys } from '@/queries/keys';
 
 export function useDeleteMusicProject(locale: string) {
   const queryClient = useQueryClient();
@@ -17,6 +17,7 @@ export function useDeleteMusicProject(locale: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
     },
   });
 }

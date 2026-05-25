@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { musicProjectKeys } from '@/queries/keys';
+import { musicProjectKeys, sidebarKeys } from '@/queries/keys';
 
 type UpdateMusicProjectInput = {
   projectId: number;
@@ -26,6 +26,7 @@ export function useUpdateMusicProject(locale: string) {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
+      queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
     },
   });
 }

@@ -144,7 +144,10 @@
     "page_description": "Manage your account settings and preferences",
     "sound_settings_title": "Sound Settings",
     "hover_sound_description": "Play a subtle sound when hovering over buttons and links",
-    "hover_sound_label": "Hover Sound"
+    "hover_sound_label": "Hover Sound",
+    "theme_settings_title": "Appearance",
+    "theme_light": "Light mode",
+    "theme_dark": "Dark mode"
   },
   "DashboardLayout": {
     "dashboard_link": "Dashboard",
@@ -161,7 +164,12 @@
     "menu_vehicle": "Vehicles",
     "menu_property": "Properties",
     "menu_person": "Persons",
-    "menu_settings": "Settings"
+    "menu_settings": "Settings",
+    "sidebar_music_projects": "Music Projects",
+    "sidebar_songs": "Songs",
+    "sidebar_albums": "Albums",
+    "sidebar_view_all": "View all",
+    "sidebar_empty": "Nothing here yet"
   },
   "Assets": {
     "meta_title": "Assets",

@@ -1,10 +1,26 @@
 import type { AlbumInput, UpdateAlbumInput } from '@/validations/AlbumValidation';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/libs/DB';
-import { albumsSchema } from '@/models/Schema';
+import { albumsSchema, musicProjectsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
 
 export class AlbumService {
+  static async getRecentAlbumsByUserId(userId: string, limit = 5) {
+    return db
+      .select({
+        id: albumsSchema.id,
+        name: albumsSchema.name,
+        musicProjectId: albumsSchema.musicProjectId,
+        updatedAt: albumsSchema.updatedAt,
+        projectName: musicProjectsSchema.name,
+      })
+      .from(albumsSchema)
+      .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
+      .where(eq(musicProjectsSchema.userId, userId))
+      .orderBy(desc(albumsSchema.updatedAt))
+      .limit(limit);
+  }
+
   static async verifyProjectAccess(projectId: number, userId: string) {
     const project = await MusicProjectService.getProjectById(projectId, userId);
     return project !== null;

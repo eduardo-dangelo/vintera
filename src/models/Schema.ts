@@ -36,7 +36,7 @@ export const usersSchema = pgTable('users', {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-  theme: text('theme').notNull().default('dark'),
+  theme: text('theme').notNull().default('light'),
   hoverSoundEnabled: text('hover_sound_enabled').notNull().default('true'),
   currency: text('currency').notNull().default('GBP'),
 });

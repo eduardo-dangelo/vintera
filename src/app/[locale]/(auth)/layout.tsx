@@ -1,45 +1,13 @@
 import { ClerkProvider } from '@clerk/nextjs';
-import { currentUser } from '@clerk/nextjs/server';
-import {
-  History as ActivityIcon,
-  CalendarMonth,
-  Dashboard as DashboardIcon,
-  DirectionsCar,
-  Folder as DocsIcon,
-  AccountBalanceWallet as FinanceIcon,
-  PhotoLibrary as GalleryIcon,
-  HomeWork,
-  MusicNote as MusicNoteIcon,
-  Person,
-  Settings as SettingsIcon,
-  Storage,
-} from '@mui/icons-material';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Suspense } from 'react';
 import { ConditionalSidebar } from '@/components/ConditionalSidebar';
 import { DevCronScheduler } from '@/components/DevCronScheduler';
 import { Sidebar } from '@/components/Sidebar';
 import { routing } from '@/libs/I18nRouting';
-import { AssetService } from '@/services/assetService';
-import { AppConfig, ClerkLocalizations } from '@/utils/AppConfig';
+import { ClerkLocalizations } from '@/utils/AppConfig';
 
 const DRAWER_WIDTH = 280;
-
-// Map asset types to their icons
-const assetTypeIcons = {
-  vehicle: DirectionsCar,
-  property: HomeWork,
-  person: Person,
-};
-
-// Helper function to pluralize asset types for routes
-const pluralizeType = (type: string): string => {
-  const pluralMap: Record<string, string> = {
-    vehicle: 'vehicles',
-    property: 'properties',
-    person: 'persons',
-  };
-  return pluralMap[type] || `${type}s`;
-};
 
 export default async function AuthLayout(props: {
   children: React.ReactNode;
@@ -51,13 +19,13 @@ export default async function AuthLayout(props: {
   const clerkLocale = ClerkLocalizations.supportedLocales[locale] ?? ClerkLocalizations.defaultLocale;
   let signInUrl = '/sign-in';
   let signUpUrl = '/sign-up';
-  let dashboardUrl = '/dashboard';
+  let projectsUrl = '/projects';
   let afterSignOutUrl = '/';
 
   if (locale !== routing.defaultLocale) {
     signInUrl = `/${locale}${signInUrl}`;
     signUpUrl = `/${locale}${signUpUrl}`;
-    dashboardUrl = `/${locale}${dashboardUrl}`;
+    projectsUrl = `/${locale}${projectsUrl}`;
     afterSignOutUrl = `/${locale}${afterSignOutUrl}`;
   }
 
@@ -66,106 +34,35 @@ export default async function AuthLayout(props: {
     namespace: 'DashboardLayout',
   });
 
-  // Fetch current user and their assets to build dynamic menu
-  const user = await currentUser();
-  let assetTypes: string[] = [];
-
-  if (user) {
-    const assets = await AssetService.getAssetsByUserId(user.id);
-    const uniqueTypes = new Set(assets.map(a => a.type));
-    assetTypes = Array.from(uniqueTypes).filter(
-      (type): type is keyof typeof assetTypeIcons => type in assetTypeIcons,
-    );
-  }
-
-  // Build base menu items
-  const menuItems = [
-    {
-      icon: DashboardIcon,
-      label: t('menu_dashboard'),
-      href: `/${locale}/dashboard`,
-    },
-    {
-      icon: MusicNoteIcon,
-      label: t('menu_music_projects'),
-      href: `/${locale}/projects`,
-    },
-    {
-      icon: CalendarMonth,
-      label: t('menu_calendar'),
-      href: `/${locale}/calendar`,
-    },
-    {
-      icon: FinanceIcon,
-      label: t('menu_finance'),
-      href: `/${locale}/finance`,
-    },
-    {
-      icon: ActivityIcon,
-      label: t('menu_activity'),
-      href: `/${locale}/activity`,
-    },
-    {
-      icon: DocsIcon,
-      label: t('menu_docs'),
-      href: `/${locale}/docs`,
-    },
-    {
-      icon: GalleryIcon,
-      label: t('menu_gallery'),
-      href: `/${locale}/gallery`,
-    },
-    {
-      icon: Storage,
-      label: t('menu_projects'),
-      href: `/${locale}/assets`,
-    },
-  ];
-
-  // Add asset type sub-items if they exist
-  assetTypes.forEach((type) => {
-    const icon = assetTypeIcons[type as keyof typeof assetTypeIcons];
-    // Map asset type to translation key
-    const labelKey = `menu_${type}` as 'menu_vehicle' | 'menu_property' | 'menu_person';
-    const pluralRoute = pluralizeType(type);
-    menuItems.push({
-      icon,
-      label: t(labelKey),
-      href: `/${locale}/assets/${pluralRoute}`,
-      isSubItem: true,
-    } as any);
-  });
-
-  // Add settings at the end
-  menuItems.push({
-    icon: SettingsIcon,
-    label: t('menu_settings'),
-    href: `/${locale}/settings`,
-  });
-
   return (
     <ClerkProvider
       appearance={{
-        cssLayerName: 'clerk', // Ensure Clerk is compatible with Tailwind CSS v4
+        cssLayerName: 'clerk',
       }}
       localization={clerkLocale}
       signInUrl={signInUrl}
       signUpUrl={signUpUrl}
-      signInFallbackRedirectUrl={dashboardUrl}
-      signUpFallbackRedirectUrl={dashboardUrl}
+      signInFallbackRedirectUrl={projectsUrl}
+      signUpFallbackRedirectUrl={projectsUrl}
       afterSignOutUrl={afterSignOutUrl}
     >
       <DevCronScheduler />
       <ConditionalSidebar
         sidebarContent={(
-          <Sidebar
-            drawerWidth={DRAWER_WIDTH}
-            menuItems={menuItems}
-            appName={AppConfig.name}
-            signOutLabel={t('sign_out')}
-          >
-            {props.children}
-          </Sidebar>
+          <Suspense fallback={null}>
+            <Sidebar
+              drawerWidth={DRAWER_WIDTH}
+              signOutLabel={t('sign_out')}
+              sectionLabels={{
+                musicProjects: t('sidebar_music_projects'),
+                songs: t('sidebar_songs'),
+                albums: t('sidebar_albums'),
+                viewAll: t('sidebar_view_all'),
+              }}
+            >
+              {props.children}
+            </Sidebar>
+          </Suspense>
         )}
       >
         {props.children}

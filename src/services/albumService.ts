@@ -13,6 +13,7 @@ export class AlbumService {
         musicProjectId: albumsSchema.musicProjectId,
         status: albumsSchema.status,
         updatedAt: albumsSchema.updatedAt,
+        coverImageUrl: albumsSchema.coverImageUrl,
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
       })

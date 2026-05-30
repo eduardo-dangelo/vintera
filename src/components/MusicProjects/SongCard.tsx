@@ -1,6 +1,6 @@
 'use client';
 
-import type { MusicProjectListItem } from '@/queries/hooks/music-projects/useMusicProjects';
+import type { SongListItem } from '@/queries/hooks/songs';
 import type { ListFolderCardSize } from '@/utils/listViewPrefs';
 import {
   Box,
@@ -10,27 +10,23 @@ import {
   Chip,
   Typography,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   getMusicCardContentPadding,
   getMusicCardCoverSize,
-  getMusicCardDescriptionLines,
   getMusicCardHoverSx,
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
 
-type ProjectCardProps = {
-  project: MusicProjectListItem;
+type SongCardProps = {
+  song: SongListItem;
   locale: string;
   cardSize?: ListFolderCardSize;
 };
 
-export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCardProps) {
-  const t = useTranslations('MusicProjects');
-  const accent = project.color || '#7c3aed';
-  const descriptionLines = getMusicCardDescriptionLines(cardSize);
+export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
+  const accent = song.projectColor || '#7c3aed';
 
   return (
     <Card
@@ -46,7 +42,7 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
     >
       <CardActionArea
         component={Link}
-        href={`/${locale}/projects/${project.id}`}
+        href={`/${locale}/songs/${song.id}`}
         sx={{ height: '100%' }}
       >
         <CardContent
@@ -58,8 +54,8 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
           }}
         >
           <MusicCoverImage
-            imageUrl={project.coverImageUrl}
-            type="project"
+            imageUrl={song.coverImageUrl}
+            type="song"
             size={getMusicCardCoverSize(cardSize)}
           />
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -67,49 +63,40 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
               variant={getMusicCardTitleVariant(cardSize)}
               sx={{
                 fontWeight: 700,
-                mb: 0.5,
+                mb: cardSize === 'small' ? 0.5 : 1,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}
             >
-              {project.name}
+              {song.title}
             </Typography>
-            {project.genre && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                mb: cardSize === 'small' ? 1 : 1.5,
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {song.projectName}
+            </Typography>
+            {song.status && (
               <Chip
-                label={project.genre}
+                label={song.status}
                 size="small"
                 sx={{
-                  mb: cardSize === 'small' ? 1 : 1.5,
+                  alignSelf: 'flex-start',
                   bgcolor: `${accent}22`,
                   color: accent,
                   fontWeight: 500,
+                  ...(cardSize === 'small' && { height: 22, fontSize: '0.7rem' }),
                 }}
               />
             )}
-            {project.description && (
-              <Typography
-                variant={cardSize === 'small' ? 'caption' : 'body2'}
-                color="text.secondary"
-                sx={{
-                  mb: cardSize === 'small' ? 1 : 2,
-                  display: '-webkit-box',
-                  WebkitLineClamp: descriptionLines,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {project.description}
-              </Typography>
-            )}
-            <Box sx={{ display: 'flex', gap: cardSize === 'small' ? 1 : 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('album_count', { count: project.albumCount })}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {t('song_count', { count: project.songCount })}
-              </Typography>
-            </Box>
           </Box>
         </CardContent>
       </CardActionArea>

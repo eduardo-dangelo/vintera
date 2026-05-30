@@ -9,6 +9,7 @@ export type AlbumListItem = {
   musicProjectId: number;
   status: string;
   updatedAt: Date;
+  coverImageUrl: string | null;
   projectName: string;
   projectColor: string | null;
 };

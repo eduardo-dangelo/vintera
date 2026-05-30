@@ -1,5 +1,5 @@
 import type { SongInput, UpdateSongInput } from '@/validations/SongValidation';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/libs/DB';
 import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
@@ -16,9 +16,12 @@ export class SongService {
         updatedAt: songsSchema.updatedAt,
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
+        albumName: albumsSchema.name,
+        coverImageUrl: sql<string | null>`coalesce(${albumsSchema.coverImageUrl}, ${musicProjectsSchema.coverImageUrl})`,
       })
       .from(songsSchema)
       .innerJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(albumsSchema, eq(songsSchema.albumId, albumsSchema.id))
       .where(eq(musicProjectsSchema.userId, userId))
       .orderBy(desc(songsSchema.updatedAt));
   }

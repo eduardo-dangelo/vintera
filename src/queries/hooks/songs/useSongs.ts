@@ -12,6 +12,8 @@ export type SongListItem = {
   updatedAt: Date;
   projectName: string;
   projectColor: string | null;
+  albumName: string | null;
+  coverImageUrl: string | null;
 };
 
 export function useSongs(locale: string) {

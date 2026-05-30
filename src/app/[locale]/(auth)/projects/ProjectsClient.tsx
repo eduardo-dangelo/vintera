@@ -5,13 +5,16 @@ import {
   Box,
   Button,
   CircularProgress,
-  Grid,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { ListViewControls } from '@/components/common/ListViewControls';
 import { CreateProjectDialog } from '@/components/MusicProjects/CreateProjectDialog';
+import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { ProjectCard } from '@/components/MusicProjects/ProjectCard';
+import { ProjectListView } from '@/components/MusicProjects/Views/ProjectListView';
+import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
 
 type ProjectsClientProps = {
@@ -22,6 +25,7 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: projects, isLoading, error } = useMusicProjects(locale);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
 
   if (isLoading) {
     return (
@@ -61,17 +65,27 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
             {t('page_description')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          onClick={() => setDialogOpen(true)}
-          sx={{
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
-            textTransform: 'none',
-            fontWeight: 600,
-          }}
-        >
-          {t('new_project')}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          {!isEmpty && (
+            <ListViewControls
+              viewMode={viewMode}
+              cardSize={cardSize}
+              onViewModeChange={setViewMode}
+              onCardSizeChange={setCardSize}
+            />
+          )}
+          <Button
+            variant="contained"
+            onClick={() => setDialogOpen(true)}
+            sx={{
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {t('new_project')}
+          </Button>
+        </Box>
       </Box>
 
       {isEmpty
@@ -106,15 +120,22 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
               </Button>
             </Box>
           )
-        : (
-            <Grid container spacing={3}>
-              {projects.map(project => (
-                <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={project.id}>
-                  <ProjectCard project={project} locale={locale} />
-                </Grid>
-              ))}
-            </Grid>
-          )}
+        : viewMode === 'list'
+          ? (
+              <ProjectListView projects={projects} locale={locale} />
+            )
+          : (
+              <MusicFolderGrid cardSize={cardSize}>
+                {projects.map(project => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    locale={locale}
+                    cardSize={cardSize}
+                  />
+                ))}
+              </MusicFolderGrid>
+            )}
 
       <CreateProjectDialog
         open={dialogOpen}

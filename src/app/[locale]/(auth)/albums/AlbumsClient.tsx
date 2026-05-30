@@ -4,14 +4,15 @@ import { Album as AlbumIcon } from '@mui/icons-material';
 import {
   Box,
   CircularProgress,
-  List,
-  ListItemButton,
-  ListItemText,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { ListViewControls } from '@/components/common/ListViewControls';
+import { AlbumCard } from '@/components/MusicProjects/AlbumCard';
+import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
+import { AlbumListView } from '@/components/MusicProjects/Views/AlbumListView';
+import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useAlbums } from '@/queries/hooks/albums';
 
 type AlbumsClientProps = {
@@ -21,6 +22,7 @@ type AlbumsClientProps = {
 export function AlbumsClient({ locale }: AlbumsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: albums, isLoading, error } = useAlbums(locale);
+  const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
 
   if (isLoading) {
     return (
@@ -60,7 +62,17 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
             {t('albums_page_description')}
           </Typography>
         </Box>
-        <NewAlbumButton locale={locale} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          {!isEmpty && (
+            <ListViewControls
+              viewMode={viewMode}
+              cardSize={cardSize}
+              onViewModeChange={setViewMode}
+              onCardSizeChange={setCardSize}
+            />
+          )}
+          <NewAlbumButton locale={locale} />
+        </Box>
       </Box>
 
       {isEmpty
@@ -86,24 +98,22 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
               <NewAlbumButton locale={locale} variant="listItem" />
             </Box>
           )
-        : (
-            <List sx={{ bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-              {albums.map(album => (
-                <ListItemButton
-                  key={album.id}
-                  component={Link}
-                  href={`/${locale}/albums/${album.id}`}
-                  divider
-                >
-                  <ListItemText
-                    primary={album.name}
-                    secondary={`${album.projectName}${album.status ? ` · ${album.status}` : ''}`}
-                    primaryTypographyProps={{ fontWeight: 600 }}
+        : viewMode === 'list'
+          ? (
+              <AlbumListView albums={albums} locale={locale} />
+            )
+          : (
+              <MusicFolderGrid cardSize={cardSize}>
+                {albums.map(album => (
+                  <AlbumCard
+                    key={album.id}
+                    album={album}
+                    locale={locale}
+                    cardSize={cardSize}
                   />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
+                ))}
+              </MusicFolderGrid>
+            )}
     </Box>
   );
 }

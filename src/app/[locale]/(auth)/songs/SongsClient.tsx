@@ -4,14 +4,15 @@ import { QueueMusic as SongIcon } from '@mui/icons-material';
 import {
   Box,
   CircularProgress,
-  List,
-  ListItemButton,
-  ListItemText,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { ListViewControls } from '@/components/common/ListViewControls';
+import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
+import { SongCard } from '@/components/MusicProjects/SongCard';
+import { SongListView } from '@/components/MusicProjects/Views/SongListView';
+import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useSongs } from '@/queries/hooks/songs';
 
 type SongsClientProps = {
@@ -21,6 +22,7 @@ type SongsClientProps = {
 export function SongsClient({ locale }: SongsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: songs, isLoading, error } = useSongs(locale);
+  const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
 
   if (isLoading) {
     return (
@@ -60,7 +62,17 @@ export function SongsClient({ locale }: SongsClientProps) {
             {t('songs_page_description')}
           </Typography>
         </Box>
-        <NewSongButton locale={locale} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          {!isEmpty && (
+            <ListViewControls
+              viewMode={viewMode}
+              cardSize={cardSize}
+              onViewModeChange={setViewMode}
+              onCardSizeChange={setCardSize}
+            />
+          )}
+          <NewSongButton locale={locale} />
+        </Box>
       </Box>
 
       {isEmpty
@@ -86,24 +98,22 @@ export function SongsClient({ locale }: SongsClientProps) {
               <NewSongButton locale={locale} variant="listItem" />
             </Box>
           )
-        : (
-            <List sx={{ bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-              {songs.map(song => (
-                <ListItemButton
-                  key={song.id}
-                  component={Link}
-                  href={`/${locale}/songs/${song.id}`}
-                  divider
-                >
-                  <ListItemText
-                    primary={song.title}
-                    secondary={`${song.projectName}${song.status ? ` · ${song.status}` : ''}`}
-                    primaryTypographyProps={{ fontWeight: 600 }}
+        : viewMode === 'list'
+          ? (
+              <SongListView songs={songs} locale={locale} />
+            )
+          : (
+              <MusicFolderGrid cardSize={cardSize}>
+                {songs.map(song => (
+                  <SongCard
+                    key={song.id}
+                    song={song}
+                    locale={locale}
+                    cardSize={cardSize}
                   />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
+                ))}
+              </MusicFolderGrid>
+            )}
     </Box>
   );
 }

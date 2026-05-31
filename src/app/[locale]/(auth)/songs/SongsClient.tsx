@@ -59,6 +59,7 @@ export function SongsClient({ locale }: SongsClientProps) {
     <Box>
       <MusicListPageHeader
         title={t('songs_page_title')}
+        heroImageSrc="/assets/images/songs-hero.png"
         toolbar={!isEmpty
           ? (
               <MusicListToolbar

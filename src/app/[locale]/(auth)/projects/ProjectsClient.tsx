@@ -63,6 +63,7 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
     <Box>
       <MusicListPageHeader
         title={t('page_title')}
+        heroImageSrc="/assets/images/music-projects-hero.png"
         toolbar={!isEmpty
           ? (
               <MusicListToolbar

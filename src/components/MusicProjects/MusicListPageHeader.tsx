@@ -3,16 +3,20 @@
 import type { ReactNode } from 'react';
 import {
   Box,
+  ThemeProvider,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  createHeroDarkTheme,
   getHeroBackgroundSx,
   getHeroOverlaySx,
   getHeroRootSx,
+  getHeroTitleSx,
+  getHeroToolbarWrapperSx,
   getStickyBarSx,
 } from './musicListPageHeaderStyles';
 
@@ -48,6 +52,10 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
     };
   }, []);
 
+  const hasHeroImage = Boolean(heroImageSrc);
+  const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
+  const barTheme = isStuck ? theme : heroDarkTheme;
+
   return (
     <Box sx={getHeroRootSx()}>
       <Box sx={getHeroBackgroundSx(theme)}>
@@ -65,17 +73,35 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
           />
         )}
       </Box>
-      <Box sx={getHeroOverlaySx(theme)} />
+      <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
       <Box ref={sentinelRef} sx={{ height: 1, flexShrink: 0 }} />
       <Box sx={getStickyBarSx(theme, isMobile, isStuck)}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, minWidth: 0 }}>
-          {title}
-        </Typography>
-        {toolbar && (
-          <Box sx={{ flexShrink: 0 }}>
-            {toolbar}
+        <ThemeProvider theme={barTheme}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+              width: '100%',
+            }}
+          >
+            <Typography
+              variant="h4"
+              component="h1"
+              color={isStuck ? undefined : 'text.primary'}
+              sx={getHeroTitleSx(hasHeroImage, isStuck)}
+            >
+              {title}
+            </Typography>
+            {toolbar && (
+              <Box sx={getHeroToolbarWrapperSx(isStuck)}>
+                {toolbar}
+              </Box>
+            )}
           </Box>
-        )}
+        </ThemeProvider>
       </Box>
     </Box>
   );

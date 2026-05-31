@@ -1,6 +1,5 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Suspense } from 'react';
 import { ConditionalSidebar } from '@/components/ConditionalSidebar';
 import { DevCronScheduler } from '@/components/DevCronScheduler';
 import { Sidebar } from '@/components/Sidebar';
@@ -49,20 +48,18 @@ export default async function AuthLayout(props: {
       <DevCronScheduler />
       <ConditionalSidebar
         sidebarContent={(
-          <Suspense fallback={null}>
-            <Sidebar
-              drawerWidth={DRAWER_WIDTH}
-              signOutLabel={t('sign_out')}
-              sectionLabels={{
-                projects: t('sidebar_projects'),
-                songs: t('sidebar_songs'),
-                albums: t('sidebar_albums'),
-                viewAll: t('sidebar_view_all'),
-              }}
-            >
-              {props.children}
-            </Sidebar>
-          </Suspense>
+          <Sidebar
+            drawerWidth={DRAWER_WIDTH}
+            signOutLabel={t('sign_out')}
+            sectionLabels={{
+              projects: t('sidebar_projects'),
+              songs: t('sidebar_songs'),
+              albums: t('sidebar_albums'),
+              viewAll: t('sidebar_view_all'),
+            }}
+          >
+            {props.children}
+          </Sidebar>
         )}
       >
         {props.children}

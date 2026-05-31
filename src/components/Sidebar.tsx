@@ -4,10 +4,10 @@ import type { ReactNode } from 'react';
 import { SignOutButton } from '@clerk/nextjs';
 import {
   Album as AlbumIcon,
+  LibraryMusic as LibraryMusicIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   MusicNote as MusicNoteIcon,
-  QueueMusic as SongIcon,
 } from '@mui/icons-material';
 import {
   AppBar,
@@ -20,13 +20,14 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Skeleton,
   Toolbar,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { useHoverSound } from '@/hooks/useHoverSound';
@@ -47,6 +48,9 @@ type SidebarItem = {
   icon: React.ComponentType<{ sx?: object }>;
 };
 
+const SKELETON_ROW_WIDTHS = ['75%', '60%', '85%'] as const;
+const skeletonSx = { bgcolor: 'rgba(255, 255, 255, 0.08)' };
+
 type SidebarSectionProps = {
   title: string;
   headerAction?: ReactNode;
@@ -54,10 +58,73 @@ type SidebarSectionProps = {
   viewAllLabel?: string;
   items: SidebarItem[];
   emptyAction?: ReactNode;
+  isLoading?: boolean;
   isActive: (href: string) => boolean;
   onItemClick: (href: string) => void;
   onItemHover: (href: string | null) => void;
 };
+
+function SidebarSectionSkeletonRows() {
+  return (
+    <List disablePadding>
+      {SKELETON_ROW_WIDTHS.map(width => (
+        <ListItem key={width} disablePadding sx={{ mb: 0.125 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              pl: 1,
+              pr: 1,
+              py: 0.25,
+              minHeight: 28,
+              width: '100%',
+            }}
+          >
+            <Skeleton
+              variant="circular"
+              width={16}
+              height={16}
+              sx={{ flexShrink: 0, ...skeletonSx }}
+            />
+            <Skeleton
+              variant="rounded"
+              height={12}
+              sx={{ flex: 1, maxWidth: width, ...skeletonSx }}
+            />
+          </Box>
+        </ListItem>
+      ))}
+    </List>
+  );
+}
+
+function SidebarSectionHeaderSkeleton() {
+  return (
+    <>
+      <Skeleton
+        variant="rounded"
+        width={52}
+        height={11}
+        sx={skeletonSx}
+      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+        <Skeleton
+          variant="rounded"
+          width={22}
+          height={22}
+          sx={skeletonSx}
+        />
+        <Skeleton
+          variant="rounded"
+          width={36}
+          height={11}
+          sx={{ ...skeletonSx, mx: 0.5 }}
+        />
+      </Box>
+    </>
+  );
+}
 
 function SidebarSection({
   title,
@@ -66,6 +133,7 @@ function SidebarSection({
   viewAllLabel,
   items,
   emptyAction,
+  isLoading = false,
   isActive,
   onItemClick,
   onItemHover,
@@ -105,86 +173,114 @@ function SidebarSection({
           mb: 0.5,
         }}
       >
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 500,
-            color: theme.palette.sidebar.textSecondary,
-            fontSize: '0.6875rem',
-          }}
-        >
-          {title}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-          {headerAction}
-          {viewAllHref && viewAllLabel && (
-            <Typography
-              component={Link}
-              href={viewAllHref}
-              variant="caption"
-              onMouseEnter={playHoverSound}
-              sx={{
-                'color': theme.palette.sidebar.textSecondary,
-                'textDecoration': 'none',
-                'fontSize': '0.6875rem',
-                'px': 0.5,
-                '&:hover': { color: theme.palette.sidebar.textPrimary },
-              }}
-            >
-              {viewAllLabel}
-            </Typography>
-          )}
-        </Box>
+        {isLoading
+          ? <SidebarSectionHeaderSkeleton />
+          : (
+              <>
+                {viewAllHref
+                  ? (
+                      <Typography
+                        component={Link}
+                        href={viewAllHref}
+                        variant="caption"
+                        onMouseEnter={playHoverSound}
+                        sx={{
+                          'fontWeight': 500,
+                          'color': theme.palette.sidebar.textSecondary,
+                          'fontSize': '0.6875rem',
+                          'textDecoration': 'none',
+                          '&:hover': { color: theme.palette.sidebar.textPrimary },
+                        }}
+                      >
+                        {title}
+                      </Typography>
+                    )
+                  : (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 500,
+                          color: theme.palette.sidebar.textSecondary,
+                          fontSize: '0.6875rem',
+                        }}
+                      >
+                        {title}
+                      </Typography>
+                    )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                  {headerAction}
+                  {viewAllHref && viewAllLabel && (
+                    <Typography
+                      component={Link}
+                      href={viewAllHref}
+                      variant="caption"
+                      onMouseEnter={playHoverSound}
+                      sx={{
+                        'color': theme.palette.sidebar.textSecondary,
+                        'textDecoration': 'none',
+                        'fontSize': '0.6875rem',
+                        'px': 0.5,
+                        '&:hover': { color: theme.palette.sidebar.textPrimary },
+                      }}
+                    >
+                      {viewAllLabel}
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
       </Box>
 
-      {items.length === 0
-        ? emptyAction
-        : (
-            <List disablePadding>
-              <TransitionGroup component={null}>
-                {items.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.href);
+      {isLoading
+        ? <SidebarSectionSkeletonRows />
+        : items.length === 0
+          ? emptyAction
+          : (
+              <List disablePadding>
+                <TransitionGroup component={null}>
+                  {items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
 
-                  return (
-                    <Collapse key={item.key} timeout={200}>
-                      <ListItem disablePadding sx={{ mb: 0.125 }}>
-                        <ListItemButton
-                          component={Link}
-                          href={item.href}
-                          onMouseEnter={() => {
-                            playHoverSound();
-                            onItemHover(item.href);
-                          }}
-                          onMouseLeave={() => onItemHover(null)}
-                          onClick={() => onItemClick(item.href)}
-                          sx={rowSx(active)}
-                        >
-                          <ListItemIcon sx={{ minWidth: 24 }}>
-                            <Icon
-                              sx={{
-                                fontSize: 16,
-                                color: active ? menuItemIconColorActive : menuItemIconColor,
+                    return (
+                      <Collapse key={item.key} timeout={200}>
+                        <ListItem disablePadding sx={{ mb: 0.125 }}>
+                          <ListItemButton
+                            component={Link}
+                            href={item.href}
+                            onMouseEnter={() => {
+                              playHoverSound();
+                              onItemHover(item.href);
+                            }}
+                            onMouseLeave={() => onItemHover(null)}
+                            onClick={() => onItemClick(item.href)}
+                            sx={rowSx(active)}
+                          >
+                            <ListItemIcon sx={{ minWidth: 24 }}>
+                              <Icon
+                                sx={{
+                                  fontSize: 16,
+                                  color: active ? menuItemIconColorActive : menuItemIconColor,
+                                }}
+                              />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={item.label}
+                              primaryTypographyProps={{
+                                fontSize: '0.75rem',
+                                fontWeight: 400,
+                                noWrap: true,
+                                sx: { textOverflow: 'ellipsis' },
                               }}
                             />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={item.label}
-                            primaryTypographyProps={{
-                              fontSize: '0.75rem',
-                              fontWeight: 400,
-                              noWrap: true,
-                              sx: { textOverflow: 'ellipsis' },
-                            }}
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    </Collapse>
-                  );
-                })}
-              </TransitionGroup>
-            </List>
-          )}
+                          </ListItemButton>
+                        </ListItem>
+                      </Collapse>
+                    );
+                  })}
+                </TransitionGroup>
+              </List>
+            )}
     </Box>
   );
 }
@@ -212,12 +308,10 @@ export function Sidebar({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { playHoverSound } = useHoverSound();
 
   const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
-  const { data: recentsData } = useGetSidebarRecents(locale);
-  const recents = recentsData ?? { projects: [], songs: [], albums: [] };
+  const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -227,7 +321,6 @@ export function Sidebar({
     const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}\//, '/');
     const hrefWithoutLocale = href.replace(/^\/[a-z]{2}\//, '/');
     const hrefPath = hrefWithoutLocale.split('?')[0] ?? hrefWithoutLocale;
-    const hrefQuery = hrefWithoutLocale.includes('?') ? hrefWithoutLocale.split('?')[1] : null;
 
     if (clickedHref) {
       const clickedWithoutLocale = clickedHref.replace(/^\/[a-z]{2}\//, '/');
@@ -239,11 +332,6 @@ export function Sidebar({
       return false;
     }
 
-    if (hrefQuery) {
-      const [paramKey, paramValue] = hrefQuery.split('=');
-      return searchParams.get(paramKey ?? '') === paramValue;
-    }
-
     return pathnameWithoutLocale === hrefPath;
   };
 
@@ -251,26 +339,26 @@ export function Sidebar({
     setClickedHref(null);
   }, [pathname]);
 
-  const projectItems: SidebarItem[] = recents.projects.map(project => ({
+  const projectItems: SidebarItem[] = recentsData?.projects.map(project => ({
     key: `project-${project.id}`,
     href: `/${locale}/projects/${project.id}`,
     label: project.name,
-    icon: MusicNoteIcon,
-  }));
+    icon: LibraryMusicIcon,
+  })) ?? [];
 
-  const songItems: SidebarItem[] = recents.songs.map(song => ({
+  const songItems: SidebarItem[] = recentsData?.songs.map(song => ({
     key: `song-${song.id}`,
     href: `/${locale}/songs/${song.id}`,
     label: `${song.title} (${song.projectName})`,
-    icon: SongIcon,
-  }));
+    icon: MusicNoteIcon,
+  })) ?? [];
 
-  const albumItems: SidebarItem[] = recents.albums.map(album => ({
+  const albumItems: SidebarItem[] = recentsData?.albums.map(album => ({
     key: `album-${album.id}`,
     href: `/${locale}/albums/${album.id}`,
     label: `${album.name} (${album.projectName})`,
     icon: AlbumIcon,
-  }));
+  })) ?? [];
 
   const sectionHeaderButtonSx = {
     'color': theme.palette.sidebar.textSecondary,
@@ -312,6 +400,7 @@ export function Sidebar({
           viewAllHref={`/${locale}/projects`}
           viewAllLabel={sectionLabels.viewAll}
           items={projectItems}
+          isLoading={isRecentsLoading}
           isActive={isActive}
           onItemClick={setClickedHref}
           onItemHover={() => {}}
@@ -326,6 +415,7 @@ export function Sidebar({
           viewAllHref={`/${locale}/songs`}
           viewAllLabel={sectionLabels.viewAll}
           items={songItems}
+          isLoading={isRecentsLoading}
           isActive={isActive}
           onItemClick={setClickedHref}
           onItemHover={() => {}}
@@ -338,6 +428,7 @@ export function Sidebar({
           viewAllHref={`/${locale}/albums`}
           viewAllLabel={sectionLabels.viewAll}
           items={albumItems}
+          isLoading={isRecentsLoading}
           isActive={isActive}
           onItemClick={setClickedHref}
           onItemHover={() => {}}

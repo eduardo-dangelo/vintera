@@ -1,6 +1,6 @@
 'use client';
 
-import { Album as AlbumIcon, MusicNote as MusicNoteIcon } from '@mui/icons-material';
+import { Album as AlbumIcon, MusicNote as MusicNoteIcon, LibraryMusic as SongIcon } from '@mui/icons-material';
 import { Box } from '@mui/material';
 
 export type MusicCoverType = 'project' | 'album' | 'song';
@@ -15,7 +15,10 @@ function getPlaceholderIcon(type: MusicCoverType) {
   if (type === 'album') {
     return AlbumIcon;
   }
-  return MusicNoteIcon;
+  if (type === 'song') {
+    return MusicNoteIcon;
+  }
+  return SongIcon;
 }
 
 export function MusicCoverImage({ imageUrl, type, size = 48 }: MusicCoverImageProps) {

@@ -8,14 +8,18 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { ListViewControls } from '@/components/common/ListViewControls';
+import { useMemo, useState } from 'react';
 import { CreateProjectDialog } from '@/components/MusicProjects/CreateProjectDialog';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
+import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHeader';
+import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
+import { primaryGradientSx } from '@/components/MusicProjects/musicListToolbarStyles';
+import { NewMusicProjectButton } from '@/components/MusicProjects/NewMusicProjectButton';
 import { ProjectCard } from '@/components/MusicProjects/ProjectCard';
 import { ProjectListView } from '@/components/MusicProjects/Views/ProjectListView';
 import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
+import { filterBySearchQuery } from '@/utils/filterMusicListItems';
 
 type ProjectsClientProps = {
   locale: string;
@@ -24,8 +28,18 @@ type ProjectsClientProps = {
 export function ProjectsClient({ locale }: ProjectsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: projects, isLoading, error } = useMusicProjects(locale);
+  const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
+
+  const filteredProjects = useMemo(
+    () => filterBySearchQuery(
+      projects ?? [],
+      searchQuery,
+      p => [p.name, p.genre, p.description].filter(Boolean).join(' '),
+    ),
+    [projects, searchQuery],
+  );
 
   if (isLoading) {
     return (
@@ -47,46 +61,24 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          mb: 4,
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 0.5 }}>
-            {t('page_title')}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('page_description')}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          {!isEmpty && (
-            <ListViewControls
-              viewMode={viewMode}
-              cardSize={cardSize}
-              onViewModeChange={setViewMode}
-              onCardSizeChange={setCardSize}
-            />
-          )}
-          <Button
-            variant="contained"
-            onClick={() => setDialogOpen(true)}
-            sx={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
-              textTransform: 'none',
-              fontWeight: 600,
-            }}
-          >
-            {t('new_project')}
-          </Button>
-        </Box>
-      </Box>
+      <MusicListPageHeader
+        title={t('page_title')}
+        toolbar={!isEmpty
+          ? (
+              <MusicListToolbar
+                showViewControls
+                viewMode={viewMode}
+                cardSize={cardSize}
+                onViewModeChange={setViewMode}
+                onCardSizeChange={setCardSize}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search projects"
+                newButton={<NewMusicProjectButton locale={locale} variant="toolbar" />}
+              />
+            )
+          : undefined}
+      />
 
       {isEmpty
         ? (
@@ -112,7 +104,7 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
                 variant="contained"
                 onClick={() => setDialogOpen(true)}
                 sx={{
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
+                  ...primaryGradientSx,
                   textTransform: 'none',
                 }}
               >
@@ -120,22 +112,31 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
               </Button>
             </Box>
           )
-        : viewMode === 'list'
+        : filteredProjects.length === 0 && searchQuery
           ? (
-              <ProjectListView projects={projects} locale={locale} />
+              <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                {`No results for "${searchQuery}"`}
+              </Typography>
             )
-          : (
-              <MusicFolderGrid cardSize={cardSize}>
-                {projects.map(project => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    locale={locale}
-                    cardSize={cardSize}
-                  />
-                ))}
-              </MusicFolderGrid>
-            )}
+          : viewMode === 'list'
+            ? (
+                <ProjectListView projects={filteredProjects} locale={locale} />
+              )
+            : (
+                <MusicFolderGrid
+                  cardSize={cardSize}
+                  items={filteredProjects.map(project => ({
+                    id: project.id,
+                    content: (
+                      <ProjectCard
+                        project={project}
+                        locale={locale}
+                        cardSize={cardSize}
+                      />
+                    ),
+                  }))}
+                />
+              )}
 
       <CreateProjectDialog
         open={dialogOpen}

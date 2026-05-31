@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { CreateProjectDialog } from './CreateProjectDialog';
+import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewMusicProjectButtonProps = {
   locale: string;
-  variant?: 'icon' | 'listItem';
+  variant?: 'icon' | 'listItem' | 'toolbar';
   iconButtonSx?: SxProps<Theme>;
   onProjectCreated?: (projectId: number) => void;
 };
@@ -76,13 +77,20 @@ export function NewMusicProjectButton({
               />
             </ListItemButton>
           )
-        : (
-            <Tooltip title={t('new_project')}>
-              <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
-                <AddIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+        : variant === 'toolbar'
+          ? (
+              <ExpandablePrimaryButton
+                label={t('new_project')}
+                onClick={() => setDialogOpen(true)}
+              />
+            )
+          : (
+              <Tooltip title={t('new_project')}>
+                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                  <AddIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
       <CreateProjectDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

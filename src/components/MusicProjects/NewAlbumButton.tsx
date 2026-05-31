@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { CreateAlbumDialog } from './CreateAlbumDialog';
+import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewAlbumButtonProps = {
   locale: string;
-  variant?: 'icon' | 'listItem';
+  variant?: 'icon' | 'listItem' | 'toolbar';
   projectId?: number;
   iconButtonSx?: SxProps<Theme>;
 };
@@ -75,13 +76,20 @@ export function NewAlbumButton({
               />
             </ListItemButton>
           )
-        : (
-            <Tooltip title={t('new_album')}>
-              <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
-                <AddIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+        : variant === 'toolbar'
+          ? (
+              <ExpandablePrimaryButton
+                label={t('new_album')}
+                onClick={() => setDialogOpen(true)}
+              />
+            )
+          : (
+              <Tooltip title={t('new_album')}>
+                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                  <AddIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
       <CreateAlbumDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

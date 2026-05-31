@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { CreateSongDialog } from './CreateSongDialog';
+import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewSongButtonProps = {
   locale: string;
-  variant?: 'icon' | 'listItem';
+  variant?: 'icon' | 'listItem' | 'toolbar';
   projectId?: number;
   iconButtonSx?: SxProps<Theme>;
 };
@@ -75,13 +76,20 @@ export function NewSongButton({
               />
             </ListItemButton>
           )
-        : (
-            <Tooltip title={t('new_song')}>
-              <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
-                <AddIcon sx={{ fontSize: 16 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+        : variant === 'toolbar'
+          ? (
+              <ExpandablePrimaryButton
+                label={t('new_song')}
+                onClick={() => setDialogOpen(true)}
+              />
+            )
+          : (
+              <Tooltip title={t('new_song')}>
+                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                  <AddIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
       <CreateSongDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}

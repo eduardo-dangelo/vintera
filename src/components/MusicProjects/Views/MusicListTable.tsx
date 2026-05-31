@@ -1,7 +1,8 @@
 'use client';
 
 import type { MusicCoverType } from '@/components/MusicProjects/MusicCoverImage';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, Collapse, Typography, useTheme } from '@mui/material';
+import { TransitionGroup } from 'react-transition-group';
 import { MusicCoverImage } from '@/components/MusicProjects/MusicCoverImage';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import {
@@ -33,30 +34,33 @@ export function MusicListTable({ rows }: MusicListTableProps) {
 
   return (
     <Box sx={getMusicListTableContainerSx()}>
-      {rows.map(row => (
-        <Box
-          key={row.id}
-          onClick={row.onClick}
-          onMouseEnter={playHoverSound}
-          sx={getMusicListTableRowSx(theme)}
-        >
-          <MusicCoverImage
-            imageUrl={row.coverImageUrl}
-            type={row.coverType}
-            size={48}
-          />
-          <Box sx={getMusicListTableMainSx()}>
-            <MusicListItemCell title={row.title} subtitle={row.subtitle} />
-          </Box>
-          {row.trailing && (
-            <Box sx={getMusicListTableTrailingSx()}>
-              <Typography variant="caption" color="text.secondary">
-                {row.trailing}
-              </Typography>
+      <TransitionGroup component={null}>
+        {rows.map(row => (
+          <Collapse key={row.id} timeout={300}>
+            <Box
+              onClick={row.onClick}
+              onMouseEnter={playHoverSound}
+              sx={getMusicListTableRowSx(theme)}
+            >
+              <MusicCoverImage
+                imageUrl={row.coverImageUrl}
+                type={row.coverType}
+                size={48}
+              />
+              <Box sx={getMusicListTableMainSx()}>
+                <MusicListItemCell title={row.title} subtitle={row.subtitle} />
+              </Box>
+              {row.trailing && (
+                <Box sx={getMusicListTableTrailingSx()}>
+                  <Typography variant="caption" color="text.secondary">
+                    {row.trailing}
+                  </Typography>
+                </Box>
+              )}
             </Box>
-          )}
-        </Box>
-      ))}
+          </Collapse>
+        ))}
+      </TransitionGroup>
     </Box>
   );
 }

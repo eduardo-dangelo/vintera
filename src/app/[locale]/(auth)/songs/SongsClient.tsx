@@ -7,13 +7,16 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { ListViewControls } from '@/components/common/ListViewControls';
+import { useMemo, useState } from 'react';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
+import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHeader';
+import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
 import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
 import { SongCard } from '@/components/MusicProjects/SongCard';
 import { SongListView } from '@/components/MusicProjects/Views/SongListView';
 import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useSongs } from '@/queries/hooks/songs';
+import { filterBySearchQuery } from '@/utils/filterMusicListItems';
 
 type SongsClientProps = {
   locale: string;
@@ -22,7 +25,17 @@ type SongsClientProps = {
 export function SongsClient({ locale }: SongsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: songs, isLoading, error } = useSongs(locale);
+  const [searchQuery, setSearchQuery] = useState('');
   const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
+
+  const filteredSongs = useMemo(
+    () => filterBySearchQuery(
+      songs ?? [],
+      searchQuery,
+      s => [s.title, s.projectName, s.albumName, s.status].filter(Boolean).join(' '),
+    ),
+    [songs, searchQuery],
+  );
 
   if (isLoading) {
     return (
@@ -44,36 +57,24 @@ export function SongsClient({ locale }: SongsClientProps) {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          mb: 4,
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 0.5 }}>
-            {t('songs_page_title')}
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            {t('songs_page_description')}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          {!isEmpty && (
-            <ListViewControls
-              viewMode={viewMode}
-              cardSize={cardSize}
-              onViewModeChange={setViewMode}
-              onCardSizeChange={setCardSize}
-            />
-          )}
-          <NewSongButton locale={locale} />
-        </Box>
-      </Box>
+      <MusicListPageHeader
+        title={t('songs_page_title')}
+        toolbar={!isEmpty
+          ? (
+              <MusicListToolbar
+                showViewControls
+                viewMode={viewMode}
+                cardSize={cardSize}
+                onViewModeChange={setViewMode}
+                onCardSizeChange={setCardSize}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Search songs"
+                newButton={<NewSongButton locale={locale} variant="toolbar" />}
+              />
+            )
+          : undefined}
+      />
 
       {isEmpty
         ? (
@@ -98,22 +99,31 @@ export function SongsClient({ locale }: SongsClientProps) {
               <NewSongButton locale={locale} variant="listItem" />
             </Box>
           )
-        : viewMode === 'list'
+        : filteredSongs.length === 0 && searchQuery
           ? (
-              <SongListView songs={songs} locale={locale} />
+              <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
+                {`No results for "${searchQuery}"`}
+              </Typography>
             )
-          : (
-              <MusicFolderGrid cardSize={cardSize}>
-                {songs.map(song => (
-                  <SongCard
-                    key={song.id}
-                    song={song}
-                    locale={locale}
-                    cardSize={cardSize}
-                  />
-                ))}
-              </MusicFolderGrid>
-            )}
+          : viewMode === 'list'
+            ? (
+                <SongListView songs={filteredSongs} locale={locale} />
+              )
+            : (
+                <MusicFolderGrid
+                  cardSize={cardSize}
+                  items={filteredSongs.map(song => ({
+                    id: song.id,
+                    content: (
+                      <SongCard
+                        song={song}
+                        locale={locale}
+                        cardSize={cardSize}
+                      />
+                    ),
+                  }))}
+                />
+              )}
     </Box>
   );
 }

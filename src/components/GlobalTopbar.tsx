@@ -20,6 +20,14 @@ export function GlobalTopbar() {
   // Get registered right content (e.g., AssetsTopBar controls on mobile)
   const { rightContent } = useGlobalTopbarContent();
 
+  const isEmptyOnDesktop = !isMobile
+    && breadcrumbItems.length === 0
+    && !rightContent;
+
+  if (isEmptyOnDesktop) {
+    return null;
+  }
+
   return (
     <Box
       sx={{

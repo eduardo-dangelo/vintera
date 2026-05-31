@@ -192,7 +192,8 @@
     "sidebar_songs": "Chansons",
     "sidebar_albums": "Albums",
     "sidebar_view_all": "Tout voir",
-    "sidebar_empty": "Rien pour l'instant"
+    "sidebar_empty": "Rien pour l'instant",
+    "sidebar_new": "Nouveau"
   },
   "Assets": {
     "meta_title": "Actifs",

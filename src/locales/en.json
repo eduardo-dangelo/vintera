@@ -193,7 +193,8 @@
     "sidebar_songs": "Songs",
     "sidebar_albums": "Albums",
     "sidebar_view_all": "View all",
-    "sidebar_empty": "Nothing here yet"
+    "sidebar_empty": "Nothing here yet",
+    "sidebar_new": "New"
   },
   "Assets": {
     "meta_title": "Assets",

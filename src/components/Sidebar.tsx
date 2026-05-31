@@ -20,7 +20,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Skeleton,
   Toolbar,
   Typography,
   useMediaQuery,
@@ -36,9 +35,7 @@ import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
-import { NewAlbumButton } from './MusicProjects/NewAlbumButton';
-import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
-import { NewSongButton } from './MusicProjects/NewSongButton';
+import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { TopbarActions } from './TopbarActions';
 
 type SidebarItem = {
@@ -48,92 +45,21 @@ type SidebarItem = {
   icon: React.ComponentType<{ sx?: object }>;
 };
 
-const SKELETON_ROW_WIDTHS = ['75%', '60%', '85%'] as const;
-const skeletonSx = { bgcolor: 'rgba(255, 255, 255, 0.08)' };
-
 type SidebarSectionProps = {
   title: string;
-  headerAction?: ReactNode;
   viewAllHref?: string;
   viewAllLabel?: string;
   items: SidebarItem[];
-  emptyAction?: ReactNode;
-  isLoading?: boolean;
   isActive: (href: string) => boolean;
   onItemClick: (href: string) => void;
   onItemHover: (href: string | null) => void;
 };
 
-function SidebarSectionSkeletonRows() {
-  return (
-    <List disablePadding>
-      {SKELETON_ROW_WIDTHS.map(width => (
-        <ListItem key={width} disablePadding sx={{ mb: 0.125 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              pl: 1,
-              pr: 1,
-              py: 0.25,
-              minHeight: 28,
-              width: '100%',
-            }}
-          >
-            <Skeleton
-              variant="circular"
-              width={16}
-              height={16}
-              sx={{ flexShrink: 0, ...skeletonSx }}
-            />
-            <Skeleton
-              variant="rounded"
-              height={12}
-              sx={{ flex: 1, maxWidth: width, ...skeletonSx }}
-            />
-          </Box>
-        </ListItem>
-      ))}
-    </List>
-  );
-}
-
-function SidebarSectionHeaderSkeleton() {
-  return (
-    <>
-      <Skeleton
-        variant="rounded"
-        width={52}
-        height={11}
-        sx={skeletonSx}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-        <Skeleton
-          variant="rounded"
-          width={22}
-          height={22}
-          sx={skeletonSx}
-        />
-        <Skeleton
-          variant="rounded"
-          width={36}
-          height={11}
-          sx={{ ...skeletonSx, mx: 0.5 }}
-        />
-      </Box>
-    </>
-  );
-}
-
 function SidebarSection({
   title,
-  headerAction,
   viewAllHref,
   viewAllLabel,
   items,
-  emptyAction,
-  isLoading = false,
   isActive,
   onItemClick,
   onItemHover,
@@ -173,114 +99,99 @@ function SidebarSection({
           mb: 0.5,
         }}
       >
-        {isLoading
-          ? <SidebarSectionHeaderSkeleton />
+        {viewAllHref
+          ? (
+              <Typography
+                component={Link}
+                href={viewAllHref}
+                variant="caption"
+                onMouseEnter={playHoverSound}
+                sx={{
+                  'fontWeight': 500,
+                  'color': theme.palette.sidebar.textSecondary,
+                  'fontSize': '0.6875rem',
+                  'textDecoration': 'none',
+                  '&:hover': { color: theme.palette.sidebar.textPrimary },
+                }}
+              >
+                {title}
+              </Typography>
+            )
           : (
-              <>
-                {viewAllHref
-                  ? (
-                      <Typography
-                        component={Link}
-                        href={viewAllHref}
-                        variant="caption"
-                        onMouseEnter={playHoverSound}
-                        sx={{
-                          'fontWeight': 500,
-                          'color': theme.palette.sidebar.textSecondary,
-                          'fontSize': '0.6875rem',
-                          'textDecoration': 'none',
-                          '&:hover': { color: theme.palette.sidebar.textPrimary },
-                        }}
-                      >
-                        {title}
-                      </Typography>
-                    )
-                  : (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 500,
-                          color: theme.palette.sidebar.textSecondary,
-                          fontSize: '0.6875rem',
-                        }}
-                      >
-                        {title}
-                      </Typography>
-                    )}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                  {headerAction}
-                  {viewAllHref && viewAllLabel && (
-                    <Typography
-                      component={Link}
-                      href={viewAllHref}
-                      variant="caption"
-                      onMouseEnter={playHoverSound}
-                      sx={{
-                        'color': theme.palette.sidebar.textSecondary,
-                        'textDecoration': 'none',
-                        'fontSize': '0.6875rem',
-                        'px': 0.5,
-                        '&:hover': { color: theme.palette.sidebar.textPrimary },
-                      }}
-                    >
-                      {viewAllLabel}
-                    </Typography>
-                  )}
-                </Box>
-              </>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.sidebar.textSecondary,
+                  fontSize: '0.6875rem',
+                }}
+              >
+                {title}
+              </Typography>
             )}
+        {viewAllHref && viewAllLabel && (
+          <Typography
+            component={Link}
+            href={viewAllHref}
+            variant="caption"
+            onMouseEnter={playHoverSound}
+            sx={{
+              'color': theme.palette.sidebar.textSecondary,
+              'textDecoration': 'none',
+              'fontSize': '0.6875rem',
+              'px': 0.5,
+              '&:hover': { color: theme.palette.sidebar.textPrimary },
+            }}
+          >
+            {viewAllLabel}
+          </Typography>
+        )}
       </Box>
 
-      {isLoading
-        ? <SidebarSectionSkeletonRows />
-        : items.length === 0
-          ? emptyAction
-          : (
-              <List disablePadding>
-                <TransitionGroup component={null}>
-                  {items.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.href);
+      <List disablePadding>
+        <TransitionGroup component={null}>
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
 
-                    return (
-                      <Collapse key={item.key} timeout={200}>
-                        <ListItem disablePadding sx={{ mb: 0.125 }}>
-                          <ListItemButton
-                            component={Link}
-                            href={item.href}
-                            onMouseEnter={() => {
-                              playHoverSound();
-                              onItemHover(item.href);
-                            }}
-                            onMouseLeave={() => onItemHover(null)}
-                            onClick={() => onItemClick(item.href)}
-                            sx={rowSx(active)}
-                          >
-                            <ListItemIcon sx={{ minWidth: 24 }}>
-                              <Icon
-                                sx={{
-                                  fontSize: 16,
-                                  color: active ? menuItemIconColorActive : menuItemIconColor,
-                                }}
-                              />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={item.label}
-                              primaryTypographyProps={{
-                                fontSize: '0.75rem',
-                                fontWeight: 400,
-                                noWrap: true,
-                                sx: { textOverflow: 'ellipsis' },
-                              }}
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      </Collapse>
-                    );
-                  })}
-                </TransitionGroup>
-              </List>
-            )}
+            return (
+              <Collapse key={item.key} timeout={200}>
+                <ListItem disablePadding sx={{ mb: 0.125 }}>
+                  <ListItemButton
+                    component={Link}
+                    href={item.href}
+                    onMouseEnter={() => {
+                      playHoverSound();
+                      onItemHover(item.href);
+                    }}
+                    onMouseLeave={() => onItemHover(null)}
+                    onClick={() => onItemClick(item.href)}
+                    sx={rowSx(active)}
+                  >
+                    <ListItemIcon sx={{ minWidth: 24 }}>
+                      <Icon
+                        sx={{
+                          fontSize: 16,
+                          color: active ? menuItemIconColorActive : menuItemIconColor,
+                        }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{
+                        fontSize: '0.75rem',
+                        fontWeight: 400,
+                        noWrap: true,
+                        sx: { textOverflow: 'ellipsis' },
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </Collapse>
+            );
+          })}
+        </TransitionGroup>
+      </List>
     </Box>
   );
 }
@@ -360,18 +271,6 @@ export function Sidebar({
     icon: AlbumIcon,
   })) ?? [];
 
-  const sectionHeaderButtonSx = {
-    'color': theme.palette.sidebar.textSecondary,
-    'bgcolor': 'transparent',
-    'borderRadius': 1,
-    'height': 22,
-    'width': 22,
-    '&:hover': {
-      color: theme.palette.sidebar.textPrimary,
-      bgcolor: 'rgba(255, 255, 255, 0.06)',
-    },
-  };
-
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {!isMobile && (
@@ -394,47 +293,46 @@ export function Sidebar({
         </Box>
       )}
 
-      <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 3 : 1, mt: isMobile ? 5 : 0, overflowY: 'auto' }}>
-        <SidebarSection
-          title={sectionLabels.projects}
-          viewAllHref={`/${locale}/projects`}
-          viewAllLabel={sectionLabels.viewAll}
-          items={projectItems}
-          isLoading={isRecentsLoading}
-          isActive={isActive}
-          onItemClick={setClickedHref}
-          onItemHover={() => {}}
-          emptyAction={<NewMusicProjectButton locale={locale} variant="listItem" />}
-          headerAction={(
-            <NewMusicProjectButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />
-          )}
-        />
+      <Box sx={{ px: 1.25, py: 1.25, mt: isMobile ? 5 : 0 }}>
+        <SidebarNewButton locale={locale} />
+      </Box>
 
-        <SidebarSection
-          title={sectionLabels.songs}
-          viewAllHref={`/${locale}/songs`}
-          viewAllLabel={sectionLabels.viewAll}
-          items={songItems}
-          isLoading={isRecentsLoading}
-          isActive={isActive}
-          onItemClick={setClickedHref}
-          onItemHover={() => {}}
-          emptyAction={<NewSongButton locale={locale} variant="listItem" />}
-          headerAction={<NewSongButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />}
-        />
+      <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 1 : 0, overflowY: 'auto', mt: 1.25 }}>
+        {!isRecentsLoading && projectItems.length > 0 && (
+          <SidebarSection
+            title={sectionLabels.projects}
+            viewAllHref={`/${locale}/projects`}
+            viewAllLabel={sectionLabels.viewAll}
+            items={projectItems}
+            isActive={isActive}
+            onItemClick={setClickedHref}
+            onItemHover={() => {}}
+          />
+        )}
 
-        <SidebarSection
-          title={sectionLabels.albums}
-          viewAllHref={`/${locale}/albums`}
-          viewAllLabel={sectionLabels.viewAll}
-          items={albumItems}
-          isLoading={isRecentsLoading}
-          isActive={isActive}
-          onItemClick={setClickedHref}
-          onItemHover={() => {}}
-          emptyAction={<NewAlbumButton locale={locale} variant="listItem" />}
-          headerAction={<NewAlbumButton locale={locale} iconButtonSx={sectionHeaderButtonSx} />}
-        />
+        {!isRecentsLoading && songItems.length > 0 && (
+          <SidebarSection
+            title={sectionLabels.songs}
+            viewAllHref={`/${locale}/songs`}
+            viewAllLabel={sectionLabels.viewAll}
+            items={songItems}
+            isActive={isActive}
+            onItemClick={setClickedHref}
+            onItemHover={() => {}}
+          />
+        )}
+
+        {!isRecentsLoading && albumItems.length > 0 && (
+          <SidebarSection
+            title={sectionLabels.albums}
+            viewAllHref={`/${locale}/albums`}
+            viewAllLabel={sectionLabels.viewAll}
+            items={albumItems}
+            isActive={isActive}
+            onItemClick={setClickedHref}
+            onItemHover={() => {}}
+          />
+        )}
       </Box>
 
       <Box>

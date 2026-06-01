@@ -6,7 +6,6 @@ export const AlbumValidation = z.object({
   releaseDate: z.coerce.date().optional().nullable(),
   coverImageUrl: z.string().url().optional().or(z.literal('')),
   sortOrder: z.number().int().optional(),
-  status: z.enum(['draft', 'released']).optional(),
 });
 
 export const UpdateAlbumValidation = AlbumValidation.partial();

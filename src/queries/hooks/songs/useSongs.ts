@@ -1,5 +1,6 @@
 'use client';
 
+import type { MusicPersonPreview } from '@/types/musicPeople';
 import { useQuery } from '@tanstack/react-query';
 import { songKeys } from '@/queries/keys';
 
@@ -8,12 +9,12 @@ export type SongListItem = {
   title: string;
   musicProjectId: number;
   albumId: number | null;
-  status: string;
   updatedAt: Date;
   projectName: string;
   projectColor: string | null;
   albumName: string | null;
   coverImageUrl: string | null;
+  authors: MusicPersonPreview[];
 };
 
 export function useSongs(locale: string) {

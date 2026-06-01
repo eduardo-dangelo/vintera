@@ -61,11 +61,6 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
   const projectHref = `/${locale}/projects/${project.id}`;
   const songsListHref = `/${locale}/songs`;
 
-  const statusLabel = (status: string) => {
-    const key = `status_${status}` as 'status_idea' | 'status_demo' | 'status_recording' | 'status_released';
-    return t(key);
-  };
-
   const handleSave = async () => {
     await updateSong.mutateAsync({
       songId,
@@ -124,7 +119,6 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
             clickable
             sx={{ bgcolor: `${accent}33`, color: accent }}
           />
-          <Chip label={statusLabel(song.status)} size="small" />
         </Box>
       </Box>
 

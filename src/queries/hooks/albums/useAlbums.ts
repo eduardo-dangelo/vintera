@@ -7,11 +7,11 @@ export type AlbumListItem = {
   id: number;
   name: string;
   musicProjectId: number;
-  status: string;
   updatedAt: Date;
   coverImageUrl: string | null;
   projectName: string;
   projectColor: string | null;
+  songCount: number;
 };
 
 export function useAlbums(locale: string) {

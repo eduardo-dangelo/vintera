@@ -1,11 +1,22 @@
 import type { ListFolderCardSize } from '@/utils/listViewPrefs';
 
-export function getMusicCardHoverSx(accent: string) {
+export function getMusicCardHoverSx() {
   return {
-    'transition': 'transform 0.2s, box-shadow 0.2s',
+    'transition': 'transform 0.2s ease, box-shadow 0.2s ease',
     '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: `0 12px 40px ${accent}33`,
+      transform: 'translateY(-1px)',
+      boxShadow: 2,
+    },
+  };
+}
+
+export function getMusicCardActionAreaSx() {
+  return {
+    '&:hover': {
+      bgcolor: 'transparent',
+    },
+    '& .MuiCardActionArea-focusHighlight': {
+      bgcolor: 'transparent',
     },
   };
 }
@@ -15,10 +26,10 @@ export function getMusicCardContentPadding(cardSize: ListFolderCardSize) {
     case 'small':
       return 2;
     case 'large':
-      return 3.5;
+      return 2;
     case 'medium':
     default:
-      return 3;
+      return 2;
   }
 }
 
@@ -37,23 +48,13 @@ export function getMusicCardTitleVariant(cardSize: ListFolderCardSize): 'subtitl
 export function getMusicCardCoverSize(cardSize: ListFolderCardSize) {
   switch (cardSize) {
     case 'small':
-      return 48;
+      return 56;
     case 'large':
-      return 84;
+      return 96;
     case 'medium':
     default:
-      return 68;
+      return 80;
   }
 }
 
-export function getMusicCardDescriptionLines(cardSize: ListFolderCardSize) {
-  switch (cardSize) {
-    case 'small':
-      return 1;
-    case 'large':
-      return 3;
-    case 'medium':
-    default:
-      return 2;
-  }
-}
+export const MUSIC_LIST_COVER_SIZE = 56;

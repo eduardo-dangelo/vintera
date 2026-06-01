@@ -1,8 +1,9 @@
 import type { AlbumInput, UpdateAlbumInput } from '@/validations/AlbumValidation';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/libs/DB';
-import { albumsSchema, musicProjectsSchema } from '@/models/Schema';
+import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
+import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
 
 export class AlbumService {
   static async getAlbumsByUserId(userId: string) {
@@ -11,15 +12,25 @@ export class AlbumService {
         id: albumsSchema.id,
         name: albumsSchema.name,
         musicProjectId: albumsSchema.musicProjectId,
-        status: albumsSchema.status,
         updatedAt: albumsSchema.updatedAt,
         coverImageUrl: albumsSchema.coverImageUrl,
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
+        songCount: sql<number>`cast(count(${songsSchema.id}) as int)`,
       })
       .from(albumsSchema)
       .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(songsSchema, eq(songsSchema.albumId, albumsSchema.id))
       .where(eq(musicProjectsSchema.userId, userId))
+      .groupBy(
+        albumsSchema.id,
+        albumsSchema.name,
+        albumsSchema.musicProjectId,
+        albumsSchema.updatedAt,
+        albumsSchema.coverImageUrl,
+        musicProjectsSchema.name,
+        musicProjectsSchema.color,
+      )
       .orderBy(desc(albumsSchema.updatedAt));
   }
 
@@ -47,7 +58,7 @@ export class AlbumService {
     }
 
     return {
-      album: row.album,
+      album: omitStatus(row.album),
       project: {
         id: row.projectId,
         name: row.projectName,
@@ -84,11 +95,13 @@ export class AlbumService {
       return null;
     }
 
-    return db
+    const albums = await db
       .select()
       .from(albumsSchema)
       .where(eq(albumsSchema.musicProjectId, projectId))
       .orderBy(albumsSchema.sortOrder, albumsSchema.name);
+
+    return omitStatusFromArray(albums);
   }
 
   static async getAlbumById(albumId: number, projectId: number, userId: string) {
@@ -108,7 +121,7 @@ export class AlbumService {
       )
       .limit(1);
 
-    return album ?? null;
+    return album ? omitStatus(album) : null;
   }
 
   static async createAlbum(projectId: number, data: AlbumInput, userId: string) {
@@ -126,11 +139,10 @@ export class AlbumService {
         releaseDate: data.releaseDate ?? null,
         coverImageUrl: data.coverImageUrl || null,
         sortOrder: data.sortOrder ?? 0,
-        status: data.status ?? 'draft',
       })
       .returning();
 
-    return album;
+    return album ? omitStatus(album) : album;
   }
 
   static async updateAlbum(
@@ -163,9 +175,6 @@ export class AlbumService {
     if (data.sortOrder !== undefined) {
       updateData.sortOrder = data.sortOrder;
     }
-    if (data.status !== undefined) {
-      updateData.status = data.status;
-    }
 
     const [updated] = await db
       .update(albumsSchema)
@@ -173,7 +182,7 @@ export class AlbumService {
       .where(eq(albumsSchema.id, albumId))
       .returning();
 
-    return updated ?? null;
+    return updated ? omitStatus(updated) : null;
   }
 
   static async deleteAlbum(albumId: number, projectId: number, userId: string) {

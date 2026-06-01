@@ -2,6 +2,8 @@ import type { MusicProjectInput, UpdateMusicProjectInput } from '@/validations/M
 import { and, count, desc, eq } from 'drizzle-orm';
 import { db } from '@/libs/DB';
 import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
+import { getMembersByProjectIds, insertOwnerMember } from '@/services/musicPeopleService';
+import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
 import { ensureUniqueSlug, slugify } from '@/utils/slugify';
 
 export type MusicProjectData = MusicProjectInput | UpdateMusicProjectInput;
@@ -29,8 +31,12 @@ export class MusicProjectService {
       .where(eq(musicProjectsSchema.userId, userId))
       .orderBy(desc(musicProjectsSchema.updatedAt));
 
+    const projectIds = projects.map(p => p.id);
+    const membersByProject = await getMembersByProjectIds(projectIds);
+
     const withCounts = await Promise.all(
       projects.map(async (project) => {
+        const projectWithoutStatus = omitStatus(project);
         const [albumCount] = await db
           .select({ value: count() })
           .from(albumsSchema)
@@ -40,9 +46,10 @@ export class MusicProjectService {
           .from(songsSchema)
           .where(eq(songsSchema.musicProjectId, project.id));
         return {
-          ...project,
+          ...projectWithoutStatus,
           albumCount: albumCount?.value ?? 0,
           songCount: songCount?.value ?? 0,
+          members: membersByProject.get(project.id) ?? [],
         };
       }),
     );
@@ -62,7 +69,7 @@ export class MusicProjectService {
       )
       .limit(1);
 
-    return project ?? null;
+    return project ? omitStatus(project) : null;
   }
 
   static async getProjectWithRelations(projectId: number, userId: string) {
@@ -83,7 +90,11 @@ export class MusicProjectService {
       .where(eq(songsSchema.musicProjectId, projectId))
       .orderBy(songsSchema.trackNumber, songsSchema.title);
 
-    return { project, albums, songs };
+    return {
+      project,
+      albums: omitStatusFromArray(albums),
+      songs: omitStatusFromArray(songs),
+    };
   }
 
   static async createProject(data: MusicProjectInput, userId: string) {
@@ -111,13 +122,17 @@ export class MusicProjectService {
         description: data.description,
         genre: data.genre,
         color: data.color ?? '#7c3aed',
-        status: data.status ?? 'active',
         coverImageUrl: data.coverImageUrl || null,
         metadata: data.metadata,
       })
       .returning();
 
-    return project;
+    if (project) {
+      await insertOwnerMember(project.id, userId);
+      return omitStatus(project);
+    }
+
+    return project ? omitStatus(project) : project;
   }
 
   static async updateProject(
@@ -140,9 +155,6 @@ export class MusicProjectService {
     }
     if (data.color !== undefined) {
       updateData.color = data.color;
-    }
-    if (data.status !== undefined) {
-      updateData.status = data.status;
     }
     if (data.coverImageUrl !== undefined) {
       updateData.coverImageUrl = data.coverImageUrl || null;
@@ -178,7 +190,10 @@ export class MusicProjectService {
       )
       .returning();
 
-    return updated ?? null;
+    if (!updated) {
+      return null;
+    }
+    return omitStatus(updated);
   }
 
   static async deleteProject(projectId: number, userId: string) {

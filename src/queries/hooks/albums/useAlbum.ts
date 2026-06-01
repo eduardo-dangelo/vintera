@@ -11,7 +11,6 @@ export type AlbumDetail = {
   releaseDate: string | null;
   coverImageUrl: string | null;
   sortOrder: number;
-  status: string;
   createdAt: Date;
   updatedAt: Date;
 };

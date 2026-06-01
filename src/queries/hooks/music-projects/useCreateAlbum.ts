@@ -8,7 +8,6 @@ type CreateAlbumInput = {
   projectId: number;
   name: string;
   description?: string;
-  status?: 'draft' | 'released';
 };
 
 export function useCreateAlbum(locale: string) {

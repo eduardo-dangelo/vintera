@@ -4,6 +4,8 @@ import type { MusicProjectListItem } from '@/queries/hooks/music-projects/useMus
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { MusicPeopleAvatarGroup } from '@/components/MusicProjects/MusicPeopleAvatarGroup';
+import { MusicStatBadge } from '@/components/MusicProjects/MusicStatBadge';
 import { MusicListTable } from './MusicListTable';
 
 type ProjectListViewProps = {
@@ -11,14 +13,11 @@ type ProjectListViewProps = {
   locale: string;
 };
 
-function buildProjectSubtitle(
-  project: MusicProjectListItem,
-  t: ReturnType<typeof useTranslations<'MusicProjects'>>,
-) {
+function buildProjectSubtitle(project: MusicProjectListItem) {
   if (project.genre) {
     return `Project • ${project.genre}`;
   }
-  return `Project • ${t('album_count', { count: project.albumCount })}, ${t('song_count', { count: project.songCount })}`;
+  return 'Project';
 }
 
 export function ProjectListView({ projects, locale }: ProjectListViewProps) {
@@ -32,7 +31,22 @@ export function ProjectListView({ projects, locale }: ProjectListViewProps) {
         coverImageUrl: project.coverImageUrl,
         coverType: 'project' as const,
         title: project.name,
-        subtitle: buildProjectSubtitle(project, t),
+        subtitle: buildProjectSubtitle(project),
+        statPrimary: (
+          <MusicStatBadge
+            count={project.albumCount}
+            label={t('albums_stat_label')}
+            compact
+          />
+        ),
+        statSecondary: (
+          <MusicStatBadge
+            count={project.songCount}
+            label={t('songs_stat_label')}
+            compact
+          />
+        ),
+        meta: <MusicPeopleAvatarGroup people={project.members} size={22} />,
         trailing: format(new Date(project.updatedAt), 'MMM d, yyyy'),
         onClick: () => router.push(`/${locale}/projects/${project.id}`),
       }))}

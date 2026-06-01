@@ -32,7 +32,7 @@ export function SongsClient({ locale }: SongsClientProps) {
     () => filterBySearchQuery(
       songs ?? [],
       searchQuery,
-      s => [s.title, s.projectName, s.albumName, s.status].filter(Boolean).join(' '),
+      s => [s.title, s.projectName, s.albumName].filter(Boolean).join(' '),
     ),
     [songs, searchQuery],
   );

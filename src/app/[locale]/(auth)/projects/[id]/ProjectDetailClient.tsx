@@ -91,11 +91,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
     router.push(`/${locale}/projects`);
   };
 
-  const statusLabel = (status: string) => {
-    const key = `status_${status}` as 'status_idea' | 'status_demo' | 'status_recording' | 'status_released' | 'status_draft';
-    return t(key);
-  };
-
   return (
     <Box>
       <Button
@@ -198,11 +193,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                           {album.name}
                         </Typography>
-                        <Chip
-                          label={statusLabel(album.status)}
-                          size="small"
-                          sx={{ mt: 1, fontSize: '0.7rem' }}
-                        />
                       </Box>
                     ))}
                   </Box>
@@ -264,7 +254,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                               {album.name}
                             </Typography>
                           )}
-                          <Chip label={statusLabel(song.status)} size="small" />
                           <IconButton
                             size="small"
                             onClick={() => deleteSong.mutate({ projectId, songId: song.id })}

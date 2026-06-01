@@ -32,7 +32,7 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
     () => filterBySearchQuery(
       albums ?? [],
       searchQuery,
-      a => [a.name, a.projectName, a.status].filter(Boolean).join(' '),
+      a => [a.name, a.projectName].filter(Boolean).join(' '),
     ),
     [albums, searchQuery],
   );
@@ -59,6 +59,7 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
     <Box>
       <MusicListPageHeader
         title={t('albums_page_title')}
+        heroImageSrc="/assets/images/albums-hero.png"
         toolbar={!isEmpty
           ? (
               <MusicListToolbar

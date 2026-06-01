@@ -7,17 +7,19 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Chip,
   Typography,
 } from '@mui/material';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
+  getMusicCardActionAreaSx,
   getMusicCardContentPadding,
   getMusicCardCoverSize,
   getMusicCardHoverSx,
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
+import { MusicStatBadge } from './MusicStatBadge';
 
 type AlbumCardProps = {
   album: AlbumListItem;
@@ -26,7 +28,8 @@ type AlbumCardProps = {
 };
 
 export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps) {
-  const accent = album.projectColor || '#7c3aed';
+  const t = useTranslations('MusicProjects');
+  const compact = cardSize === 'small';
 
   return (
     <Card
@@ -37,13 +40,13 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
         overflow: 'hidden',
         border: '1px solid',
         borderColor: 'divider',
-        ...getMusicCardHoverSx(accent),
+        ...getMusicCardHoverSx(),
       }}
     >
       <CardActionArea
         component={Link}
         href={`/${locale}/albums/${album.id}`}
-        sx={{ height: '100%' }}
+        sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
       >
         <CardContent
           sx={{
@@ -84,19 +87,11 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
             >
               {album.projectName}
             </Typography>
-            {album.status && (
-              <Chip
-                label={album.status}
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  bgcolor: `${accent}22`,
-                  color: accent,
-                  fontWeight: 500,
-                  ...(cardSize === 'small' && { height: 22, fontSize: '0.7rem' }),
-                }}
-              />
-            )}
+            <MusicStatBadge
+              count={album.songCount}
+              label={t('songs_stat_label')}
+              compact={compact}
+            />
           </Box>
         </CardContent>
       </CardActionArea>

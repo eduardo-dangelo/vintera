@@ -257,6 +257,32 @@ export const songsSchema = pgTable('songs', {
     .notNull(),
 });
 
+export const musicProjectMembersSchema = pgTable('music_project_members', {
+  id: serial('id').primaryKey(),
+  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'cascade' }).notNull(),
+  userId: text('user_id').references(() => usersSchema.id, { onDelete: 'set null' }),
+  displayName: text('display_name'),
+  imageUrl: text('image_url'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, table => [
+  uniqueIndex('music_project_members_project_user_idx').on(table.musicProjectId, table.userId),
+]);
+
+export const songAuthorsSchema = pgTable('song_authors', {
+  id: serial('id').primaryKey(),
+  songId: integer('song_id').references(() => songsSchema.id, { onDelete: 'cascade' }).notNull(),
+  memberId: integer('member_id').references(() => musicProjectMembersSchema.id, { onDelete: 'cascade' }).notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+}, table => [
+  uniqueIndex('song_authors_song_member_idx').on(table.songId, table.memberId),
+]);
+
 // Define relationships
 export const userRelations = relations(usersSchema, ({ many }) => ({
   assets: many(assetsSchema),
@@ -401,6 +427,7 @@ export const musicProjectsRelations = relations(musicProjectsSchema, ({ one, man
   }),
   albums: many(albumsSchema),
   songs: many(songsSchema),
+  members: many(musicProjectMembersSchema),
 }));
 
 export const albumsRelations = relations(albumsSchema, ({ one, many }) => ({
@@ -411,7 +438,7 @@ export const albumsRelations = relations(albumsSchema, ({ one, many }) => ({
   songs: many(songsSchema),
 }));
 
-export const songsRelations = relations(songsSchema, ({ one }) => ({
+export const songsRelations = relations(songsSchema, ({ one, many }) => ({
   musicProject: one(musicProjectsSchema, {
     fields: [songsSchema.musicProjectId],
     references: [musicProjectsSchema.id],
@@ -419,5 +446,29 @@ export const songsRelations = relations(songsSchema, ({ one }) => ({
   album: one(albumsSchema, {
     fields: [songsSchema.albumId],
     references: [albumsSchema.id],
+  }),
+  authors: many(songAuthorsSchema),
+}));
+
+export const musicProjectMembersRelations = relations(musicProjectMembersSchema, ({ one, many }) => ({
+  musicProject: one(musicProjectsSchema, {
+    fields: [musicProjectMembersSchema.musicProjectId],
+    references: [musicProjectsSchema.id],
+  }),
+  user: one(usersSchema, {
+    fields: [musicProjectMembersSchema.userId],
+    references: [usersSchema.id],
+  }),
+  songCredits: many(songAuthorsSchema),
+}));
+
+export const songAuthorsRelations = relations(songAuthorsSchema, ({ one }) => ({
+  song: one(songsSchema, {
+    fields: [songAuthorsSchema.songId],
+    references: [songsSchema.id],
+  }),
+  member: one(musicProjectMembersSchema, {
+    fields: [songAuthorsSchema.memberId],
+    references: [musicProjectMembersSchema.id],
   }),
 }));

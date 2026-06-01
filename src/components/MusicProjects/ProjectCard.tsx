@@ -13,13 +13,15 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
+  getMusicCardActionAreaSx,
   getMusicCardContentPadding,
   getMusicCardCoverSize,
-  getMusicCardDescriptionLines,
   getMusicCardHoverSx,
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
+import { MusicPeopleAvatarGroup } from './MusicPeopleAvatarGroup';
+import { MusicStatBadge, MusicStatBadgeRow } from './MusicStatBadge';
 
 type ProjectCardProps = {
   project: MusicProjectListItem;
@@ -30,7 +32,9 @@ type ProjectCardProps = {
 export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCardProps) {
   const t = useTranslations('MusicProjects');
   const accent = project.color || '#7c3aed';
-  const descriptionLines = getMusicCardDescriptionLines(cardSize);
+  const compact = cardSize === 'small';
+  const hideStatLabels = cardSize !== 'large';
+  const showGenre = cardSize === 'large' && Boolean(project.genre);
 
   return (
     <Card
@@ -41,13 +45,13 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
         overflow: 'hidden',
         border: '1px solid',
         borderColor: 'divider',
-        ...getMusicCardHoverSx(accent),
+        ...getMusicCardHoverSx(),
       }}
     >
       <CardActionArea
         component={Link}
         href={`/${locale}/projects/${project.id}`}
-        sx={{ height: '100%' }}
+        sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
       >
         <CardContent
           sx={{
@@ -75,40 +79,48 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
             >
               {project.name}
             </Typography>
-            {project.genre && (
+            {showGenre && (
               <Chip
                 label={project.genre}
                 size="small"
                 sx={{
-                  mb: cardSize === 'small' ? 1 : 1.5,
+                  mb: 1.5,
                   bgcolor: `${accent}22`,
                   color: accent,
                   fontWeight: 500,
                 }}
               />
             )}
-            {project.description && (
-              <Typography
-                variant={cardSize === 'small' ? 'caption' : 'body2'}
-                color="text.secondary"
-                sx={{
-                  mb: cardSize === 'small' ? 1 : 2,
-                  display: '-webkit-box',
-                  WebkitLineClamp: descriptionLines,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                }}
-              >
-                {project.description}
-              </Typography>
-            )}
-            <Box sx={{ display: 'flex', gap: cardSize === 'small' ? 1 : 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('album_count', { count: project.albumCount })}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {t('song_count', { count: project.songCount })}
-              </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                flexWrap: 'wrap',
+                mt: showGenre ? 0 : 1,
+              }}
+            >
+              <MusicStatBadgeRow compact={compact}>
+                <MusicStatBadge
+                  count={project.albumCount}
+                  label={t('albums_stat_label')}
+                  compact={compact}
+                  hideLabel={hideStatLabels}
+                  tooltip={t('album_count', { count: project.albumCount })}
+                />
+                <MusicStatBadge
+                  count={project.songCount}
+                  label={t('songs_stat_label')}
+                  compact={compact}
+                  hideLabel={hideStatLabels}
+                  tooltip={t('song_count', { count: project.songCount })}
+                />
+              </MusicStatBadgeRow>
+              <MusicPeopleAvatarGroup
+                people={project.members}
+                size={compact ? 22 : 24}
+              />
             </Box>
           </Box>
         </CardContent>

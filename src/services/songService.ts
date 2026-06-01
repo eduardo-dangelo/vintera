@@ -2,17 +2,18 @@ import type { SongInput, UpdateSongInput } from '@/validations/SongValidation';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/libs/DB';
 import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
+import { getAuthorsBySongIds } from '@/services/musicPeopleService';
 import { MusicProjectService } from '@/services/musicProjectService';
+import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
 
 export class SongService {
   static async getSongsByUserId(userId: string) {
-    return db
+    const songs = await db
       .select({
         id: songsSchema.id,
         title: songsSchema.title,
         musicProjectId: songsSchema.musicProjectId,
         albumId: songsSchema.albumId,
-        status: songsSchema.status,
         updatedAt: songsSchema.updatedAt,
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
@@ -24,6 +25,14 @@ export class SongService {
       .leftJoin(albumsSchema, eq(songsSchema.albumId, albumsSchema.id))
       .where(eq(musicProjectsSchema.userId, userId))
       .orderBy(desc(songsSchema.updatedAt));
+
+    const songIds = songs.map(s => s.id);
+    const authorsBySong = await getAuthorsBySongIds(songIds);
+
+    return songs.map(song => ({
+      ...song,
+      authors: authorsBySong.get(song.id) ?? [],
+    }));
   }
 
   static async getSongByIdForUser(songId: number, userId: string) {
@@ -50,7 +59,7 @@ export class SongService {
     }
 
     return {
-      song: row.song,
+      song: omitStatus(row.song),
       project: {
         id: row.projectId,
         name: row.projectName,
@@ -87,11 +96,13 @@ export class SongService {
       return null;
     }
 
-    return db
+    const songs = await db
       .select()
       .from(songsSchema)
       .where(eq(songsSchema.musicProjectId, projectId))
       .orderBy(songsSchema.trackNumber, songsSchema.title);
+
+    return omitStatusFromArray(songs);
   }
 
   static async getSongById(songId: number, projectId: number, userId: string) {
@@ -111,7 +122,7 @@ export class SongService {
       )
       .limit(1);
 
-    return song ?? null;
+    return song ? omitStatus(song) : null;
   }
 
   static async createSong(projectId: number, data: SongInput, userId: string) {
@@ -149,11 +160,10 @@ export class SongService {
         lyrics: data.lyrics,
         chordsOrTabs: data.chordsOrTabs,
         metadata: data.metadata,
-        status: data.status ?? 'idea',
       })
       .returning();
 
-    return song;
+    return song ? omitStatus(song) : song;
   }
 
   static async updateSong(
@@ -214,9 +224,6 @@ export class SongService {
     if (data.metadata !== undefined) {
       updateData.metadata = data.metadata;
     }
-    if (data.status !== undefined) {
-      updateData.status = data.status;
-    }
 
     const [updated] = await db
       .update(songsSchema)
@@ -224,7 +231,7 @@ export class SongService {
       .where(eq(songsSchema.id, songId))
       .returning();
 
-    return updated ?? null;
+    return updated ? omitStatus(updated) : null;
   }
 
   static async deleteSong(songId: number, projectId: number, userId: string) {

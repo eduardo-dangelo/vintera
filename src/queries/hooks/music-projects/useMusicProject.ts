@@ -12,7 +12,6 @@ export type MusicProjectDetail = {
     description: string | null;
     genre: string | null;
     color: string | null;
-    status: string;
     coverImageUrl: string | null;
     metadata: unknown;
     linkedAssetId: number | null;
@@ -27,7 +26,6 @@ export type MusicProjectDetail = {
     releaseDate: string | null;
     coverImageUrl: string | null;
     sortOrder: number;
-    status: string;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -43,7 +41,6 @@ export type MusicProjectDetail = {
     lyrics: string | null;
     chordsOrTabs: string | null;
     metadata: unknown;
-    status: string;
     createdAt: string;
     updatedAt: string;
   }>;

@@ -8,7 +8,6 @@ type CreateSongInput = {
   projectId: number;
   title: string;
   albumId?: number | null;
-  status?: 'idea' | 'demo' | 'recording' | 'released';
   lyrics?: string;
   chordsOrTabs?: string;
 };

@@ -1,4 +1,5 @@
 import type { SxProps, Theme } from '@mui/material/styles';
+import { MUSIC_LIST_COVER_SIZE } from '@/components/MusicProjects/musicCardStyles';
 
 export function getMusicListTableContainerSx(): SxProps<Theme> {
   return {
@@ -12,9 +13,10 @@ export function getMusicListTableContainerSx(): SxProps<Theme> {
 
 export function getMusicListTableRowSx(theme: Theme): SxProps<Theme> {
   return {
-    'display': 'flex',
+    'display': 'grid',
+    'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr))`,
+    'columnGap': 2,
     'alignItems': 'center',
-    'gap': 2,
     'py': 1,
     'px': 1.5,
     'cursor': 'pointer',
@@ -33,10 +35,24 @@ export function getMusicListTableRowSx(theme: Theme): SxProps<Theme> {
   };
 }
 
+export function getMusicListTableColumnSx(
+  align: 'start' | 'center' | 'end' = 'start',
+): SxProps<Theme> {
+  return {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: align === 'start' ? 'flex-start' : align === 'center' ? 'center' : 'flex-end',
+  };
+}
+
 export function getMusicListTableMainSx(): SxProps<Theme> {
   return {
-    flex: 1,
     minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   };
 }
 
@@ -59,9 +75,17 @@ export function getMusicListTableSubtitleSx(): SxProps<Theme> {
   };
 }
 
+export function getMusicListTableStatSx(): SxProps<Theme> {
+  return getMusicListTableColumnSx('start');
+}
+
+export function getMusicListTableMetaSx(): SxProps<Theme> {
+  return getMusicListTableColumnSx('center');
+}
+
 export function getMusicListTableTrailingSx(): SxProps<Theme> {
   return {
-    display: { xs: 'none', sm: 'block' },
-    flexShrink: 0,
+    ...getMusicListTableColumnSx('end'),
+    display: { xs: 'none', sm: 'flex' },
   };
 }

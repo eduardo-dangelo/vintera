@@ -7,17 +7,18 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Chip,
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
 import {
+  getMusicCardActionAreaSx,
   getMusicCardContentPadding,
   getMusicCardCoverSize,
   getMusicCardHoverSx,
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
+import { MusicPeopleAvatarGroup } from './MusicPeopleAvatarGroup';
 
 type SongCardProps = {
   song: SongListItem;
@@ -26,7 +27,7 @@ type SongCardProps = {
 };
 
 export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
-  const accent = song.projectColor || '#7c3aed';
+  const compact = cardSize === 'small';
 
   return (
     <Card
@@ -37,13 +38,13 @@ export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
         overflow: 'hidden',
         border: '1px solid',
         borderColor: 'divider',
-        ...getMusicCardHoverSx(accent),
+        ...getMusicCardHoverSx(),
       }}
     >
       <CardActionArea
         component={Link}
         href={`/${locale}/songs/${song.id}`}
-        sx={{ height: '100%' }}
+        sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
       >
         <CardContent
           sx={{
@@ -84,19 +85,10 @@ export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
             >
               {song.projectName}
             </Typography>
-            {song.status && (
-              <Chip
-                label={song.status}
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  bgcolor: `${accent}22`,
-                  color: accent,
-                  fontWeight: 500,
-                  ...(cardSize === 'small' && { height: 22, fontSize: '0.7rem' }),
-                }}
-              />
-            )}
+            <MusicPeopleAvatarGroup
+              people={song.authors}
+              size={compact ? 22 : 24}
+            />
           </Box>
         </CardContent>
       </CardActionArea>

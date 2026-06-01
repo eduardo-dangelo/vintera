@@ -15,7 +15,6 @@ export type SongDetail = {
   lyrics: string | null;
   chordsOrTabs: string | null;
   metadata: unknown;
-  status: string;
   createdAt: Date;
   updatedAt: Date;
 };

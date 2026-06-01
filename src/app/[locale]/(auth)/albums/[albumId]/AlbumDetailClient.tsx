@@ -44,11 +44,6 @@ export function AlbumDetailClient({ locale, albumId, breadcrumbProjectId }: Albu
   const projectHref = `/${locale}/projects/${project.id}`;
   const albumsListHref = `/${locale}/albums`;
 
-  const statusLabel = (status: string) => {
-    const key = `status_${status}` as 'status_draft' | 'status_released';
-    return t(key);
-  };
-
   return (
     <Box>
       <Breadcrumbs sx={{ mb: 2 }} aria-label="breadcrumb">
@@ -93,7 +88,6 @@ export function AlbumDetailClient({ locale, albumId, breadcrumbProjectId }: Albu
             clickable
             sx={{ bgcolor: `${accent}33`, color: accent }}
           />
-          <Chip label={statusLabel(album.status)} size="small" />
         </Box>
         {album.description && (
           <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.7 }}>

@@ -55,6 +55,8 @@
     "no_songs": "No songs yet",
     "album_count": "{count} albums",
     "song_count": "{count} songs",
+    "albums_stat_label": "albums",
+    "songs_stat_label": "songs",
     "status_idea": "Idea",
     "status_demo": "Demo",
     "status_recording": "Recording",

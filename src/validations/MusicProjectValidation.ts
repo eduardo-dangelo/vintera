@@ -6,7 +6,6 @@ export const MusicProjectValidation = z.object({
   description: z.string().max(5000).optional(),
   genre: z.string().max(100).optional(),
   color: z.string().max(50).optional(),
-  status: z.enum(['active', 'archived', 'draft']).optional(),
   coverImageUrl: z.string().url().optional().or(z.literal('')),
   metadata: z.record(z.string(), z.any()).optional(),
 });

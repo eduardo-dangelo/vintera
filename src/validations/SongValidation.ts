@@ -10,7 +10,6 @@ export const SongValidation = z.object({
   lyrics: z.string().max(50000).optional(),
   chordsOrTabs: z.string().max(50000).optional(),
   metadata: z.record(z.string(), z.any()).optional(),
-  status: z.enum(['idea', 'demo', 'recording', 'released']).optional(),
 });
 
 export const UpdateSongValidation = SongValidation.partial();

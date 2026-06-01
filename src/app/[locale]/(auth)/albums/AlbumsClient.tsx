@@ -1,6 +1,5 @@
 'use client';
 
-import { Album as AlbumIcon } from '@mui/icons-material';
 import {
   Box,
   Typography,
@@ -10,6 +9,7 @@ import { useMemo, useState } from 'react';
 import { AlbumCard } from '@/components/MusicProjects/AlbumCard';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { MusicListContentSkeleton } from '@/components/MusicProjects/MusicListContentSkeleton';
+import { MusicListEmptyState } from '@/components/MusicProjects/MusicListEmptyState';
 import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHeader';
 import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
 import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
@@ -46,26 +46,29 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
   }
 
   const isEmpty = !albums?.length;
+  const newAlbumButton = <NewAlbumButton locale={locale} variant="toolbar" />;
 
   return (
     <Box>
       <MusicListPageHeader
         title={t('albums_page_title')}
         heroImageSrc="/assets/images/albums-hero.png"
-        toolbar={!isLoading && !isEmpty
-          ? (
-              <MusicListToolbar
-                showViewControls
-                viewMode={viewMode}
-                cardSize={cardSize}
-                onViewModeChange={setViewMode}
-                onCardSizeChange={setCardSize}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                searchPlaceholder="Search albums"
-                newButton={<NewAlbumButton locale={locale} variant="toolbar" />}
-              />
-            )
+        toolbar={!isLoading
+          ? isEmpty
+            ? newAlbumButton
+            : (
+                <MusicListToolbar
+                  showViewControls
+                  viewMode={viewMode}
+                  cardSize={cardSize}
+                  onViewModeChange={setViewMode}
+                  onCardSizeChange={setCardSize}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder="Search albums"
+                  newButton={newAlbumButton}
+                />
+              )
           : undefined}
       />
 
@@ -75,26 +78,11 @@ export function AlbumsClient({ locale }: AlbumsClientProps) {
           )
         : isEmpty
           ? (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 10,
-                  px: 3,
-                  borderRadius: 4,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                  bgcolor: 'action.hover',
-                }}
-              >
-                <AlbumIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2, opacity: 0.6 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                  {t('albums_empty_title')}
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-                  {t('albums_empty_description')}
-                </Typography>
-                <NewAlbumButton locale={locale} variant="listItem" />
-              </Box>
+              <MusicListEmptyState
+                kind="album"
+                title={t('albums_empty_title')}
+                description={t('albums_empty_description')}
+              />
             )
           : filteredAlbums.length === 0 && searchQuery
             ? (

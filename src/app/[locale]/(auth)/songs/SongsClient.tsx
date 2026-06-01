@@ -1,6 +1,5 @@
 'use client';
 
-import { QueueMusic as SongIcon } from '@mui/icons-material';
 import {
   Box,
   Typography,
@@ -9,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { MusicListContentSkeleton } from '@/components/MusicProjects/MusicListContentSkeleton';
+import { MusicListEmptyState } from '@/components/MusicProjects/MusicListEmptyState';
 import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHeader';
 import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
 import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
@@ -46,26 +46,29 @@ export function SongsClient({ locale }: SongsClientProps) {
   }
 
   const isEmpty = !songs?.length;
+  const newSongButton = <NewSongButton locale={locale} variant="toolbar" />;
 
   return (
     <Box>
       <MusicListPageHeader
         title={t('songs_page_title')}
         heroImageSrc="/assets/images/songs-hero.png"
-        toolbar={!isLoading && !isEmpty
-          ? (
-              <MusicListToolbar
-                showViewControls
-                viewMode={viewMode}
-                cardSize={cardSize}
-                onViewModeChange={setViewMode}
-                onCardSizeChange={setCardSize}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                searchPlaceholder="Search songs"
-                newButton={<NewSongButton locale={locale} variant="toolbar" />}
-              />
-            )
+        toolbar={!isLoading
+          ? isEmpty
+            ? newSongButton
+            : (
+                <MusicListToolbar
+                  showViewControls
+                  viewMode={viewMode}
+                  cardSize={cardSize}
+                  onViewModeChange={setViewMode}
+                  onCardSizeChange={setCardSize}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder="Search songs"
+                  newButton={newSongButton}
+                />
+              )
           : undefined}
       />
 
@@ -75,26 +78,11 @@ export function SongsClient({ locale }: SongsClientProps) {
           )
         : isEmpty
           ? (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 10,
-                  px: 3,
-                  borderRadius: 4,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                  bgcolor: 'action.hover',
-                }}
-              >
-                <SongIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2, opacity: 0.6 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                  {t('songs_empty_title')}
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-                  {t('songs_empty_description')}
-                </Typography>
-                <NewSongButton locale={locale} variant="listItem" />
-              </Box>
+              <MusicListEmptyState
+                kind="song"
+                title={t('songs_empty_title')}
+                description={t('songs_empty_description')}
+              />
             )
           : filteredSongs.length === 0 && searchQuery
             ? (

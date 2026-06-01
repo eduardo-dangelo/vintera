@@ -1,19 +1,16 @@
 'use client';
 
-import { MusicNote } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { CreateProjectDialog } from '@/components/MusicProjects/CreateProjectDialog';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { MusicListContentSkeleton } from '@/components/MusicProjects/MusicListContentSkeleton';
+import { MusicListEmptyState } from '@/components/MusicProjects/MusicListEmptyState';
 import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHeader';
 import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
-import { primaryGradientSx } from '@/components/MusicProjects/musicListToolbarStyles';
 import { NewMusicProjectButton } from '@/components/MusicProjects/NewMusicProjectButton';
 import { ProjectCard } from '@/components/MusicProjects/ProjectCard';
 import { ProjectListView } from '@/components/MusicProjects/Views/ProjectListView';
@@ -29,7 +26,6 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: projects, isLoading, error } = useMusicProjects(locale);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
   const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
 
   const filteredProjects = useMemo(
@@ -50,26 +46,29 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
   }
 
   const isEmpty = !projects?.length;
+  const newProjectButton = <NewMusicProjectButton locale={locale} variant="toolbar" />;
 
   return (
     <Box>
       <MusicListPageHeader
         title={t('page_title')}
         heroImageSrc="/assets/images/music-projects-hero.png"
-        toolbar={!isLoading && !isEmpty
-          ? (
-              <MusicListToolbar
-                showViewControls
-                viewMode={viewMode}
-                cardSize={cardSize}
-                onViewModeChange={setViewMode}
-                onCardSizeChange={setCardSize}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                searchPlaceholder="Search projects"
-                newButton={<NewMusicProjectButton locale={locale} variant="toolbar" />}
-              />
-            )
+        toolbar={!isLoading
+          ? isEmpty
+            ? newProjectButton
+            : (
+                <MusicListToolbar
+                  showViewControls
+                  viewMode={viewMode}
+                  cardSize={cardSize}
+                  onViewModeChange={setViewMode}
+                  onCardSizeChange={setCardSize}
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder="Search projects"
+                  newButton={newProjectButton}
+                />
+              )
           : undefined}
       />
 
@@ -79,35 +78,11 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
           )
         : isEmpty
           ? (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 10,
-                  px: 3,
-                  borderRadius: 4,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                  bgcolor: 'action.hover',
-                }}
-              >
-                <MusicNote sx={{ fontSize: 64, color: 'primary.main', mb: 2, opacity: 0.6 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                  {t('empty_title')}
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-                  {t('empty_description')}
-                </Typography>
-                <Button
-                  variant="contained"
-                  onClick={() => setDialogOpen(true)}
-                  sx={{
-                    ...primaryGradientSx,
-                    textTransform: 'none',
-                  }}
-                >
-                  {t('create_project')}
-                </Button>
-              </Box>
+              <MusicListEmptyState
+                kind="project"
+                title={t('empty_title')}
+                description={t('empty_description')}
+              />
             )
           : filteredProjects.length === 0 && searchQuery
             ? (
@@ -134,12 +109,6 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
                     }))}
                   />
                 )}
-
-      <CreateProjectDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        locale={locale}
-      />
     </Box>
   );
 }

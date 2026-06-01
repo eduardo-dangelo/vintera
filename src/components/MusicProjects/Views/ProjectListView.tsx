@@ -26,12 +26,18 @@ export function ProjectListView({ projects, locale }: ProjectListViewProps) {
 
   return (
     <MusicListTable
+      locale={locale}
       rows={projects.map(project => ({
         id: project.id,
         coverImageUrl: project.coverImageUrl,
         coverType: 'project' as const,
         title: project.name,
         subtitle: buildProjectSubtitle(project),
+        menuTarget: {
+          kind: 'project',
+          id: project.id,
+          href: `/${locale}/projects/${project.id}`,
+        },
         statPrimary: (
           <MusicStatBadge
             count={project.albumCount}

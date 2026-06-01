@@ -18,7 +18,9 @@ import {
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
+import { MusicItemActionsButton } from './MusicItemActionsButton';
 import { MusicPeopleAvatarGroup } from './MusicPeopleAvatarGroup';
+import { useMusicItemContextMenu } from './useMusicItemContextMenu';
 
 type SongCardProps = {
   song: SongListItem;
@@ -29,69 +31,92 @@ type SongCardProps = {
 export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
   const compact = cardSize === 'small';
 
+  const menuTarget = {
+    kind: 'song' as const,
+    id: song.id,
+    href: `/${locale}/songs/${song.id}`,
+  };
+
+  const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);
+
   return (
-    <Card
-      elevation={0}
-      sx={{
-        height: '100%',
-        borderRadius: 3,
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-        ...getMusicCardHoverSx(),
-      }}
-    >
-      <CardActionArea
-        component={Link}
-        href={`/${locale}/songs/${song.id}`}
-        sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
+    <>
+      <Card
+        elevation={0}
+        onContextMenu={e => openFromContextMenu(e, menuTarget)}
+        sx={{
+          height: '100%',
+          borderRadius: 3,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          position: 'relative',
+          ...getMusicCardHoverSx(),
+        }}
       >
-        <CardContent
+        <Box
           sx={{
-            p: getMusicCardContentPadding(cardSize),
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 2,
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
           }}
         >
-          <MusicCoverImage
-            imageUrl={song.coverImageUrl}
-            type="song"
-            size={getMusicCardCoverSize(cardSize)}
-          />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant={getMusicCardTitleVariant(cardSize)}
-              sx={{
-                fontWeight: 700,
-                mb: cardSize === 'small' ? 0.5 : 1,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {song.title}
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                mb: cardSize === 'small' ? 1 : 1.5,
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {song.projectName}
-            </Typography>
-            <MusicPeopleAvatarGroup
-              people={song.authors}
-              size={compact ? 22 : 24}
+          <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
+        </Box>
+        <CardActionArea
+          component={Link}
+          href={menuTarget.href}
+          sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
+        >
+          <CardContent
+            sx={{
+              p: getMusicCardContentPadding(cardSize),
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 2,
+            }}
+          >
+            <MusicCoverImage
+              imageUrl={song.coverImageUrl}
+              type="song"
+              size={getMusicCardCoverSize(cardSize)}
             />
-          </Box>
-        </CardContent>
-      </CardActionArea>
-    </Card>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant={getMusicCardTitleVariant(cardSize)}
+                sx={{
+                  fontWeight: 700,
+                  mb: cardSize === 'small' ? 0.5 : 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {song.title}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  mb: cardSize === 'small' ? 1 : 1.5,
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {song.projectName}
+              </Typography>
+              <MusicPeopleAvatarGroup
+                people={song.authors}
+                size={compact ? 22 : 24}
+              />
+            </Box>
+          </CardContent>
+        </CardActionArea>
+      </Card>
+      {renderMenus()}
+    </>
   );
 }

@@ -14,7 +14,7 @@ export function getMusicListTableContainerSx(): SxProps<Theme> {
 export function getMusicListTableRowSx(theme: Theme): SxProps<Theme> {
   return {
     'display': 'grid',
-    'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr))`,
+    'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr)) 36px`,
     'columnGap': 2,
     'alignItems': 'center',
     'py': 1,
@@ -87,5 +87,16 @@ export function getMusicListTableTrailingSx(): SxProps<Theme> {
   return {
     ...getMusicListTableColumnSx('end'),
     display: { xs: 'none', sm: 'flex' },
+  };
+}
+
+export function getMusicListTableActionsSx(): SxProps<Theme> {
+  return {
+    ...getMusicListTableColumnSx('end'),
+    'opacity': 0.6,
+    'transition': 'opacity 0.15s ease',
+    '.music-list-table-row:hover &': {
+      opacity: 1,
+    },
   };
 }

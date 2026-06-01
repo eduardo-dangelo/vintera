@@ -18,12 +18,18 @@ export function AlbumListView({ albums, locale }: AlbumListViewProps) {
 
   return (
     <MusicListTable
+      locale={locale}
       rows={albums.map(album => ({
         id: album.id,
         coverImageUrl: album.coverImageUrl,
         coverType: 'album' as const,
         title: album.name,
         subtitle: `Album • ${album.projectName}`,
+        menuTarget: {
+          kind: 'album',
+          id: album.id,
+          href: `/${locale}/albums/${album.id}`,
+        },
         statPrimary: (
           <MusicStatBadge
             count={album.songCount}

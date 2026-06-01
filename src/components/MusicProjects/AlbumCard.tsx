@@ -19,7 +19,9 @@ import {
   getMusicCardTitleVariant,
 } from './musicCardStyles';
 import { MusicCoverImage } from './MusicCoverImage';
+import { MusicItemActionsButton } from './MusicItemActionsButton';
 import { MusicStatBadge } from './MusicStatBadge';
+import { useMusicItemContextMenu } from './useMusicItemContextMenu';
 
 type AlbumCardProps = {
   album: AlbumListItem;
@@ -31,70 +33,93 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
   const t = useTranslations('MusicProjects');
   const compact = cardSize === 'small';
 
+  const menuTarget = {
+    kind: 'album' as const,
+    id: album.id,
+    href: `/${locale}/albums/${album.id}`,
+  };
+
+  const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);
+
   return (
-    <Card
-      elevation={0}
-      sx={{
-        height: '100%',
-        borderRadius: 3,
-        overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-        ...getMusicCardHoverSx(),
-      }}
-    >
-      <CardActionArea
-        component={Link}
-        href={`/${locale}/albums/${album.id}`}
-        sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
+    <>
+      <Card
+        elevation={0}
+        onContextMenu={e => openFromContextMenu(e, menuTarget)}
+        sx={{
+          height: '100%',
+          borderRadius: 3,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          position: 'relative',
+          ...getMusicCardHoverSx(),
+        }}
       >
-        <CardContent
+        <Box
           sx={{
-            p: getMusicCardContentPadding(cardSize),
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 2,
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
           }}
         >
-          <MusicCoverImage
-            imageUrl={album.coverImageUrl}
-            type="album"
-            size={getMusicCardCoverSize(cardSize)}
-          />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography
-              variant={getMusicCardTitleVariant(cardSize)}
-              sx={{
-                fontWeight: 700,
-                mb: cardSize === 'small' ? 0.5 : 1,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {album.name}
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                mb: cardSize === 'small' ? 1 : 1.5,
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {album.projectName}
-            </Typography>
-            <MusicStatBadge
-              count={album.songCount}
-              label={t('songs_stat_label')}
-              compact={compact}
+          <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
+        </Box>
+        <CardActionArea
+          component={Link}
+          href={menuTarget.href}
+          sx={{ height: '100%', ...getMusicCardActionAreaSx() }}
+        >
+          <CardContent
+            sx={{
+              p: getMusicCardContentPadding(cardSize),
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 2,
+            }}
+          >
+            <MusicCoverImage
+              imageUrl={album.coverImageUrl}
+              type="album"
+              size={getMusicCardCoverSize(cardSize)}
             />
-          </Box>
-        </CardContent>
-      </CardActionArea>
-    </Card>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant={getMusicCardTitleVariant(cardSize)}
+                sx={{
+                  fontWeight: 700,
+                  mb: cardSize === 'small' ? 0.5 : 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {album.name}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  mb: cardSize === 'small' ? 1 : 1.5,
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {album.projectName}
+              </Typography>
+              <MusicStatBadge
+                count={album.songCount}
+                label={t('songs_stat_label')}
+                compact={compact}
+              />
+            </Box>
+          </CardContent>
+        </CardActionArea>
+      </Card>
+      {renderMenus()}
+    </>
   );
 }

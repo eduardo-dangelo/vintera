@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import type { MusicItemKind } from './MusicProjects/musicItemMenuTypes';
 import { SignOutButton } from '@clerk/nextjs';
 import {
   Album as AlbumIcon,
@@ -36,6 +37,7 @@ import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
+import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
 import { TopbarActions } from './TopbarActions';
 
 type SidebarItem = {
@@ -43,6 +45,8 @@ type SidebarItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ sx?: object }>;
+  kind: MusicItemKind;
+  id: number;
 };
 
 type SidebarSectionProps = {
@@ -53,6 +57,7 @@ type SidebarSectionProps = {
   isActive: (href: string) => boolean;
   onItemClick: (href: string) => void;
   onItemHover: (href: string | null) => void;
+  onItemContextMenu: (event: React.MouseEvent, item: SidebarItem) => void;
 };
 
 function SidebarSection({
@@ -63,6 +68,7 @@ function SidebarSection({
   isActive,
   onItemClick,
   onItemHover,
+  onItemContextMenu,
 }: SidebarSectionProps) {
   const theme = useTheme();
   const { playHoverSound } = useHoverSound();
@@ -166,6 +172,7 @@ function SidebarSection({
                     }}
                     onMouseLeave={() => onItemHover(null)}
                     onClick={() => onItemClick(item.href)}
+                    onContextMenu={e => onItemContextMenu(e, item)}
                     sx={rowSx(active)}
                   >
                     <ListItemIcon sx={{ minWidth: 24 }}>
@@ -223,6 +230,15 @@ export function Sidebar({
 
   const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
   const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale);
+  const { openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);
+
+  const handleItemContextMenu = (event: React.MouseEvent, item: SidebarItem) => {
+    openFromContextMenu(event, {
+      kind: item.kind,
+      id: item.id,
+      href: item.href,
+    });
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -255,6 +271,8 @@ export function Sidebar({
     href: `/${locale}/projects/${project.id}`,
     label: project.name,
     icon: LibraryMusicIcon,
+    kind: 'project' as const,
+    id: project.id,
   })) ?? [];
 
   const songItems: SidebarItem[] = recentsData?.songs.map(song => ({
@@ -262,6 +280,8 @@ export function Sidebar({
     href: `/${locale}/songs/${song.id}`,
     label: `${song.title} (${song.projectName})`,
     icon: MusicNoteIcon,
+    kind: 'song' as const,
+    id: song.id,
   })) ?? [];
 
   const albumItems: SidebarItem[] = recentsData?.albums.map(album => ({
@@ -269,6 +289,8 @@ export function Sidebar({
     href: `/${locale}/albums/${album.id}`,
     label: `${album.name} (${album.projectName})`,
     icon: AlbumIcon,
+    kind: 'album' as const,
+    id: album.id,
   })) ?? [];
 
   const drawerContent = (
@@ -307,6 +329,7 @@ export function Sidebar({
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}
+            onItemContextMenu={handleItemContextMenu}
           />
         )}
 
@@ -319,6 +342,7 @@ export function Sidebar({
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}
+            onItemContextMenu={handleItemContextMenu}
           />
         )}
 
@@ -331,6 +355,7 @@ export function Sidebar({
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}
+            onItemContextMenu={handleItemContextMenu}
           />
         )}
       </Box>
@@ -379,6 +404,7 @@ export function Sidebar({
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', bgcolor: theme.palette.background.default, overflow: 'hidden' }}>
+      {renderMenus()}
       {isMobile && (
         <AppBar
           position="fixed"

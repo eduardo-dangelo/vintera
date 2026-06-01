@@ -58,6 +58,9 @@ export type CommonPopoverProps = {
 
 const POSITION_ANCHOR_ORIGIN: PopoverOrigin = { vertical: 'center', horizontal: 'left' };
 const POSITION_TRANSFORM_ORIGIN: PopoverOrigin = { vertical: 'center', horizontal: 'left' };
+/** Popover top-left at anchor point; anchor top should be offset below the cursor. */
+export const POSITION_BELOW_ANCHOR_ORIGIN: PopoverOrigin = { vertical: 'top', horizontal: 'left' };
+export const POSITION_BELOW_TRANSFORM_ORIGIN: PopoverOrigin = { vertical: 'top', horizontal: 'left' };
 
 export function Popover({
   open,
@@ -118,7 +121,7 @@ export function Popover({
 
   const anchorOrigin = useMemo(() => {
     if (usePositionAnchor) {
-      return POSITION_ANCHOR_ORIGIN;
+      return anchorOriginOverride ?? POSITION_ANCHOR_ORIGIN;
     }
     if (anchorOriginOverride) {
       return anchorOriginOverride;
@@ -131,7 +134,7 @@ export function Popover({
 
   const transformOrigin = useMemo(() => {
     if (usePositionAnchor) {
-      return POSITION_TRANSFORM_ORIGIN;
+      return transformOriginOverride ?? POSITION_TRANSFORM_ORIGIN;
     }
     if (transformOriginOverride) {
       return transformOriginOverride;
@@ -146,6 +149,10 @@ export function Popover({
     const base: SxProps<Theme> = {
       borderRadius: 2,
       marginLeft: usePositionAnchor ? `${POPOVER_GAP}px` : (anchorOrigin.horizontal === 'right' ? `${POPOVER_GAP}px` : undefined),
+      marginTop:
+        usePositionAnchor && anchorOrigin.vertical === 'top' && transformOrigin.vertical === 'top'
+          ? `${POPOVER_GAP}px`
+          : undefined,
       marginRight: usePositionAnchor ? undefined : (anchorOrigin.horizontal === 'left' ? `${POPOVER_GAP}px` : undefined),
       ...(isAutoWidth && { width: 'fit-content' }),
       ...(minWidth != null && { minWidth }),
@@ -186,7 +193,18 @@ export function Popover({
     return typeof paperSx === 'function'
       ? (theme: Theme) => ({ ...base, ...paperSx(theme) })
       : { ...base, ...paperSx };
-  }, [effectiveShowArrow, anchorOrigin.horizontal, usePositionAnchor, arrowTop, minWidth, maxWidth, maxHeight, paperSx]);
+  }, [
+    effectiveShowArrow,
+    anchorOrigin.horizontal,
+    anchorOrigin.vertical,
+    transformOrigin.vertical,
+    usePositionAnchor,
+    arrowTop,
+    minWidth,
+    maxWidth,
+    maxHeight,
+    paperSx,
+  ]);
 
   return (
     <MuiPopover

@@ -117,12 +117,27 @@ export function getStickyBarContentSx(isStuck: boolean): SxProps<Theme> {
   };
 }
 
-export function getHeroTitleSx(hasHeroImage: boolean, isStuck: boolean): SxProps<Theme> {
+/** Light sticky glass bar needs the app palette, not hero-on-image styling. */
+export function isLightStickyHeroBar(
+  theme: Theme,
+  hasHeroImage: boolean,
+  isStuck: boolean,
+): boolean {
+  return theme.palette.mode === 'light' && hasHeroImage && isStuck;
+}
+
+export function getHeroTitleSx(
+  hasHeroImage: boolean,
+  isStuck: boolean,
+  theme: Theme,
+): SxProps<Theme> {
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isStuck);
+
   return {
     'fontWeight': 700,
     'minWidth': 0,
     'color': 'text.primary',
-    ...(hasHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
+    ...(onHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
     ...(isStuck
       ? {
           fontSize: { xs: '1.125rem', sm: '1.25rem' },
@@ -138,8 +153,11 @@ export function getHeroTitleSx(hasHeroImage: boolean, isStuck: boolean): SxProps
 export function getHeroToolbarWrapperSx(
   hasHeroImage: boolean,
   isStuck: boolean,
+  theme: Theme,
 ): SxProps<Theme> {
-  const heroOnImageSx = hasHeroImage
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isStuck);
+
+  const heroOnImageSx = onHeroImage
     ? {
         '& .MuiSvgIcon-root': {
           color: 'text.secondary !important',

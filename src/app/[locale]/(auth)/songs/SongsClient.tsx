@@ -16,7 +16,7 @@ import { SongCard } from '@/components/MusicProjects/SongCard';
 import { SongListView } from '@/components/MusicProjects/Views/SongListView';
 import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useSongs } from '@/queries/hooks/songs';
-import { filterBySearchQuery } from '@/utils/filterMusicListItems';
+import { filterByProjectIds, filterBySearchQuery } from '@/utils/filterMusicListItems';
 
 type SongsClientProps = {
   locale: string;
@@ -26,16 +26,21 @@ export function SongsClient({ locale }: SongsClientProps) {
   const t = useTranslations('MusicProjects');
   const { data: songs, isLoading, error } = useSongs(locale);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
   const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
 
-  const filteredSongs = useMemo(
-    () => filterBySearchQuery(
+  const filteredSongs = useMemo(() => {
+    const byProject = filterByProjectIds(
       songs ?? [],
+      selectedProjectIds,
+      song => song.musicProjectId,
+    );
+    return filterBySearchQuery(
+      byProject,
       searchQuery,
       s => [s.title, s.projectName, s.albumName].filter(Boolean).join(' '),
-    ),
-    [songs, searchQuery],
-  );
+    );
+  }, [songs, searchQuery, selectedProjectIds]);
 
   if (error) {
     return (
@@ -63,6 +68,9 @@ export function SongsClient({ locale }: SongsClientProps) {
                   cardSize={cardSize}
                   onViewModeChange={setViewMode}
                   onCardSizeChange={setCardSize}
+                  locale={locale}
+                  selectedProjectIds={selectedProjectIds}
+                  onSelectedProjectIdsChange={setSelectedProjectIds}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   searchPlaceholder="Search songs"
@@ -84,10 +92,12 @@ export function SongsClient({ locale }: SongsClientProps) {
                 description={t('songs_empty_description')}
               />
             )
-          : filteredSongs.length === 0 && searchQuery
+          : filteredSongs.length === 0 && (searchQuery || selectedProjectIds.length > 0)
             ? (
                 <Typography color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-                  {`No results for "${searchQuery}"`}
+                  {searchQuery
+                    ? `No results for "${searchQuery}"`
+                    : t('no_results_filter_songs')}
                 </Typography>
               )
             : viewMode === 'list'

@@ -65,7 +65,8 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
 
   const hasHeroImage = Boolean(heroImageSrc);
   const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
-  const barTheme = hasHeroImage ? heroDarkTheme : theme;
+  const useHeroBarTheme = hasHeroImage && !(theme.palette.mode === 'light' && isStuck);
+  const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
 
   const renderHeroImage = () => (
     heroImageSrc
@@ -108,12 +109,12 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
                 variant={isStuck ? 'h5' : 'h4'}
                 component="h1"
                 color="text.primary"
-                sx={getHeroTitleSx(hasHeroImage, isStuck)}
+                sx={getHeroTitleSx(hasHeroImage, isStuck, theme)}
               >
                 {title}
               </Typography>
               {toolbar && (
-                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, isStuck)}>
+                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, isStuck, theme)}>
                   {toolbar}
                 </Box>
               )}

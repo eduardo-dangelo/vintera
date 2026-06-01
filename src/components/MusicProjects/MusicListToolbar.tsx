@@ -5,6 +5,7 @@ import type { ListFolderCardSize, ListViewMode } from '@/utils/listViewPrefs';
 import { Box, useTheme } from '@mui/material';
 import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
 import { ListViewControls } from '@/components/common/ListViewControls';
+import { MusicListProjectFilter } from './MusicListProjectFilter';
 import { getToolbarIconButtonSx } from './musicListToolbarStyles';
 
 type MusicListToolbarProps = {
@@ -13,6 +14,9 @@ type MusicListToolbarProps = {
   onViewModeChange: (mode: ListViewMode) => void;
   onCardSizeChange: (size: ListFolderCardSize) => void;
   showViewControls?: boolean;
+  locale?: string;
+  selectedProjectIds?: number[];
+  onSelectedProjectIdsChange?: (ids: number[]) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   searchPlaceholder?: string;
@@ -25,6 +29,9 @@ export function MusicListToolbar({
   onViewModeChange,
   onCardSizeChange,
   showViewControls = true,
+  locale,
+  selectedProjectIds,
+  onSelectedProjectIdsChange,
   searchQuery,
   onSearchChange,
   searchPlaceholder = 'Search',
@@ -32,6 +39,9 @@ export function MusicListToolbar({
 }: MusicListToolbarProps) {
   const theme = useTheme();
   const iconButtonSx = getToolbarIconButtonSx(theme);
+  const showProjectFilter = locale != null
+    && selectedProjectIds != null
+    && onSelectedProjectIdsChange != null;
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
@@ -51,6 +61,14 @@ export function MusicListToolbar({
             }}
           />
         </>
+      )}
+      {showProjectFilter && (
+        <MusicListProjectFilter
+          locale={locale}
+          selectedProjectIds={selectedProjectIds}
+          onSelectedProjectIdsChange={onSelectedProjectIdsChange}
+          iconButtonSx={iconButtonSx as object}
+        />
       )}
       <CollapsibleSearch
         value={searchQuery}

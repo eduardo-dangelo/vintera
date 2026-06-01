@@ -95,6 +95,10 @@
     "back_to_songs": "Retour aux chansons",
     "back_to_albums": "Retour aux albums",
     "load_error": "Échec du chargement",
+    "filter_by_project": "Filtrer par projet",
+    "filter_projects_placeholder": "Sélectionner des projets",
+    "no_results_filter_songs": "Aucune chanson ne correspond aux projets sélectionnés",
+    "no_results_filter_albums": "Aucun album ne correspond aux projets sélectionnés",
     "release_date": "Date de sortie"
   },
   "Counter": {

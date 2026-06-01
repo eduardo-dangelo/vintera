@@ -95,6 +95,10 @@
     "back_to_songs": "Back to songs",
     "back_to_albums": "Back to albums",
     "load_error": "Failed to load",
+    "filter_by_project": "Filter by project",
+    "filter_projects_placeholder": "Select projects",
+    "no_results_filter_songs": "No songs match the selected projects",
+    "no_results_filter_albums": "No albums match the selected projects",
     "release_date": "Release date"
   },
   "Counter": {

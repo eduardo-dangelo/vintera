@@ -9,14 +9,15 @@ import {
   useTheme,
 } from '@mui/material';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createHeroDarkTheme,
   getHeroBackgroundSx,
+  getHeroBandSx,
   getHeroOverlaySx,
-  getHeroRootSx,
   getHeroTitleSx,
   getHeroToolbarWrapperSx,
+  getStickyBarContentSx,
   getStickyBarSx,
 } from './musicListPageHeaderStyles';
 
@@ -26,83 +27,100 @@ type MusicListPageHeaderProps = {
   heroImageSrc?: string;
 };
 
+const heroImageStyle = {
+  objectFit: 'cover' as const,
+  objectPosition: 'center',
+};
+
 export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListPageHeaderProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [isStuck, setIsStuck] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const stickyBarRef = useRef<HTMLDivElement>(null);
+
+  const topOffset = isMobile ? 56 : 0;
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) {
+    const stickyBar = stickyBarRef.current;
+    if (!stickyBar) {
       return undefined;
     }
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsStuck(!entry?.isIntersecting);
-      },
-      { threshold: 0 },
-    );
+    const scrollRoot = stickyBar.closest('main');
 
-    observer.observe(sentinel);
+    const updateStuck = () => {
+      const { top } = stickyBar.getBoundingClientRect();
+      setIsStuck(top <= topOffset + 0.5);
+    };
+
+    updateStuck();
+    scrollRoot?.addEventListener('scroll', updateStuck, { passive: true });
+    window.addEventListener('resize', updateStuck);
 
     return () => {
-      observer.disconnect();
+      scrollRoot?.removeEventListener('scroll', updateStuck);
+      window.removeEventListener('resize', updateStuck);
     };
-  }, []);
+  }, [topOffset]);
 
   const hasHeroImage = Boolean(heroImageSrc);
   const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
-  const barTheme = isStuck ? theme : heroDarkTheme;
+  const barTheme = hasHeroImage ? heroDarkTheme : theme;
 
-  return (
-    <Box sx={getHeroRootSx()}>
-      <Box sx={getHeroBackgroundSx(theme)}>
-        {heroImageSrc && (
+  const renderHeroImage = () => (
+    heroImageSrc
+      ? (
           <Image
             src={heroImageSrc}
             alt=""
             fill
             priority
             sizes="100vw"
-            style={{
-              objectFit: 'cover',
-              objectPosition: 'center',
-            }}
+            style={heroImageStyle}
           />
-        )}
+        )
+      : null
+  );
+
+  return (
+    <Fragment>
+      <Box sx={getHeroBandSx()}>
+        <Box sx={getHeroBackgroundSx(theme)}>
+          {renderHeroImage()}
+        </Box>
+        <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
       </Box>
-      <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
-      <Box ref={sentinelRef} sx={{ height: 1, flexShrink: 0 }} />
-      <Box sx={getStickyBarSx(theme, isMobile, isStuck)}>
-        <ThemeProvider theme={barTheme}>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 2,
-              flexWrap: 'wrap',
-              width: '100%',
-            }}
-          >
-            <Typography
-              variant="h4"
-              component="h1"
-              color={isStuck ? undefined : 'text.primary'}
-              sx={getHeroTitleSx(hasHeroImage, isStuck)}
+
+      <Box ref={stickyBarRef} sx={getStickyBarSx(theme, isMobile, isStuck)}>
+        <Box sx={getStickyBarContentSx(isStuck)}>
+          <ThemeProvider theme={barTheme}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: isStuck ? 1.5 : 2,
+                flexWrap: 'wrap',
+                width: '100%',
+              }}
             >
-              {title}
-            </Typography>
-            {toolbar && (
-              <Box sx={getHeroToolbarWrapperSx(isStuck)}>
-                {toolbar}
-              </Box>
-            )}
-          </Box>
-        </ThemeProvider>
+              <Typography
+                variant={isStuck ? 'h5' : 'h4'}
+                component="h1"
+                color="text.primary"
+                sx={getHeroTitleSx(hasHeroImage, isStuck)}
+              >
+                {title}
+              </Typography>
+              {toolbar && (
+                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, isStuck)}>
+                  {toolbar}
+                </Box>
+              )}
+            </Box>
+          </ThemeProvider>
+        </Box>
       </Box>
-    </Box>
+    </Fragment>
   );
 }

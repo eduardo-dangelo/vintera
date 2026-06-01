@@ -1,5 +1,8 @@
 import type { SxProps, Theme } from '@mui/material/styles';
-import { createTheme } from '@mui/material/styles';
+import { alpha, createTheme } from '@mui/material/styles';
+
+/** Overlap of sticky bar onto hero band (title sits on hero bottom). */
+export const STICKY_BAR_OVERLAP = { xs: 72, md: 80 } as const;
 
 export function createHeroDarkTheme(baseTheme: Theme): Theme {
   return createTheme(baseTheme, {
@@ -21,16 +24,14 @@ export function createHeroDarkTheme(baseTheme: Theme): Theme {
   });
 }
 
-export function getHeroRootSx(): SxProps<Theme> {
+export function getHeroBandSx(): SxProps<Theme> {
   return {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
-    minHeight: { xs: 220, md: 280 },
-    mb: 4,
     mx: { xs: -2, sm: -3 },
     width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+    position: 'relative',
+    height: { xs: 220, md: 280 },
+    overflow: 'hidden',
+    zIndex: 0,
   };
 }
 
@@ -64,60 +65,134 @@ export function getHeroOverlaySx(theme: Theme, hasHeroImage: boolean): SxProps<T
   };
 }
 
-export function getHeroTitleSx(hasHeroImage: boolean, isStuck: boolean): SxProps<Theme> {
-  return {
-    fontWeight: 700,
-    minWidth: 0,
-    ...(!isStuck
-      ? {
-          color: 'text.primary',
-          ...(hasHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
-        }
-      : {}),
-  };
-}
-
-export function getHeroToolbarWrapperSx(isStuck: boolean): SxProps<Theme> {
-  if (isStuck) {
-    return { flexShrink: 0 };
-  }
-
-  return {
-    'flexShrink': 0,
-    '& .MuiSvgIcon-root': {
-      color: 'text.secondary !important',
-    },
-    '& > div > .MuiBox-root:nth-of-type(2)': {
-      bgcolor: 'rgba(255, 255, 255, 0.2)',
-    },
-  };
-}
-
 export function getStickyBarSx(
   theme: Theme,
   isMobile: boolean,
   isStuck: boolean,
 ): SxProps<Theme> {
   return {
+    mx: { xs: -2, sm: -3 },
+    width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
     position: 'sticky',
     top: isMobile ? 56 : 0,
-    zIndex: theme.zIndex.appBar - 2,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 2,
-    flexWrap: 'wrap',
-    px: { xs: 2, sm: 3 },
-    py: 2,
+    zIndex: theme.zIndex.appBar - 1,
+    mt: {
+      xs: `-${STICKY_BAR_OVERLAP.xs}px`,
+      md: `-${STICKY_BAR_OVERLAP.md}px`,
+    },
+    mb: 4,
+    ...(isStuck ? getStickyHeaderGlassSx(theme) : {}),
+  };
+}
+
+/**
+ * Frosted glass on the full sticky bar so backdrop-filter blurs scrolling list content.
+ * Must be applied to the sticky root — not a child with opaque layers behind it.
+ */
+export function getStickyHeaderGlassSx(theme: Theme): SxProps<Theme> {
+  const isLight = theme.palette.mode === 'light';
+
+  return {
+    bgcolor: isLight
+      ? alpha(theme.palette.background.default, 0.55)
+      : alpha(theme.palette.background.default, 0.6),
+    backdropFilter: 'blur(12px) saturate(1.15)',
+    WebkitBackdropFilter: 'blur(12px) saturate(1.15)',
+  };
+}
+
+export function getStickyBarContentSx(isStuck: boolean): SxProps<Theme> {
+  return {
+    'position': 'relative',
+    'display': 'flex',
+    'justifyContent': 'space-between',
+    'alignItems': 'center',
+    'gap': isStuck ? 1.5 : 2,
+    'flexWrap': 'wrap',
+    'px': { xs: 2, sm: 3 },
+    'py': isStuck ? 1 : 2,
+    '@media (prefers-reduced-motion: no-preference)': {
+      transition: 'padding 0.2s ease, gap 0.2s ease',
+    },
+  };
+}
+
+export function getHeroTitleSx(hasHeroImage: boolean, isStuck: boolean): SxProps<Theme> {
+  return {
+    'fontWeight': 700,
+    'minWidth': 0,
+    'color': 'text.primary',
+    ...(hasHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
     ...(isStuck
       ? {
-          backdropFilter: 'blur(2px)',
-          bgcolor: theme.palette.mode === 'light'
-            ? 'rgba(248, 249, 250, 0.8)'
-            : 'rgba(37, 37, 38, 0.8)',
+          fontSize: { xs: '1.125rem', sm: '1.25rem' },
+          lineHeight: 1.25,
         }
-      : {
-          bgcolor: 'transparent',
-        }),
+      : {}),
+    '@media (prefers-reduced-motion: no-preference)': {
+      transition: 'font-size 0.2s ease, line-height 0.2s ease',
+    },
+  };
+}
+
+export function getHeroToolbarWrapperSx(
+  hasHeroImage: boolean,
+  isStuck: boolean,
+): SxProps<Theme> {
+  const heroOnImageSx = hasHeroImage
+    ? {
+        '& .MuiSvgIcon-root': {
+          color: 'text.secondary !important',
+        },
+        '& > div > .MuiBox-root:nth-of-type(2)': {
+          bgcolor: 'rgba(255, 255, 255, 0.2)',
+        },
+      }
+    : {};
+
+  const compactToolbarSx = isStuck
+    ? {
+        '& .MuiButton-root': {
+          minHeight: 30,
+          py: 0.375,
+          px: 1.25,
+          fontSize: '0.8125rem',
+        },
+        '& .MuiButton-startIcon > *:nth-of-type(1)': {
+          fontSize: 16,
+        },
+        '& .MuiIconButton-root': {
+          height: 26,
+          width: 26,
+        },
+        '& .MuiIconButton-root .MuiSvgIcon-root': {
+          fontSize: 15,
+        },
+        '& .MuiToggleButton-root': {
+          py: 0.25,
+          px: 0.625,
+        },
+        '& .MuiToggleButton-root .MuiSvgIcon-root': {
+          fontSize: 15,
+        },
+        '& .MuiToggleButtonGroup-root': {
+          height: 26,
+        },
+        '& > div > .MuiBox-root:nth-of-type(2)': {
+          height: 16,
+          mx: 0.5,
+        },
+      }
+    : {};
+
+  return {
+    'flexShrink': 0,
+    ...heroOnImageSx,
+    ...compactToolbarSx,
+    '@media (prefers-reduced-motion: no-preference)': {
+      '& .MuiButton-root, & .MuiIconButton-root, & .MuiToggleButton-root': {
+        transition: 'min-height 0.2s ease, padding 0.2s ease, font-size 0.2s ease',
+      },
+    },
   };
 }

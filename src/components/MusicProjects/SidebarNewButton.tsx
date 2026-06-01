@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
+import { glassPaperSx } from '@/utils/glassPaperStyles';
 import { CreateAlbumDialog } from './CreateAlbumDialog';
 import { CreateProjectDialog } from './CreateProjectDialog';
 import { CreateSongDialog } from './CreateSongDialog';
@@ -122,10 +123,11 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{
           paper: {
-            sx: {
+            sx: theme => ({
+              ...glassPaperSx(theme),
               minWidth: anchorEl?.offsetWidth ?? undefined,
               mt: 0.5,
-            },
+            }),
           },
         }}
       >

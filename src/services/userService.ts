@@ -10,6 +10,7 @@ export type UserData = {
   imageUrl?: string | null;
   theme?: string;
   hoverSoundEnabled?: string;
+  hoverSoundVolume?: string;
   currency?: string;
 };
 
@@ -27,6 +28,7 @@ export class UserService {
         imageUrl: userData.imageUrl || null,
         theme: userData.theme || 'system',
         hoverSoundEnabled: userData.hoverSoundEnabled || 'true',
+        hoverSoundVolume: userData.hoverSoundVolume || '100',
         currency: userData.currency || 'GBP',
         createdAt: new Date(),
         updatedAt: new Date(),

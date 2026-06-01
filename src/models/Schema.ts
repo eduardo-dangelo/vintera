@@ -38,6 +38,7 @@ export const usersSchema = pgTable('users', {
     .notNull(),
   theme: text('theme').notNull().default('light'),
   hoverSoundEnabled: text('hover_sound_enabled').notNull().default('true'),
+  hoverSoundVolume: text('hover_sound_volume').notNull().default('100'),
   currency: text('currency').notNull().default('GBP'),
 });
 

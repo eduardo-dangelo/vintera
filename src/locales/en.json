@@ -168,10 +168,10 @@
     "meta_title": "Settings",
     "page_title": "Settings",
     "page_description": "Manage your account settings and preferences",
-    "sound_settings_title": "Sound Settings",
-    "hover_sound_description": "Play a subtle sound when hovering over buttons and links",
     "hover_sound_label": "Hover Sound",
-    "theme_settings_title": "Appearance",
+    "hover_sound_volume_label": "Hover sound volume",
+    "hover_sound_mute": "Mute hover sound",
+    "hover_sound_unmute": "Unmute hover sound",
     "theme_light": "Light mode",
     "theme_dark": "Dark mode"
   },

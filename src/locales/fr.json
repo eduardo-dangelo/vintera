@@ -167,10 +167,10 @@
     "meta_title": "Paramètres",
     "page_title": "Paramètres",
     "page_description": "Gérez les paramètres et préférences de votre compte",
-    "sound_settings_title": "Paramètres sonores",
-    "hover_sound_description": "Jouer un son discret au survol des boutons et des liens",
     "hover_sound_label": "Son au survol",
-    "theme_settings_title": "Apparence",
+    "hover_sound_volume_label": "Volume du son au survol",
+    "hover_sound_mute": "Couper le son au survol",
+    "hover_sound_unmute": "Réactiver le son au survol",
     "theme_light": "Mode clair",
     "theme_dark": "Mode sombre"
   },

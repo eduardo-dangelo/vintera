@@ -20,6 +20,7 @@ export async function GET() {
     return NextResponse.json({
       theme: user.theme || 'light',
       hoverSoundEnabled: user.hoverSoundEnabled || 'true',
+      hoverSoundVolume: user.hoverSoundVolume || '100',
       currency: user.currency || 'GBP',
     });
   } catch (error) {
@@ -37,11 +38,16 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { theme, hoverSoundEnabled, currency } = body;
+    const { theme, hoverSoundEnabled, hoverSoundVolume, currency } = body;
 
     const validThemes = ['light', 'dark', 'system'];
     const validHoverSoundEnabled = ['true', 'false'];
     const validCurrencies = ['GBP', 'EUR', 'USD'];
+
+    const isValidHoverSoundVolume = (value: string) => {
+      const parsed = Number.parseInt(value, 10);
+      return !Number.isNaN(parsed) && parsed >= 0 && parsed <= 100;
+    };
 
     if (theme && !validThemes.includes(theme)) {
       return NextResponse.json({ error: 'Invalid theme' }, { status: 400 });
@@ -49,6 +55,9 @@ export async function PATCH(request: NextRequest) {
 
     if (hoverSoundEnabled && !validHoverSoundEnabled.includes(hoverSoundEnabled)) {
       return NextResponse.json({ error: 'Invalid hover sound enabled value' }, { status: 400 });
+    }
+    if (hoverSoundVolume != null && !isValidHoverSoundVolume(String(hoverSoundVolume))) {
+      return NextResponse.json({ error: 'Invalid hover sound volume value' }, { status: 400 });
     }
     if (currency && !validCurrencies.includes(currency)) {
       return NextResponse.json({ error: 'Invalid currency' }, { status: 400 });
@@ -60,6 +69,9 @@ export async function PATCH(request: NextRequest) {
     }
     if (hoverSoundEnabled) {
       updateData.hoverSoundEnabled = hoverSoundEnabled;
+    }
+    if (hoverSoundVolume != null) {
+      updateData.hoverSoundVolume = String(hoverSoundVolume);
     }
     if (currency) {
       updateData.currency = currency;
@@ -80,6 +92,7 @@ export async function PATCH(request: NextRequest) {
       preferences: {
         theme: updatedUser.theme,
         hoverSoundEnabled: updatedUser.hoverSoundEnabled,
+        hoverSoundVolume: updatedUser.hoverSoundVolume,
         currency: updatedUser.currency,
       },
     });

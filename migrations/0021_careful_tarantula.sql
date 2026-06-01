@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "hover_sound_volume" text DEFAULT '100' NOT NULL;

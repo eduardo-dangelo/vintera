@@ -151,6 +151,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             textPrimary: '#f4f4f5',
             textSecondary: 'rgba(244, 244, 245, 0.65)',
           },
+          gradients: {
+            primary: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
+          },
         },
       }),
     [mode],

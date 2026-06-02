@@ -17,6 +17,7 @@ import { alpha } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 import { Popover } from '@/components/common/Popover';
+import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
 
@@ -42,7 +43,7 @@ const projectFilterInputSx = {
 const filterBadgeSx = {
   'cursor': 'pointer',
   '& .MuiBadge-badge': {
-    bgcolor: 'primary.main',
+    background: PRIMARY_GRADIENT,
     color: 'white',
     fontSize: '0.625rem',
     fontWeight: 600,

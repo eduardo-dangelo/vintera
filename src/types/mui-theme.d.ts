@@ -7,12 +7,18 @@ declare module '@mui/material/styles' {
       textPrimary: string;
       textSecondary: string;
     };
+    gradients: {
+      primary: string;
+    };
   }
   interface PaletteOptions {
     sidebar?: {
       background?: string;
       textPrimary?: string;
       textSecondary?: string;
+    };
+    gradients?: {
+      primary?: string;
     };
   }
 }

@@ -36,6 +36,7 @@ import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
+import { GradientIcon } from './MusicProjects/GradientIcon';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
 import { TopbarActions } from './TopbarActions';
@@ -74,7 +75,6 @@ function SidebarSection({
   const { playHoverSound } = useHoverSound();
 
   const menuItemIconColor = 'rgba(200, 200, 210, 0.9)';
-  const menuItemIconColorActive = 'rgba(244, 244, 245, 0.95)';
 
   const rowSx = (active: boolean) => ({
     'borderRadius': 1,
@@ -89,7 +89,7 @@ function SidebarSection({
       'bgcolor': 'rgba(255, 255, 255, 0.06)',
       'color': theme.palette.sidebar.textPrimary,
       '& .MuiListItemIcon-root svg': {
-        color: menuItemIconColorActive,
+        ...(active ? {} : { color: 'rgba(244, 244, 245, 0.95)' }),
       },
     },
   });
@@ -176,12 +176,22 @@ function SidebarSection({
                     sx={rowSx(active)}
                   >
                     <ListItemIcon sx={{ minWidth: 24 }}>
-                      <Icon
-                        sx={{
-                          fontSize: 16,
-                          color: active ? menuItemIconColorActive : menuItemIconColor,
-                        }}
-                      />
+                      {active
+                        ? (
+                            <GradientIcon
+                              kind={item.kind}
+                              fontSize={16}
+                              sx={{ display: 'block' }}
+                            />
+                          )
+                        : (
+                            <Icon
+                              sx={{
+                                fontSize: 16,
+                                color: menuItemIconColor,
+                              }}
+                            />
+                          )}
                     </ListItemIcon>
                     <ListItemText
                       primary={item.label}

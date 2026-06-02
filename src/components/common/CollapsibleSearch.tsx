@@ -3,6 +3,7 @@
 import { Search as SearchIcon } from '@mui/icons-material';
 import { Badge, Box, IconButton, TextField, Tooltip } from '@mui/material';
 import { useRef, useState } from 'react';
+import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
 
 type CollapsibleSearchProps = {
   value: string;
@@ -76,7 +77,7 @@ export function CollapsibleSearch({
                 sx={{
                   'cursor': 'pointer',
                   '& .MuiBadge-badge': {
-                    bgcolor: 'primary.main',
+                    background: PRIMARY_GRADIENT,
                     color: 'white',
                     fontSize: '0.625rem',
                     fontWeight: 600,

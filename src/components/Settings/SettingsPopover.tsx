@@ -43,11 +43,15 @@ const settingsIconButtonSx = {
 
 const toggleIconButtonSx = (active: boolean) => ({
   'borderRadius': '6px',
-  'color': active ? 'primary.main' : 'text.secondary',
+  'color': 'text.primary',
   'bgcolor': active ? 'action.selected' : 'transparent',
   'transition': 'all 0.2s ease',
   '&:hover': {
+    color: 'text.primary',
     bgcolor: active ? 'action.selected' : 'action.hover',
+  },
+  '&.Mui-disabled': {
+    color: 'text.primary',
   },
 });
 

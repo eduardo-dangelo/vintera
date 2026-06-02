@@ -3,8 +3,17 @@ import { alpha } from '@mui/material/styles';
 
 export const glassPaperSx = (theme: Theme) => ({
   bgcolor: alpha(theme.palette.background.paper, 0.62),
-  backdropFilter: 'blur(4px)',
-  WebkitBackdropFilter: 'blur(4px)',
+  backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
+});
+
+export const globalTopbarGlassSx = (theme: Theme) => ({
+  bgcolor: alpha(
+    theme.palette.background.default,
+    theme.palette.mode === 'light' ? 0.55 : 0.6,
+  ),
+  backdropFilter: 'blur(6px) saturate(1.15)',
+  WebkitBackdropFilter: 'blur(6px) saturate(1.15)',
 });
 
 /** Matches context menu item typography (Sidebar / MusicItemContextMenu). */

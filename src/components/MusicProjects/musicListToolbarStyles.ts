@@ -11,8 +11,8 @@ export const primaryGradientSx: SxProps<Theme> = {
 
 export function getToolbarIconButtonSx(theme: Theme): SxProps<Theme> {
   return {
-    'height': 30,
-    'width': 30,
+    'height': { xs: 28, sm: 30 },
+    'width': { xs: 28, sm: 30 },
     'border': 'none',
     'bgcolor': 'transparent',
     'borderRadius': '6px',

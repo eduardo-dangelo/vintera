@@ -5,10 +5,10 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { globalTopbarGlassSx } from '@/utils/glassPaperStyles';
 import { Breadcrumb } from './Breadcrumb';
 import { useBreadcrumb } from './BreadcrumbContext';
 import { useGlobalTopbarContent } from './GlobalTopbarContentContext';
-import { TopbarActions } from './TopbarActions';
 
 export function GlobalTopbar() {
   const theme = useTheme();
@@ -38,13 +38,9 @@ export function GlobalTopbar() {
         alignItems: 'center',
         justifyContent: 'space-between',
         py: { xs: 0, lg: 2 },
-        backdropFilter: 'blur(2px)',
-        bgcolor: theme => (theme.palette.mode === 'light'
-          ? 'rgba(248, 249, 250, 0.85)'
-          : 'rgba(37, 37, 38, 0.85)'),
+        ...globalTopbarGlassSx(theme),
         zIndex: theme.zIndex.appBar - 1,
         gap: 1,
-        // border: '1px solid',
       }}
     >
       {/* Breadcrumb - left side, can wrap below on small screens */}
@@ -70,12 +66,6 @@ export function GlobalTopbar() {
         </Box>
       )}
 
-      {/* Actions - mobile only; desktop actions live in sidebar header */}
-      {!rightContent && (
-        <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', flexShrink: 0 }}>
-          <TopbarActions />
-        </Box>
-      )}
     </Box>
   );
 }

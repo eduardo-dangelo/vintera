@@ -44,7 +44,26 @@ export function MusicListToolbar({
     && onSelectedProjectIdsChange != null;
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, flexWrap: 'wrap' }}>
+    <Box
+      sx={{
+        'display': 'flex',
+        'alignItems': 'center',
+        'justifyContent': 'flex-end',
+        'gap': { xs: 0.75, sm: 1 },
+        'flexWrap': 'nowrap',
+        'minWidth': 0,
+        '& .MuiButton-root': {
+          minHeight: { xs: 30, sm: 34 },
+          py: { xs: 0.375, sm: 0.5 },
+          px: { xs: 1.25, sm: 1.5 },
+          fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+          whiteSpace: 'nowrap',
+        },
+        '& .MuiButton-startIcon > *:nth-of-type(1)': {
+          fontSize: { xs: 16, sm: 18 },
+        },
+      }}
+    >
       {showViewControls && (
         <>
           <ListViewControls

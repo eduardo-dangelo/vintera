@@ -1,5 +1,6 @@
 import type { SxProps, Theme } from '@mui/material/styles';
-import { alpha, createTheme } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
+import { globalTopbarGlassSx } from '@/utils/glassPaperStyles';
 
 /** Overlap of sticky bar onto hero band (title sits on hero bottom). */
 export const STICKY_BAR_OVERLAP = { xs: 72, md: 80 } as const;
@@ -90,15 +91,7 @@ export function getStickyBarSx(
  * Must be applied to the sticky root — not a child with opaque layers behind it.
  */
 export function getStickyHeaderGlassSx(theme: Theme): SxProps<Theme> {
-  const isLight = theme.palette.mode === 'light';
-
-  return {
-    bgcolor: isLight
-      ? alpha(theme.palette.background.default, 0.55)
-      : alpha(theme.palette.background.default, 0.6),
-    backdropFilter: 'blur(12px) saturate(1.15)',
-    WebkitBackdropFilter: 'blur(12px) saturate(1.15)',
-  };
+  return globalTopbarGlassSx(theme);
 }
 
 export function getStickyBarContentSx(isStuck: boolean): SxProps<Theme> {
@@ -128,17 +121,17 @@ export function isLightStickyHeroBar(
 
 export function getHeroTitleSx(
   hasHeroImage: boolean,
-  isStuck: boolean,
+  isCompact: boolean,
   theme: Theme,
 ): SxProps<Theme> {
-  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isStuck);
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isCompact);
 
   return {
     'fontWeight': 700,
     'minWidth': 0,
     'color': 'text.primary',
     ...(onHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
-    ...(isStuck
+    ...(isCompact
       ? {
           fontSize: { xs: '1.125rem', sm: '1.25rem' },
           lineHeight: 1.25,
@@ -152,10 +145,10 @@ export function getHeroTitleSx(
 
 export function getHeroToolbarWrapperSx(
   hasHeroImage: boolean,
-  isStuck: boolean,
+  isCompact: boolean,
   theme: Theme,
 ): SxProps<Theme> {
-  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isStuck);
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isCompact);
 
   const heroOnImageSx = onHeroImage
     ? {
@@ -168,7 +161,7 @@ export function getHeroToolbarWrapperSx(
       }
     : {};
 
-  const compactToolbarSx = isStuck
+  const compactToolbarSx = isCompact
     ? {
         '& .MuiButton-root': {
           minHeight: 30,

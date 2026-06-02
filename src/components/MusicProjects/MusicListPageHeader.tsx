@@ -37,6 +37,7 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [isStuck, setIsStuck] = useState(false);
   const stickyBarRef = useRef<HTMLDivElement>(null);
+  const useCompactHeader = isMobile || isStuck;
 
   const topOffset = isMobile ? 56 : 0;
 
@@ -100,21 +101,22 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: isStuck ? 1.5 : 2,
-                flexWrap: 'wrap',
+                gap: useCompactHeader ? 1.5 : 2,
+                flexWrap: isMobile ? 'nowrap' : 'wrap',
                 width: '100%',
+                minWidth: 0,
               }}
             >
               <Typography
-                variant={isStuck ? 'h5' : 'h4'}
+                variant={useCompactHeader ? 'h5' : 'h4'}
                 component="h1"
                 color="text.primary"
-                sx={getHeroTitleSx(hasHeroImage, isStuck, theme)}
+                sx={getHeroTitleSx(hasHeroImage, useCompactHeader, theme)}
               >
                 {title}
               </Typography>
               {toolbar && (
-                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, isStuck, theme)}>
+                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, useCompactHeader, theme)}>
                   {toolbar}
                 </Box>
               )}

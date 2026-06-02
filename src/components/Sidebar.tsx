@@ -32,6 +32,7 @@ import { useEffect, useState } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { useGetSidebarRecents } from '@/queries/hooks/sidebar';
+import { globalTopbarGlassSx } from '@/utils/glassPaperStyles';
 import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
@@ -325,7 +326,7 @@ export function Sidebar({
         </Box>
       )}
 
-      <Box sx={{ px: 1.25, py: 1.25, mt: isMobile ? 5 : 0 }}>
+      <Box sx={{ px: 1.25, py: 1.25, mt: isMobile ? 6 : 0 }}>
         <SidebarNewButton locale={locale} />
       </Box>
 
@@ -420,15 +421,11 @@ export function Sidebar({
           position="fixed"
           elevation={0}
           sx={{
-            bgcolor: mobileOpen
-              ? 'transparent'
-              : theme.palette.mode === 'light'
-                ? 'rgba(248, 249, 250, 0.8)'
-                : 'rgba(37, 37, 38, 0.8)',
+            ...(mobileOpen ? { bgcolor: 'transparent' } : globalTopbarGlassSx(theme)),
             display: { xs: 'block', lg: 'none' },
             zIndex: theme => theme.zIndex.drawer + 1,
             transition: 'background-color 0.3s ease',
-            backdropFilter: mobileOpen ? 'none' : 'blur(2px)',
+            ...(mobileOpen ? { backdropFilter: 'none', WebkitBackdropFilter: 'none' } : {}),
           }}
         >
           <Toolbar
@@ -449,7 +446,7 @@ export function Sidebar({
                 sx={{
                   mr: 0.5,
                   color: mobileOpen
-                    ? theme.palette.text.primary
+                    ? theme.palette.sidebar.textPrimary
                     : (theme.palette.mode === 'dark' ? theme.palette.text.primary : '#1a1a1a'),
                 }}
               >

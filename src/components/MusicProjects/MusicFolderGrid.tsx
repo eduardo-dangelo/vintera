@@ -21,6 +21,7 @@ export function MusicFolderGrid({ cardSize, items }: MusicFolderGridProps) {
 
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
+      {/* Keep cards non-virtualized for now; responsive multi-column cards have higher complexity. */}
       <TransitionGroup component={null}>
         {items.map(item => (
           <Collapse

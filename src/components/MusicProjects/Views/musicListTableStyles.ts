@@ -11,7 +11,16 @@ export function getMusicListTableContainerSx(): SxProps<Theme> {
   };
 }
 
-export function getMusicListTableRowSx(theme: Theme): SxProps<Theme> {
+type MusicListTableRowSxOptions = {
+  showDivider?: boolean;
+};
+
+export function getMusicListTableRowSx(
+  theme: Theme,
+  options?: MusicListTableRowSxOptions,
+): SxProps<Theme> {
+  const showDivider = options?.showDivider ?? true;
+
   return {
     'display': 'grid',
     'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr)) 36px`,
@@ -21,11 +30,8 @@ export function getMusicListTableRowSx(theme: Theme): SxProps<Theme> {
     'px': 1.5,
     'cursor': 'pointer',
     'transition': 'background-color 0.15s ease, color 0.15s ease',
-    'borderBottom': '1px solid',
+    'borderBottom': showDivider ? '1px solid' : 'none',
     'borderColor': 'divider',
-    '&:last-child': {
-      borderBottom: 'none',
-    },
     '&:hover': {
       'bgcolor': 'action.selected',
       '& .music-list-table-title': {

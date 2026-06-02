@@ -31,17 +31,23 @@ const heroImageStyle = {
   objectFit: 'cover' as const,
   objectPosition: 'center',
 };
+const TITLE_COLOR_EARLY_SWITCH_PX = 28;
 
 export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListPageHeaderProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const [isStuck, setIsStuck] = useState(false);
+  const [isHeroOutOfView, setIsHeroOutOfView] = useState(!heroImageSrc);
+  const [isHeroTextOutOfView, setIsHeroTextOutOfView] = useState(!heroImageSrc);
+  const heroBandRef = useRef<HTMLDivElement>(null);
   const stickyBarRef = useRef<HTMLDivElement>(null);
   const useCompactHeader = isMobile || isStuck;
+  const hasHeroImage = Boolean(heroImageSrc);
 
   const topOffset = isMobile ? 56 : 0;
 
   useEffect(() => {
+    const heroBand = heroBandRef.current;
     const stickyBar = stickyBarRef.current;
     if (!stickyBar) {
       return undefined;
@@ -49,24 +55,35 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
 
     const scrollRoot = stickyBar.closest('main');
 
-    const updateStuck = () => {
+    const updateHeaderState = () => {
       const { top } = stickyBar.getBoundingClientRect();
       setIsStuck(top <= topOffset + 0.5);
+
+      if (!hasHeroImage || !heroBand) {
+        setIsHeroOutOfView(true);
+        setIsHeroTextOutOfView(true);
+        return;
+      }
+
+      const heroBottom = heroBand.getBoundingClientRect().bottom;
+      setIsHeroOutOfView(heroBottom <= topOffset + 0.5);
+      setIsHeroTextOutOfView(heroBottom <= topOffset + TITLE_COLOR_EARLY_SWITCH_PX);
     };
 
-    updateStuck();
-    scrollRoot?.addEventListener('scroll', updateStuck, { passive: true });
-    window.addEventListener('resize', updateStuck);
+    const initialUpdateFrame = window.requestAnimationFrame(updateHeaderState);
+    scrollRoot?.addEventListener('scroll', updateHeaderState, { passive: true });
+    window.addEventListener('resize', updateHeaderState);
 
     return () => {
-      scrollRoot?.removeEventListener('scroll', updateStuck);
-      window.removeEventListener('resize', updateStuck);
+      window.cancelAnimationFrame(initialUpdateFrame);
+      scrollRoot?.removeEventListener('scroll', updateHeaderState);
+      window.removeEventListener('resize', updateHeaderState);
     };
-  }, [topOffset]);
+  }, [hasHeroImage, topOffset]);
 
-  const hasHeroImage = Boolean(heroImageSrc);
   const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
-  const useHeroBarTheme = hasHeroImage && !(theme.palette.mode === 'light' && isStuck);
+  const useHeroBarTheme = hasHeroImage && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
+  const showStickyGlass = hasHeroImage ? isHeroOutOfView : isStuck;
   const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
 
   const renderHeroImage = () => (
@@ -86,14 +103,14 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
 
   return (
     <Fragment>
-      <Box sx={getHeroBandSx()}>
+      <Box ref={heroBandRef} sx={getHeroBandSx()}>
         <Box sx={getHeroBackgroundSx(theme)}>
           {renderHeroImage()}
         </Box>
         <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
       </Box>
 
-      <Box ref={stickyBarRef} sx={getStickyBarSx(theme, isMobile, isStuck)}>
+      <Box ref={stickyBarRef} sx={getStickyBarSx(theme, isMobile, showStickyGlass)}>
         <Box sx={getStickyBarContentSx(isStuck)}>
           <ThemeProvider theme={barTheme}>
             <Box
@@ -111,12 +128,12 @@ export function MusicListPageHeader({ title, toolbar, heroImageSrc }: MusicListP
                 variant={useCompactHeader ? 'h5' : 'h4'}
                 component="h1"
                 color="text.primary"
-                sx={getHeroTitleSx(hasHeroImage, useCompactHeader, theme)}
+                sx={getHeroTitleSx(hasHeroImage, useCompactHeader, isHeroTextOutOfView, theme)}
               >
                 {title}
               </Typography>
               {toolbar && (
-                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, useCompactHeader, theme)}>
+                <Box sx={getHeroToolbarWrapperSx(hasHeroImage, useCompactHeader, isHeroTextOutOfView, theme)}>
                   {toolbar}
                 </Box>
               )}

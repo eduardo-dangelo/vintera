@@ -69,7 +69,7 @@ export function getHeroOverlaySx(theme: Theme, hasHeroImage: boolean): SxProps<T
 export function getStickyBarSx(
   theme: Theme,
   isMobile: boolean,
-  isStuck: boolean,
+  showGlass: boolean,
 ): SxProps<Theme> {
   return {
     mx: { xs: -2, sm: -3 },
@@ -82,7 +82,7 @@ export function getStickyBarSx(
       md: `-${STICKY_BAR_OVERLAP.md}px`,
     },
     mb: 4,
-    ...(isStuck ? getStickyHeaderGlassSx(theme) : {}),
+    ...(showGlass ? getStickyHeaderGlassSx(theme) : {}),
   };
 }
 
@@ -114,17 +114,18 @@ export function getStickyBarContentSx(isStuck: boolean): SxProps<Theme> {
 export function isLightStickyHeroBar(
   theme: Theme,
   hasHeroImage: boolean,
-  isStuck: boolean,
+  isHeroOutOfView: boolean,
 ): boolean {
-  return theme.palette.mode === 'light' && hasHeroImage && isStuck;
+  return theme.palette.mode === 'light' && hasHeroImage && isHeroOutOfView;
 }
 
 export function getHeroTitleSx(
   hasHeroImage: boolean,
   isCompact: boolean,
+  isHeroOutOfView: boolean,
   theme: Theme,
 ): SxProps<Theme> {
-  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isCompact);
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isHeroOutOfView);
 
   return {
     'fontWeight': 700,
@@ -146,9 +147,10 @@ export function getHeroTitleSx(
 export function getHeroToolbarWrapperSx(
   hasHeroImage: boolean,
   isCompact: boolean,
+  isHeroOutOfView: boolean,
   theme: Theme,
 ): SxProps<Theme> {
-  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isCompact);
+  const onHeroImage = hasHeroImage && !isLightStickyHeroBar(theme, hasHeroImage, isHeroOutOfView);
 
   const heroOnImageSx = onHeroImage
     ? {

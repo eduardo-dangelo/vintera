@@ -18,10 +18,15 @@ import { CreateAlbumPopover } from './CreateAlbumPopover';
 import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
 import { CreateProjectPopover } from './CreateProjectPopover';
 import { CreateSongPopover } from './CreateSongPopover';
+import { GradientIcon } from './GradientIcon';
 import { primaryGradientSx } from './musicListToolbarStyles';
 
 const menuItemSx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.75,
   fontSize: '0.75rem',
+  px: 1,
   py: 0.45,
   minHeight: 28,
 } as const;
@@ -153,6 +158,7 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
             onMouseEnter={playHoverSound}
             sx={menuItemSx}
           >
+            <GradientIcon kind={type} fontSize={16} gradientOnHover aria-hidden />
             {label}
           </MenuItem>
         ))}

@@ -16,20 +16,41 @@ const ICON_PATHS: Record<GradientMusicIconKind, string> = {
 type GradientIconProps = {
   'kind': GradientMusicIconKind;
   'fontSize'?: number;
+  'gradientOnHover'?: boolean;
   'sx'?: SxProps<Theme>;
   'aria-hidden'?: boolean;
 };
 
-export function GradientIcon({ kind, fontSize = 44, sx, 'aria-hidden': ariaHidden }: GradientIconProps) {
+export function GradientIcon({
+  kind,
+  fontSize = 44,
+  gradientOnHover = false,
+  sx,
+  'aria-hidden': ariaHidden,
+}: GradientIconProps) {
   const gradientId = useId().replace(/:/g, '');
-  const fill = `url(#${gradientId})`;
+  const gradientFill = `url(#${gradientId})`;
 
   return (
     <SvgIcon
       aria-hidden={ariaHidden}
       sx={{
         fontSize,
-        fill: `${fill} !important`,
+        ...(gradientOnHover
+          ? {
+              'color': 'action.active',
+              'transition': 'fill 0.2s ease',
+              '& path': {
+                fill: 'currentColor',
+                transition: 'fill 0.2s ease',
+              },
+              '.MuiMenuItem-root:hover & path': {
+                fill: gradientFill,
+              },
+            }
+          : {
+              fill: `${gradientFill} !important`,
+            }),
         ...sx,
       }}
     >
@@ -39,7 +60,7 @@ export function GradientIcon({ kind, fontSize = 44, sx, 'aria-hidden': ariaHidde
           <stop offset="100%" stopColor={PRIMARY_GRADIENT_END} />
         </linearGradient>
       </defs>
-      <path d={ICON_PATHS[kind]} fill={fill} />
+      <path d={ICON_PATHS[kind]} fill={gradientOnHover ? undefined : gradientFill} />
     </SvgIcon>
   );
 }

@@ -78,7 +78,7 @@ export function SettingsPopover({ open, anchorEl, onClose }: SettingsPopoverProp
 
   const volumeOpen = Boolean(volumeAnchorEl);
   const isDarkMode = mode === 'dark';
-  const themeLabel = isDarkMode ? t('theme_dark') : t('theme_light');
+  const themeLabel = isDarkMode ? t('theme_light') : t('theme_dark');
   const showVolumeOffIcon = hoverSoundMuted || hoverSoundVolume === 0;
 
   const handlePopoverClose = () => {
@@ -194,7 +194,7 @@ export function SettingsPopover({ open, anchorEl, onClose }: SettingsPopoverProp
                 aria-pressed={isDarkMode}
                 sx={{ ...settingsIconButtonSx, ...toggleIconButtonSx(isDarkMode) }}
               >
-                {isDarkMode ? <DarkMode /> : <LightMode />}
+                {isDarkMode ? <LightMode /> : <DarkMode />}
               </IconButton>
             </Tooltip>
             <Typography

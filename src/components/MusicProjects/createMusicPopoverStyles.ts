@@ -59,6 +59,12 @@ export const createPopoverFieldSx: SxProps<Theme> = {
   '& .MuiInputLabel-root': {
     color: 'text.secondary',
   },
+  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'text.primary',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: 'text.primary',
+  },
 };
 
 export const createPopoverSelectSx: SxProps<Theme> = {

@@ -14,9 +14,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
-import { CreateAlbumDialog } from './CreateAlbumDialog';
-import { CreateProjectDialog } from './CreateProjectDialog';
-import { CreateSongDialog } from './CreateSongDialog';
+import { CreateAlbumPopover } from './CreateAlbumPopover';
+import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
+import { CreateProjectPopover } from './CreateProjectPopover';
+import { CreateSongPopover } from './CreateSongPopover';
 import { primaryGradientSx } from './musicListToolbarStyles';
 
 const menuItemSx = {
@@ -29,46 +30,56 @@ type SidebarNewButtonProps = {
   locale: string;
 };
 
-type DialogType = 'album' | 'project' | 'song' | null;
+type PopoverType = 'album' | 'project' | 'song' | null;
 
 export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
   const tMusic = useTranslations('MusicProjects');
   const router = useRouter();
   const { playHoverSound } = useHoverSound();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openDialog, setOpenDialog] = useState<DialogType>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [openPopover, setOpenPopover] = useState<PopoverType>(null);
+  const [popoverAnchorPosition, setPopoverAnchorPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
-  const menuOpen = Boolean(anchorEl);
+  const menuOpen = Boolean(menuAnchorEl);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     playHoverSound();
-    setAnchorEl(event.currentTarget);
+    setMenuAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = () => {
-    setAnchorEl(null);
+    setMenuAnchorEl(null);
   };
 
-  const handleSelect = (type: DialogType) => {
+  const handleSelect = (type: PopoverType, event: React.MouseEvent<HTMLElement>) => {
+    setPopoverAnchorPosition(getCreatePopoverAnchorPositionFromClick(event));
     handleMenuClose();
-    setOpenDialog(type);
+    setOpenPopover(type);
+  };
+
+  const handlePopoverClose = () => {
+    setOpenPopover(null);
+    setPopoverAnchorPosition(null);
   };
 
   const handleProjectCreated = (id: number) => {
-    setOpenDialog(null);
+    handlePopoverClose();
     router.push(`/${locale}/projects/${id}`);
     router.refresh();
   };
 
   const handleSongCreated = (songId: number) => {
-    setOpenDialog(null);
+    handlePopoverClose();
     router.push(`/${locale}/songs/${songId}`);
     router.refresh();
   };
 
   const handleAlbumCreated = (albumId: number) => {
-    setOpenDialog(null);
+    handlePopoverClose();
     router.push(`/${locale}/albums/${albumId}`);
     router.refresh();
   };
@@ -78,6 +89,10 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
     { type: 'project' as const, label: tMusic('select_project') },
     { type: 'song' as const, label: tMusic('song_detail_title') },
   ];
+
+  const popoverAnchorProps = {
+    anchorPosition: popoverAnchorPosition,
+  };
 
   return (
     <>
@@ -116,7 +131,7 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
       </Button>
 
       <Menu
-        anchorEl={anchorEl}
+        anchorEl={menuAnchorEl}
         open={menuOpen}
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -125,7 +140,7 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
           paper: {
             sx: theme => ({
               ...glassPaperSx(theme),
-              minWidth: anchorEl?.offsetWidth ?? undefined,
+              minWidth: menuAnchorEl?.offsetWidth ?? undefined,
               mt: 0.5,
             }),
           },
@@ -134,7 +149,7 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         {menuItems.map(({ type, label }) => (
           <MenuItem
             key={type}
-            onClick={() => handleSelect(type)}
+            onClick={e => handleSelect(type, e)}
             onMouseEnter={playHoverSound}
             sx={menuItemSx}
           >
@@ -143,23 +158,26 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         ))}
       </Menu>
 
-      <CreateProjectDialog
-        open={openDialog === 'project'}
-        onClose={() => setOpenDialog(null)}
+      <CreateProjectPopover
+        open={openPopover === 'project'}
+        onClose={handlePopoverClose}
         locale={locale}
         onCreated={handleProjectCreated}
+        {...popoverAnchorProps}
       />
-      <CreateSongDialog
-        open={openDialog === 'song'}
-        onClose={() => setOpenDialog(null)}
+      <CreateSongPopover
+        open={openPopover === 'song'}
+        onClose={handlePopoverClose}
         locale={locale}
         onCreated={handleSongCreated}
+        {...popoverAnchorProps}
       />
-      <CreateAlbumDialog
-        open={openDialog === 'album'}
-        onClose={() => setOpenDialog(null)}
+      <CreateAlbumPopover
+        open={openPopover === 'album'}
+        onClose={handlePopoverClose}
         locale={locale}
         onCreated={handleAlbumCreated}
+        {...popoverAnchorProps}
       />
     </>
   );

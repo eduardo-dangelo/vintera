@@ -13,8 +13,8 @@ export type SidebarRecents = {
   songs: Array<{
     id: number;
     title: string;
-    musicProjectId: number;
-    projectName: string;
+    musicProjectId: number | null;
+    projectName: string | null;
     updatedAt: Date;
   }>;
   albums: Array<{

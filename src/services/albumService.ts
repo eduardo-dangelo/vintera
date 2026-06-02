@@ -4,6 +4,7 @@ import { db } from '@/libs/DB';
 import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
 import { MusicProjectService } from '@/services/musicProjectService';
 import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
+import { toTitleCase } from '@/utils/toTitleCase';
 
 export class AlbumService {
   static async getAlbumsByUserId(userId: string) {
@@ -134,7 +135,7 @@ export class AlbumService {
       .insert(albumsSchema)
       .values({
         musicProjectId: projectId,
-        name: data.name,
+        name: toTitleCase(data.name),
         description: data.description,
         releaseDate: data.releaseDate ?? null,
         coverImageUrl: data.coverImageUrl || null,
@@ -161,7 +162,7 @@ export class AlbumService {
     };
 
     if (data.name !== undefined) {
-      updateData.name = data.name;
+      updateData.name = toTitleCase(data.name);
     }
     if (data.description !== undefined) {
       updateData.description = data.description;

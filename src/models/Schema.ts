@@ -240,7 +240,8 @@ export const albumsSchema = pgTable('albums', {
 
 export const songsSchema = pgTable('songs', {
   id: serial('id').primaryKey(),
-  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'cascade' }).notNull(),
+  userId: text('user_id').references(() => usersSchema.id, { onDelete: 'cascade' }).notNull(),
+  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'set null' }),
   albumId: integer('album_id').references(() => albumsSchema.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   trackNumber: integer('track_number'),

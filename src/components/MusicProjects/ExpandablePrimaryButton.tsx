@@ -6,7 +6,7 @@ import { primaryGradientSx } from './musicListToolbarStyles';
 
 type ExpandablePrimaryButtonProps = {
   label: string;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLElement>) => void;
   ariaLabel?: string;
 };
 
@@ -15,7 +15,7 @@ export function ExpandablePrimaryButton({ label, onClick, ariaLabel }: Expandabl
     <Button
       variant="contained"
       startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-      onClick={onClick}
+      onClick={e => onClick(e)}
       aria-label={ariaLabel ?? label}
       sx={{
         ...primaryGradientSx,

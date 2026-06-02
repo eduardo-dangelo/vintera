@@ -289,7 +289,7 @@ export function Sidebar({
   const songItems: SidebarItem[] = recentsData?.songs.map(song => ({
     key: `song-${song.id}`,
     href: `/${locale}/songs/${song.id}`,
-    label: `${song.title} (${song.projectName})`,
+    label: song.projectName ? `${song.title} (${song.projectName})` : song.title,
     icon: MusicNoteIcon,
     kind: 'song' as const,
     id: song.id,

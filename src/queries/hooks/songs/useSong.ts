@@ -5,7 +5,7 @@ import { songKeys } from '@/queries/keys';
 
 export type SongDetail = {
   id: number;
-  musicProjectId: number;
+  musicProjectId: number | null;
   albumId: number | null;
   title: string;
   trackNumber: number | null;
@@ -34,7 +34,7 @@ export function useSong(locale: string, songId: number) {
       if (!res.ok) {
         throw new Error('Failed to fetch song');
       }
-      return (await res.json()) as { song: SongDetail; project: SongProjectSummary };
+      return (await res.json()) as { song: SongDetail; project: SongProjectSummary | null };
     },
     enabled: songId > 0,
   });

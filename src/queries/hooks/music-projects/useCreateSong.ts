@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { albumKeys, musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
 
 type CreateSongInput = {
-  projectId: number;
+  projectId?: number;
   title: string;
   albumId?: number | null;
   lyrics?: string;
@@ -18,10 +18,23 @@ export function useCreateSong(locale: string) {
 
   return useMutation({
     mutationFn: async ({ projectId, ...data }: CreateSongInput) => {
-      const res = await fetch(`/${locale}/api/music-projects/${projectId}/songs`, {
+      if (projectId != null) {
+        const res = await fetch(`/${locale}/api/music-projects/${projectId}/songs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          throw new Error('Failed to create song');
+        }
+        const { song } = (await res.json()) as { song: { id: number } };
+        return song;
+      }
+
+      const res = await fetch(`/${locale}/api/songs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, projectId: null }),
       });
       if (!res.ok) {
         throw new Error('Failed to create song');
@@ -30,7 +43,9 @@ export function useCreateSong(locale: string) {
       return song;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
+      if (variables.projectId != null) {
+        queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
+      }
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
       queryClient.invalidateQueries({ queryKey: songKeys.list() });
       queryClient.invalidateQueries({ queryKey: albumKeys.list() });

@@ -33,7 +33,7 @@ export function SongsClient({ locale }: SongsClientProps) {
     const byProject = filterByProjectIds(
       songs ?? [],
       selectedProjectIds,
-      song => song.musicProjectId,
+      song => song.musicProjectId ?? -1,
     );
     return filterBySearchQuery(
       byProject,

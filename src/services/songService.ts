@@ -5,6 +5,11 @@ import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema'
 import { getAuthorsBySongIds } from '@/services/musicPeopleService';
 import { MusicProjectService } from '@/services/musicProjectService';
 import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
+import { toTitleCase } from '@/utils/toTitleCase';
+
+export type CreateSongForUserInput = SongInput & {
+  musicProjectId?: number | null;
+};
 
 export class SongService {
   static async getSongsByUserId(userId: string) {
@@ -21,9 +26,9 @@ export class SongService {
         coverImageUrl: sql<string | null>`coalesce(${albumsSchema.coverImageUrl}, ${musicProjectsSchema.coverImageUrl})`,
       })
       .from(songsSchema)
-      .innerJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
       .leftJoin(albumsSchema, eq(songsSchema.albumId, albumsSchema.id))
-      .where(eq(musicProjectsSchema.userId, userId))
+      .where(eq(songsSchema.userId, userId))
       .orderBy(desc(songsSchema.updatedAt));
 
     const songIds = songs.map(s => s.id);
@@ -45,11 +50,11 @@ export class SongService {
         projectSlug: musicProjectsSchema.slug,
       })
       .from(songsSchema)
-      .innerJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
       .where(
         and(
           eq(songsSchema.id, songId),
-          eq(musicProjectsSchema.userId, userId),
+          eq(songsSchema.userId, userId),
         ),
       )
       .limit(1);
@@ -60,12 +65,14 @@ export class SongService {
 
     return {
       song: omitStatus(row.song),
-      project: {
-        id: row.projectId,
-        name: row.projectName,
-        color: row.projectColor,
-        slug: row.projectSlug,
-      },
+      project: row.projectId != null
+        ? {
+            id: row.projectId,
+            name: row.projectName!,
+            color: row.projectColor,
+            slug: row.projectSlug!,
+          }
+        : null,
     };
   }
 
@@ -79,8 +86,8 @@ export class SongService {
         projectName: musicProjectsSchema.name,
       })
       .from(songsSchema)
-      .innerJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
-      .where(eq(musicProjectsSchema.userId, userId))
+      .leftJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .where(eq(songsSchema.userId, userId))
       .orderBy(desc(songsSchema.updatedAt))
       .limit(limit);
   }
@@ -125,6 +132,33 @@ export class SongService {
     return song ? omitStatus(song) : null;
   }
 
+  static async createSongForUser(userId: string, data: CreateSongForUserInput) {
+    const projectId = data.musicProjectId ?? null;
+
+    if (projectId != null) {
+      return this.createSong(projectId, data, userId);
+    }
+
+    const [song] = await db
+      .insert(songsSchema)
+      .values({
+        userId,
+        musicProjectId: null,
+        albumId: null,
+        title: toTitleCase(data.title),
+        trackNumber: data.trackNumber ?? null,
+        durationSeconds: data.durationSeconds ?? null,
+        key: data.key,
+        bpm: data.bpm ?? null,
+        lyrics: data.lyrics,
+        chordsOrTabs: data.chordsOrTabs,
+        metadata: data.metadata,
+      })
+      .returning();
+
+    return song ? omitStatus(song) : song;
+  }
+
   static async createSong(projectId: number, data: SongInput, userId: string) {
     const hasAccess = await this.verifyProjectAccess(projectId, userId);
     if (!hasAccess) {
@@ -150,9 +184,10 @@ export class SongService {
     const [song] = await db
       .insert(songsSchema)
       .values({
+        userId,
         musicProjectId: projectId,
         albumId: data.albumId ?? null,
-        title: data.title,
+        title: toTitleCase(data.title),
         trackNumber: data.trackNumber ?? null,
         durationSeconds: data.durationSeconds ?? null,
         key: data.key,
@@ -168,23 +203,28 @@ export class SongService {
 
   static async updateSong(
     songId: number,
-    projectId: number,
+    projectId: number | null,
     data: UpdateSongInput,
     userId: string,
   ) {
-    const existing = await this.getSongById(songId, projectId, userId);
+    const existing = projectId != null
+      ? await this.getSongById(songId, projectId, userId)
+      : (await this.getSongByIdForUser(songId, userId))?.song;
+
     if (!existing) {
       return null;
     }
 
-    if (data.albumId) {
+    const effectiveProjectId = existing.musicProjectId;
+
+    if (data.albumId && effectiveProjectId != null) {
       const [album] = await db
         .select()
         .from(albumsSchema)
         .where(
           and(
             eq(albumsSchema.id, data.albumId),
-            eq(albumsSchema.musicProjectId, projectId),
+            eq(albumsSchema.musicProjectId, effectiveProjectId),
           ),
         )
         .limit(1);
@@ -198,10 +238,10 @@ export class SongService {
     };
 
     if (data.title !== undefined) {
-      updateData.title = data.title;
+      updateData.title = toTitleCase(data.title);
     }
     if (data.albumId !== undefined) {
-      updateData.albumId = data.albumId;
+      updateData.albumId = effectiveProjectId != null ? data.albumId : null;
     }
     if (data.trackNumber !== undefined) {
       updateData.trackNumber = data.trackNumber;
@@ -228,19 +268,32 @@ export class SongService {
     const [updated] = await db
       .update(songsSchema)
       .set(updateData)
-      .where(eq(songsSchema.id, songId))
+      .where(
+        and(
+          eq(songsSchema.id, songId),
+          eq(songsSchema.userId, userId),
+        ),
+      )
       .returning();
 
     return updated ? omitStatus(updated) : null;
   }
 
-  static async deleteSong(songId: number, projectId: number, userId: string) {
-    const existing = await this.getSongById(songId, projectId, userId);
+  static async deleteSong(songId: number, projectId: number | null, userId: string) {
+    const existing = projectId != null
+      ? await this.getSongById(songId, projectId, userId)
+      : (await this.getSongByIdForUser(songId, userId))?.song;
+
     if (!existing) {
       return false;
     }
 
-    await db.delete(songsSchema).where(eq(songsSchema.id, songId));
+    await db.delete(songsSchema).where(
+      and(
+        eq(songsSchema.id, songId),
+        eq(songsSchema.userId, userId),
+      ),
+    );
     return true;
   }
 }

@@ -57,9 +57,9 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
   }
 
   const { song, project } = data;
-  const accent = project.color || '#7c3aed';
-  const projectHref = `/${locale}/projects/${project.id}`;
   const songsListHref = `/${locale}/songs`;
+  const accent = project?.color || '#7c3aed';
+  const projectHref = project ? `/${locale}/projects/${project.id}` : songsListHref;
 
   const handleSave = async () => {
     await updateSong.mutateAsync({
@@ -79,7 +79,7 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
         <Link href={`/${locale}/projects`} style={{ textDecoration: 'none', color: 'inherit' }}>
           {t('breadcrumb_projects')}
         </Link>
-        {(breadcrumbProjectId ?? project.id) && (
+        {(breadcrumbProjectId ?? project?.id) != null && project != null && (
           <Link href={projectHref} style={{ textDecoration: 'none', color: 'inherit' }}>
             {project.name}
           </Link>
@@ -89,11 +89,11 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
 
       <Button
         component={Link}
-        href={breadcrumbProjectId ? projectHref : songsListHref}
+        href={breadcrumbProjectId && project ? projectHref : songsListHref}
         startIcon={<ArrowBack />}
         sx={{ mb: 3, textTransform: 'none', color: 'text.secondary' }}
       >
-        {breadcrumbProjectId ? project.name : t('back_to_songs')}
+        {breadcrumbProjectId && project ? project.name : t('back_to_songs')}
       </Button>
 
       <Box
@@ -110,16 +110,18 @@ export function SongDetailClient({ locale, songId, breadcrumbProjectId }: SongDe
           {song.trackNumber ? `${song.trackNumber}. ` : ''}
           {song.title}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Chip
-            label={project.name}
-            size="small"
-            component={Link}
-            href={projectHref}
-            clickable
-            sx={{ bgcolor: `${accent}33`, color: accent }}
-          />
-        </Box>
+        {project != null && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Chip
+              label={project.name}
+              size="small"
+              component={Link}
+              href={projectHref}
+              clickable
+              sx={{ bgcolor: `${accent}33`, color: accent }}
+            />
+          </Box>
+        )}
       </Box>
 
       <TextField

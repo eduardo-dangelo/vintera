@@ -70,7 +70,7 @@ export async function PATCH(
 
     const song = await SongService.updateSong(
       songId,
-      existing.song.musicProjectId,
+      existing.song.musicProjectId ?? null,
       parse.data,
       user.id,
     );
@@ -78,7 +78,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Song not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ song, project: existing.project });
+    const project = existing.project;
+    return NextResponse.json({ song, project });
   } catch (error) {
     logger.error(`Error updating song: ${error instanceof Error ? error.message : String(error)}`);
     return NextResponse.json({ error: 'Failed to update song' }, { status: 500 });
@@ -108,7 +109,7 @@ export async function DELETE(
 
     const deleted = await SongService.deleteSong(
       songId,
-      existing.song.musicProjectId,
+      existing.song.musicProjectId ?? null,
       user.id,
     );
     if (!deleted) {

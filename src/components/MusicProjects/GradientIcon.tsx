@@ -14,17 +14,19 @@ const ICON_PATHS: Record<GradientMusicIconKind, string> = {
 };
 
 type GradientIconProps = {
-  kind: GradientMusicIconKind;
-  fontSize?: number;
-  sx?: SxProps<Theme>;
+  'kind': GradientMusicIconKind;
+  'fontSize'?: number;
+  'sx'?: SxProps<Theme>;
+  'aria-hidden'?: boolean;
 };
 
-export function GradientIcon({ kind, fontSize = 44, sx }: GradientIconProps) {
+export function GradientIcon({ kind, fontSize = 44, sx, 'aria-hidden': ariaHidden }: GradientIconProps) {
   const gradientId = useId().replace(/:/g, '');
   const fill = `url(#${gradientId})`;
 
   return (
     <SvgIcon
+      aria-hidden={ariaHidden}
       sx={{
         fontSize,
         fill: `${fill} !important`,

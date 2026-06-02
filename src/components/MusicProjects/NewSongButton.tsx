@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { CreateSongDialog } from './CreateSongDialog';
+import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
+import { CreateSongPopover } from './CreateSongPopover';
 import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewSongButtonProps = {
@@ -27,7 +28,18 @@ export function NewSongButton({
   const t = useTranslations('MusicProjects');
   const router = useRouter();
   const { playHoverSound } = useHoverSound();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [anchorPosition, setAnchorPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorPosition(getCreatePopoverAnchorPositionFromClick(event));
+    setPopoverOpen(true);
+  };
+
+  const handleClose = () => {
+    setPopoverOpen(false);
+    setAnchorPosition(null);
+  };
 
   const handleCreated = (songId: number) => {
     router.push(`/${locale}/songs/${songId}`);
@@ -48,7 +60,7 @@ export function NewSongButton({
       {variant === 'listItem'
         ? (
             <ListItemButton
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpen}
               onMouseEnter={playHoverSound}
               sx={{
                 'borderRadius': 1,
@@ -80,19 +92,20 @@ export function NewSongButton({
           ? (
               <ExpandablePrimaryButton
                 label={t('new_song')}
-                onClick={() => setDialogOpen(true)}
+                onClick={handleOpen}
               />
             )
           : (
               <Tooltip title={t('new_song')}>
-                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                <IconButton size="small" onClick={handleOpen} sx={defaultSx}>
                   <AddIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
             )}
-      <CreateSongDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+      <CreateSongPopover
+        open={popoverOpen}
+        anchorPosition={anchorPosition}
+        onClose={handleClose}
         locale={locale}
         projectId={projectId}
         onCreated={handleCreated}

@@ -5,6 +5,7 @@ import { albumsSchema, musicProjectsSchema, songsSchema } from '@/models/Schema'
 import { getMembersByProjectIds, insertOwnerMember } from '@/services/musicPeopleService';
 import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
 import { ensureUniqueSlug, slugify } from '@/utils/slugify';
+import { toTitleCase } from '@/utils/toTitleCase';
 
 export type MusicProjectData = MusicProjectInput | UpdateMusicProjectInput;
 
@@ -117,7 +118,7 @@ export class MusicProjectService {
       .insert(musicProjectsSchema)
       .values({
         userId,
-        name: data.name,
+        name: toTitleCase(data.name),
         slug,
         description: data.description,
         genre: data.genre,
@@ -145,7 +146,7 @@ export class MusicProjectService {
     };
 
     if (data.name !== undefined) {
-      updateData.name = data.name;
+      updateData.name = toTitleCase(data.name);
     }
     if (data.description !== undefined) {
       updateData.description = data.description;

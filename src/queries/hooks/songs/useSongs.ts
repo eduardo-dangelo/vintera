@@ -7,10 +7,10 @@ import { songKeys } from '@/queries/keys';
 export type SongListItem = {
   id: number;
   title: string;
-  musicProjectId: number;
+  musicProjectId: number | null;
   albumId: number | null;
   updatedAt: Date;
-  projectName: string;
+  projectName: string | null;
   projectColor: string | null;
   albumName: string | null;
   coverImageUrl: string | null;

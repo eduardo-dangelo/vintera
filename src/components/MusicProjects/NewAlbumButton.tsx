@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { CreateAlbumDialog } from './CreateAlbumDialog';
+import { CreateAlbumPopover } from './CreateAlbumPopover';
+import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
 import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewAlbumButtonProps = {
@@ -27,7 +28,18 @@ export function NewAlbumButton({
   const t = useTranslations('MusicProjects');
   const router = useRouter();
   const { playHoverSound } = useHoverSound();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [anchorPosition, setAnchorPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorPosition(getCreatePopoverAnchorPositionFromClick(event));
+    setPopoverOpen(true);
+  };
+
+  const handleClose = () => {
+    setPopoverOpen(false);
+    setAnchorPosition(null);
+  };
 
   const handleCreated = (albumId: number) => {
     router.push(`/${locale}/albums/${albumId}`);
@@ -48,7 +60,7 @@ export function NewAlbumButton({
       {variant === 'listItem'
         ? (
             <ListItemButton
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpen}
               onMouseEnter={playHoverSound}
               sx={{
                 'borderRadius': 1,
@@ -80,19 +92,20 @@ export function NewAlbumButton({
           ? (
               <ExpandablePrimaryButton
                 label={t('new_album')}
-                onClick={() => setDialogOpen(true)}
+                onClick={handleOpen}
               />
             )
           : (
               <Tooltip title={t('new_album')}>
-                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                <IconButton size="small" onClick={handleOpen} sx={defaultSx}>
                   <AddIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
             )}
-      <CreateAlbumDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+      <CreateAlbumPopover
+        open={popoverOpen}
+        anchorPosition={anchorPosition}
+        onClose={handleClose}
         locale={locale}
         projectId={projectId}
         onCreated={handleCreated}

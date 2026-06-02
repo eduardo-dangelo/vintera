@@ -7,7 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { CreateProjectDialog } from './CreateProjectDialog';
+import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
+import { CreateProjectPopover } from './CreateProjectPopover';
 import { ExpandablePrimaryButton } from './ExpandablePrimaryButton';
 
 type NewMusicProjectButtonProps = {
@@ -27,7 +28,18 @@ export function NewMusicProjectButton({
   const t = useTranslations('MusicProjects');
   const router = useRouter();
   const { playHoverSound } = useHoverSound();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [anchorPosition, setAnchorPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorPosition(getCreatePopoverAnchorPositionFromClick(event));
+    setPopoverOpen(true);
+  };
+
+  const handleClose = () => {
+    setPopoverOpen(false);
+    setAnchorPosition(null);
+  };
 
   const handleCreated = (id: number) => {
     onProjectCreated?.(id);
@@ -49,7 +61,7 @@ export function NewMusicProjectButton({
       {variant === 'listItem'
         ? (
             <ListItemButton
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpen}
               onMouseEnter={playHoverSound}
               sx={{
                 'borderRadius': 1,
@@ -81,19 +93,20 @@ export function NewMusicProjectButton({
           ? (
               <ExpandablePrimaryButton
                 label={t('new_project')}
-                onClick={() => setDialogOpen(true)}
+                onClick={handleOpen}
               />
             )
           : (
               <Tooltip title={t('new_project')}>
-                <IconButton size="small" onClick={() => setDialogOpen(true)} sx={defaultSx}>
+                <IconButton size="small" onClick={handleOpen} sx={defaultSx}>
                   <AddIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
             )}
-      <CreateProjectDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+      <CreateProjectPopover
+        open={popoverOpen}
+        anchorPosition={anchorPosition}
+        onClose={handleClose}
         locale={locale}
         onCreated={handleCreated}
       />

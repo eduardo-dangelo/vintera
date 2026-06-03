@@ -13,7 +13,9 @@ type ProjectEditableTitleProps = {
   placeholder?: string;
   compact?: boolean;
   heroTitleStyle?: Record<string, unknown>;
-  fontPickerAdornment?: ReactNode;
+  titleAdornments?: ReactNode;
+  /** Keep font/color buttons visible while a picker popover is open. */
+  keepAdornmentsVisible?: boolean;
   truncate?: boolean;
   onSave: (name: string) => Promise<void>;
 };
@@ -24,7 +26,8 @@ export function ProjectEditableTitle({
   placeholder,
   compact = false,
   heroTitleStyle,
-  fontPickerAdornment,
+  titleAdornments,
+  keepAdornmentsVisible = false,
   truncate = false,
   onSave,
 }: ProjectEditableTitleProps) {
@@ -36,6 +39,9 @@ export function ProjectEditableTitle({
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+
+  const adornmentRowHeight = compact ? 26 : 32;
+  const showAdornments = (isHovered || keepAdornmentsVisible) && !isEditing && Boolean(titleAdornments);
 
   useEffect(() => {
     setLocalName(name);
@@ -137,13 +143,11 @@ export function ProjectEditableTitle({
     ? { xs: '1.125rem', sm: '1.25rem' }
     : { xs: '1.5rem', sm: '2.125rem' };
 
-  const showFontPicker = isHovered && !isEditing && Boolean(fontPickerAdornment);
-
   const inputSx = {
     '& .MuiInput-root': {
       fontSize,
       'fontWeight': 700,
-      'lineHeight': compact ? 1.25 : 1.2,
+      'lineHeight': 1,
       'color': 'text.primary',
       'fontFamily': fontFamily ?? 'inherit',
       '&:before': { borderBottom: 'none' },
@@ -165,76 +169,100 @@ export function ProjectEditableTitle({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.5,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         minWidth: 0,
         maxWidth: isEditing && truncate ? '100%' : undefined,
         flex: isEditing && truncate ? '1 1 0' : undefined,
-        flexWrap: 'nowrap',
       }}
     >
-      {isEditing
-        ? (
-            <TextField
-              inputRef={titleRef}
-              value={localName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder ?? t('project_name')}
-              variant="standard"
-              fullWidth={truncate}
-              sx={{
-                flex: truncate ? '1 1 0' : '0 1 auto',
-                minWidth: truncate ? 0 : { xs: 120, sm: 160 },
-                maxWidth: truncate ? '100%' : { xs: 'min(100%, 280px)', sm: 'min(100%, 480px)' },
-                ...inputSx,
-              }}
-            />
-          )
-        : (
-            <Typography
-              component="h1"
-              onClick={handleDisplayClick}
-              sx={{
-                fontSize,
-                fontWeight: 700,
-                lineHeight: compact ? 1.25 : 1.2,
-                color: 'text.primary',
-                fontFamily: fontFamily ?? 'inherit',
-                cursor: 'pointer',
-                width: 'fit-content',
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                ...heroTitleStyle,
-              }}
-            >
-              {localName || placeholder || t('project_name')}
-            </Typography>
-          )}
-      {fontPickerAdornment && (
+      <Box
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
+          minWidth: 0,
+          maxWidth: '100%',
+          flexWrap: 'nowrap',
+        }}
+      >
         <Box
-          onClick={e => e.stopPropagation()}
-          onPointerDown={e => e.stopPropagation()}
           sx={{
-            'opacity': showFontPicker ? 1 : 0,
-            'maxWidth': showFontPicker ? 40 : 0,
-            'overflow': 'hidden',
-            'flexShrink': 0,
-            'pointerEvents': showFontPicker ? 'auto' : 'none',
-            '@media (prefers-reduced-motion: no-preference)': {
-              transition: 'opacity 0.2s ease, max-width 0.2s ease',
-            },
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: adornmentRowHeight,
+            minWidth: 0,
+            flex: truncate ? '1 1 0' : undefined,
           }}
         >
-          {fontPickerAdornment}
+          {isEditing
+            ? (
+                <TextField
+                  inputRef={titleRef}
+                  value={localName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder={placeholder ?? t('project_name')}
+                  variant="standard"
+                  fullWidth={truncate}
+                  sx={{
+                    flex: truncate ? '1 1 0' : '0 1 auto',
+                    minWidth: truncate ? 0 : { xs: 120, sm: 160 },
+                    maxWidth: truncate ? '100%' : { xs: 'min(100%, 280px)', sm: 'min(100%, 480px)' },
+                    ...inputSx,
+                  }}
+                />
+              )
+            : (
+                <Typography
+                  component="h1"
+                  onClick={handleDisplayClick}
+                  sx={{
+                    fontSize,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    color: 'text.primary',
+                    fontFamily: fontFamily ?? 'inherit',
+                    cursor: 'pointer',
+                    width: 'fit-content',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    ...heroTitleStyle,
+                  }}
+                >
+                  {localName || placeholder || t('project_name')}
+                </Typography>
+              )}
         </Box>
-      )}
+        {titleAdornments && (
+          <Box
+            onClick={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            sx={{
+              'display': 'flex',
+              'alignItems': 'center',
+              'gap': 0.25,
+              'minHeight': adornmentRowHeight,
+              'opacity': showAdornments ? 1 : 0,
+              'maxWidth': showAdornments ? 88 : 0,
+              'overflow': 'hidden',
+              'flexShrink': 0,
+              'pointerEvents': showAdornments ? 'auto' : 'none',
+              '@media (prefers-reduced-motion: no-preference)': {
+                transition: 'opacity 0.2s ease, max-width 0.2s ease',
+              },
+            }}
+          >
+            {titleAdornments}
+          </Box>
+        )}
+      </Box>
       {saving && (
-        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25 }}>
           {t('saving')}
         </Typography>
       )}

@@ -1,0 +1,626 @@
+import { loadGoogleFont } from '@/utils/loadGoogleFont';
+
+export type TitleFontOption = {
+  id: string;
+  fontFamily: string;
+  /** Screen reader only — style hint, not shown in the list */
+  ariaLabel: string;
+  googleFamily?: string;
+  searchTerms?: string[];
+};
+
+/** Fallback when the project has no title font saved yet */
+export const DEFAULT_TITLE_FONT_FAMILY = 'var(--font-nunito), sans-serif';
+
+/** Display / logo-style Google Fonts — no generic UI typefaces in the picker */
+export const TITLE_FONT_OPTIONS: TitleFontOption[] = [
+  {
+    id: 'bebas',
+    ariaLabel: 'Condensed bold display',
+    fontFamily: 'var(--font-bebas-neue), sans-serif',
+    searchTerms: ['bold', 'condensed', 'impact'],
+  },
+  {
+    id: 'abril',
+    ariaLabel: 'Fat display serif',
+    fontFamily: '\'Abril Fatface\', serif',
+    googleFamily: 'Abril Fatface',
+    searchTerms: ['display', 'serif', 'bold'],
+  },
+  {
+    id: 'archivo_black',
+    ariaLabel: 'Heavy sans',
+    fontFamily: '\'Archivo Black\', sans-serif',
+    googleFamily: 'Archivo Black',
+    searchTerms: ['heavy', 'sans', 'block'],
+  },
+  {
+    id: 'anton',
+    ariaLabel: 'Poster sans',
+    fontFamily: '\'Anton\', sans-serif',
+    googleFamily: 'Anton',
+    searchTerms: ['poster', 'sans', 'loud'],
+  },
+  {
+    id: 'bungee',
+    ariaLabel: 'Inline display',
+    fontFamily: '\'Bungee\', sans-serif',
+    googleFamily: 'Bungee',
+    searchTerms: ['inline', 'display', 'urban'],
+  },
+  {
+    id: 'righteous',
+    ariaLabel: 'Retro display',
+    fontFamily: '\'Righteous\', sans-serif',
+    googleFamily: 'Righteous',
+    searchTerms: ['retro', 'display', 'wide'],
+  },
+  {
+    id: 'orbitron',
+    ariaLabel: 'Sci-fi geometric',
+    fontFamily: '\'Orbitron\', sans-serif',
+    googleFamily: 'Orbitron',
+    searchTerms: ['geometric', 'futuristic', 'tech'],
+  },
+  {
+    id: 'cinzel',
+    ariaLabel: 'Ornate serif',
+    fontFamily: '\'Cinzel Decorative\', serif',
+    googleFamily: 'Cinzel Decorative',
+    searchTerms: ['ornate', 'serif', 'decorative'],
+  },
+  {
+    id: 'new_rocker',
+    ariaLabel: 'Angular metal',
+    fontFamily: '\'New Rocker\', serif',
+    googleFamily: 'New Rocker',
+    searchTerms: ['metal', 'angular', 'sharp'],
+  },
+  {
+    id: 'pirata',
+    ariaLabel: 'Swagger serif',
+    fontFamily: '\'Pirata One\', serif',
+    googleFamily: 'Pirata One',
+    searchTerms: ['serif', 'edge', 'rough'],
+  },
+  {
+    id: 'russo',
+    ariaLabel: 'Strong geometric sans',
+    fontFamily: '\'Russo One\', sans-serif',
+    googleFamily: 'Russo One',
+    searchTerms: ['geometric', 'strong', 'sans'],
+  },
+  {
+    id: 'black_ops',
+    ariaLabel: 'Stencil bold',
+    fontFamily: '\'Black Ops One\', sans-serif',
+    googleFamily: 'Black Ops One',
+    searchTerms: ['stencil', 'bold', 'military'],
+  },
+  {
+    id: 'oswald',
+    ariaLabel: 'Bold condensed sans',
+    fontFamily: 'var(--font-oswald), sans-serif',
+    searchTerms: ['condensed', 'sans', 'punk'],
+  },
+  {
+    id: 'staatliches',
+    ariaLabel: 'Poster condensed',
+    fontFamily: '\'Staatliches\', sans-serif',
+    googleFamily: 'Staatliches',
+    searchTerms: ['poster', 'condensed', 'caps'],
+  },
+  {
+    id: 'teko',
+    ariaLabel: 'Narrow headline',
+    fontFamily: '\'Teko\', sans-serif',
+    googleFamily: 'Teko',
+    searchTerms: ['narrow', 'headline', 'condensed'],
+  },
+  {
+    id: 'alfa_slab',
+    ariaLabel: 'Slab display',
+    fontFamily: '\'Alfa Slab One\', serif',
+    googleFamily: 'Alfa Slab One',
+    searchTerms: ['slab', 'serif', 'heavy'],
+  },
+  {
+    id: 'fugaz',
+    ariaLabel: 'Italic display sans',
+    fontFamily: '\'Fugaz One\', sans-serif',
+    googleFamily: 'Fugaz One',
+    searchTerms: ['italic', 'dynamic', 'sans'],
+  },
+  {
+    id: 'shrikhand',
+    ariaLabel: 'Bold display serif',
+    fontFamily: '\'Shrikhand\', serif',
+    googleFamily: 'Shrikhand',
+    searchTerms: ['bold', 'display', 'serif'],
+  },
+  {
+    id: 'lobster',
+    ariaLabel: 'Script logo',
+    fontFamily: '\'Lobster\', serif',
+    googleFamily: 'Lobster',
+    searchTerms: ['script', 'cursive', 'logo'],
+  },
+  {
+    id: 'rye',
+    ariaLabel: 'Western slab',
+    fontFamily: '\'Rye\', serif',
+    googleFamily: 'Rye',
+    searchTerms: ['western', 'slab', 'vintage'],
+  },
+  {
+    id: 'monoton',
+    ariaLabel: 'Striped retro',
+    fontFamily: '\'Monoton\', sans-serif',
+    googleFamily: 'Monoton',
+    searchTerms: ['retro', 'striped', 'display'],
+  },
+  {
+    id: 'audiowide',
+    ariaLabel: 'Racing tech',
+    fontFamily: '\'Audiowide\', sans-serif',
+    googleFamily: 'Audiowide',
+    searchTerms: ['tech', 'racing', 'wide'],
+  },
+  {
+    id: 'passion',
+    ariaLabel: 'Compressed impact',
+    fontFamily: '\'Passion One\', sans-serif',
+    googleFamily: 'Passion One',
+    searchTerms: ['compressed', 'impact', 'bold'],
+  },
+  {
+    id: 'paytone',
+    ariaLabel: 'Rounded bold',
+    fontFamily: '\'Paytone One\', sans-serif',
+    googleFamily: 'Paytone One',
+    searchTerms: ['rounded', 'bold', 'friendly'],
+  },
+  {
+    id: 'syncopate',
+    ariaLabel: 'Wide bold caps',
+    fontFamily: '\'Syncopate\', sans-serif',
+    googleFamily: 'Syncopate',
+    searchTerms: ['wide', 'caps', 'bold'],
+  },
+  {
+    id: 'vampiro',
+    ariaLabel: 'Gothic script',
+    fontFamily: '\'Vampiro One\', sans-serif',
+    googleFamily: 'Vampiro One',
+    searchTerms: ['gothic', 'script', 'dark'],
+  },
+  {
+    id: 'permanent_marker',
+    ariaLabel: 'Hand marker',
+    fontFamily: '\'Permanent Marker\', cursive',
+    googleFamily: 'Permanent Marker',
+    searchTerms: ['hand', 'marker', 'raw'],
+  },
+  {
+    id: 'luckiest',
+    ariaLabel: 'Cartoon punch',
+    fontFamily: '\'Luckiest Guy\', cursive',
+    googleFamily: 'Luckiest Guy',
+    searchTerms: ['cartoon', 'bold', 'playful'],
+  },
+  {
+    id: 'gravitas',
+    ariaLabel: 'Ultra serif',
+    fontFamily: '\'Gravitas One\', serif',
+    googleFamily: 'Gravitas One',
+    searchTerms: ['ultra', 'serif', 'heavy'],
+  },
+  {
+    id: 'squada',
+    ariaLabel: 'Square condensed',
+    fontFamily: '\'Squada One\', sans-serif',
+    googleFamily: 'Squada One',
+    searchTerms: ['square', 'condensed', 'block'],
+  },
+  {
+    id: 'bungee_shade',
+    ariaLabel: 'Layered display',
+    fontFamily: '\'Bungee Shade\', sans-serif',
+    googleFamily: 'Bungee Shade',
+    searchTerms: ['layered', '3d', 'display'],
+  },
+  {
+    id: 'michroma',
+    ariaLabel: 'Square tech',
+    fontFamily: '\'Michroma\', sans-serif',
+    googleFamily: 'Michroma',
+    searchTerms: ['square', 'tech', 'geometric'],
+  },
+  {
+    id: 'kanit',
+    ariaLabel: 'Modern bold',
+    fontFamily: '\'Kanit\', sans-serif',
+    googleFamily: 'Kanit',
+    searchTerms: ['modern', 'bold', 'sans'],
+  },
+  {
+    id: 'bangers',
+    ariaLabel: 'Comic punch',
+    fontFamily: '\'Bangers\', cursive',
+    googleFamily: 'Bangers',
+    searchTerms: ['comic', 'bold', 'punch'],
+  },
+  {
+    id: 'rubik_mono',
+    ariaLabel: 'Mono block',
+    fontFamily: '\'Rubik Mono One\', sans-serif',
+    googleFamily: 'Rubik Mono One',
+    searchTerms: ['mono', 'block', 'geometric'],
+  },
+  {
+    id: 'saira_stencil',
+    ariaLabel: 'Modern stencil',
+    fontFamily: '\'Saira Stencil One\', sans-serif',
+    googleFamily: 'Saira Stencil One',
+    searchTerms: ['stencil', 'modern', 'sans'],
+  },
+  {
+    id: 'wallpoet',
+    ariaLabel: 'Graffiti stencil',
+    fontFamily: '\'Wallpoet\', sans-serif',
+    googleFamily: 'Wallpoet',
+    searchTerms: ['graffiti', 'stencil', 'street'],
+  },
+  {
+    id: 'yellowtail',
+    ariaLabel: 'Retro script',
+    fontFamily: '\'Yellowtail\', cursive',
+    googleFamily: 'Yellowtail',
+    searchTerms: ['retro', 'script', 'flow'],
+  },
+  {
+    id: 'trade_winds',
+    ariaLabel: 'Distressed display',
+    fontFamily: '\'Trade Winds\', cursive',
+    googleFamily: 'Trade Winds',
+    searchTerms: ['distressed', 'rough', 'display'],
+  },
+  {
+    id: 'dela_gothic',
+    ariaLabel: 'Bold gothic sans',
+    fontFamily: '\'Dela Gothic One\', sans-serif',
+    googleFamily: 'Dela Gothic One',
+    searchTerms: ['gothic', 'bold', 'japanese'],
+  },
+  {
+    id: 'rampart',
+    ariaLabel: 'Outlined display',
+    fontFamily: '\'Rampart One\', sans-serif',
+    googleFamily: 'Rampart One',
+    searchTerms: ['outline', 'layered', 'display'],
+  },
+  {
+    id: 'titan',
+    ariaLabel: 'Heavy rounded',
+    fontFamily: '\'Titan One\', sans-serif',
+    googleFamily: 'Titan One',
+    searchTerms: ['rounded', 'heavy', 'bold'],
+  },
+  {
+    id: 'concert',
+    ariaLabel: 'Rounded display',
+    fontFamily: '\'Concert One\', sans-serif',
+    googleFamily: 'Concert One',
+    searchTerms: ['rounded', 'friendly', 'display'],
+  },
+  {
+    id: 'secular',
+    ariaLabel: 'Modern display sans',
+    fontFamily: '\'Secular One\', sans-serif',
+    googleFamily: 'Secular One',
+    searchTerms: ['modern', 'sans', 'headline'],
+  },
+  {
+    id: 'jockey',
+    ariaLabel: 'Condensed racing',
+    fontFamily: '\'Jockey One\', sans-serif',
+    googleFamily: 'Jockey One',
+    searchTerms: ['condensed', 'racing', 'caps'],
+  },
+  {
+    id: 'modak',
+    ariaLabel: 'Blob display',
+    fontFamily: '\'Modak\', sans-serif',
+    googleFamily: 'Modak',
+    searchTerms: ['blob', 'rounded', 'playful'],
+  },
+  {
+    id: 'poetsen',
+    ariaLabel: 'Soft rounded display',
+    fontFamily: '\'Poetsen One\', sans-serif',
+    googleFamily: 'Poetsen One',
+    searchTerms: ['rounded', 'soft', 'logo'],
+  },
+  {
+    id: 'protest_strike',
+    ariaLabel: 'Bold protest poster',
+    fontFamily: '\'Protest Strike\', sans-serif',
+    googleFamily: 'Protest Strike',
+    searchTerms: ['poster', 'bold', 'impact'],
+  },
+  {
+    id: 'zen_dots',
+    ariaLabel: 'Dot matrix display',
+    fontFamily: '\'Zen Dots\', sans-serif',
+    googleFamily: 'Zen Dots',
+    searchTerms: ['dots', 'retro', 'digital'],
+  },
+  {
+    id: 'silkscreen',
+    ariaLabel: 'Pixel bitmap',
+    fontFamily: '\'Silkscreen\', cursive',
+    googleFamily: 'Silkscreen',
+    searchTerms: ['pixel', 'bitmap', 'retro'],
+  },
+  {
+    id: 'pixelify',
+    ariaLabel: 'Retro pixel',
+    fontFamily: '\'Pixelify Sans\', sans-serif',
+    googleFamily: 'Pixelify Sans',
+    searchTerms: ['pixel', '8bit', 'arcade'],
+  },
+  {
+    id: 'sixtyfour',
+    ariaLabel: 'Retro computer',
+    fontFamily: '\'Sixtyfour\', sans-serif',
+    googleFamily: 'Sixtyfour',
+    searchTerms: ['retro', 'computer', 'digital'],
+  },
+  {
+    id: 'koulen',
+    ariaLabel: 'Geometric block',
+    fontFamily: '\'Koulen\', sans-serif',
+    googleFamily: 'Koulen',
+    searchTerms: ['geometric', 'block', 'bold'],
+  },
+  {
+    id: 'metal_mania',
+    ariaLabel: 'Metal script',
+    fontFamily: '\'Metal Mania\', cursive',
+    googleFamily: 'Metal Mania',
+    searchTerms: ['metal', 'script', 'sharp'],
+  },
+  {
+    id: 'creepster',
+    ariaLabel: 'Horror display',
+    fontFamily: '\'Creepster\', cursive',
+    googleFamily: 'Creepster',
+    searchTerms: ['horror', 'halloween', 'drip'],
+  },
+  {
+    id: 'ultra',
+    ariaLabel: 'Ultra heavy serif',
+    fontFamily: '\'Ultra\', serif',
+    googleFamily: 'Ultra',
+    searchTerms: ['serif', 'heavy', 'classic'],
+  },
+  {
+    id: 'press_start',
+    ariaLabel: 'Arcade pixel',
+    fontFamily: '\'Press Start 2P\', cursive',
+    googleFamily: 'Press Start 2P',
+    searchTerms: ['arcade', 'pixel', 'game'],
+  },
+  {
+    id: 'racing_sans',
+    ariaLabel: 'Italic speed',
+    fontFamily: '\'Racing Sans One\', sans-serif',
+    googleFamily: 'Racing Sans One',
+    searchTerms: ['racing', 'italic', 'speed'],
+  },
+  {
+    id: 'changa',
+    ariaLabel: 'Bold italic display',
+    fontFamily: '\'Changa One\', sans-serif',
+    googleFamily: 'Changa One',
+    searchTerms: ['italic', 'bold', 'dynamic'],
+  },
+  {
+    id: 'fredoka',
+    ariaLabel: 'Rounded punch',
+    fontFamily: '\'Fredoka One\', sans-serif',
+    googleFamily: 'Fredoka One',
+    searchTerms: ['rounded', 'bold', 'friendly'],
+  },
+  {
+    id: 'fascinate_inline',
+    ariaLabel: 'Inline layered',
+    fontFamily: '\'Fascinate Inline\', cursive',
+    googleFamily: 'Fascinate Inline',
+    searchTerms: ['inline', 'layered', 'decorative'],
+  },
+  {
+    id: 'iceberg',
+    ariaLabel: 'Minimal geometric',
+    fontFamily: '\'Iceberg\', sans-serif',
+    googleFamily: 'Iceberg',
+    searchTerms: ['minimal', 'geometric', 'cold'],
+  },
+  {
+    id: 'plaster',
+    ariaLabel: 'Tall condensed',
+    fontFamily: '\'Plaster\', cursive',
+    googleFamily: 'Plaster',
+    searchTerms: ['condensed', 'tall', 'poster'],
+  },
+  {
+    id: 'graduate',
+    ariaLabel: 'Collegiate slab',
+    fontFamily: '\'Graduate\', serif',
+    googleFamily: 'Graduate',
+    searchTerms: ['collegiate', 'slab', 'varsity'],
+  },
+  {
+    id: 'federo',
+    ariaLabel: 'Art deco sans',
+    fontFamily: '\'Federo\', sans-serif',
+    googleFamily: 'Federo',
+    searchTerms: ['art deco', 'elegant', 'sans'],
+  },
+  {
+    id: 'boogaloo',
+    ariaLabel: 'Funky retro',
+    fontFamily: '\'Boogaloo\', cursive',
+    googleFamily: 'Boogaloo',
+    searchTerms: ['funky', 'retro', 'groove'],
+  },
+  {
+    id: 'rubik_glitch',
+    ariaLabel: 'Glitch display',
+    fontFamily: '\'Rubik Glitch\', sans-serif',
+    googleFamily: 'Rubik Glitch',
+    searchTerms: ['glitch', 'digital', 'distorted'],
+  },
+  {
+    id: 'nosifer',
+    ariaLabel: 'Horror drip',
+    fontFamily: '\'Nosifer\', cursive',
+    googleFamily: 'Nosifer',
+    searchTerms: ['horror', 'drip', 'dark'],
+  },
+  {
+    id: 'emblema',
+    ariaLabel: 'Emblem stencil',
+    fontFamily: '\'Emblema One\', cursive',
+    googleFamily: 'Emblema One',
+    searchTerms: ['emblem', 'stencil', 'badge'],
+  },
+  {
+    id: 'stint_expanded',
+    ariaLabel: 'Ultra wide serif',
+    fontFamily: '\'Stint Ultra Expanded\', serif',
+    googleFamily: 'Stint Ultra Expanded',
+    searchTerms: ['wide', 'serif', 'expanded'],
+  },
+  {
+    id: 'faster_one',
+    ariaLabel: 'Speed italic',
+    fontFamily: '\'Faster One\', cursive',
+    googleFamily: 'Faster One',
+    searchTerms: ['speed', 'italic', 'motion'],
+  },
+  {
+    id: 'sonsie',
+    ariaLabel: 'Organic blob',
+    fontFamily: '\'Sonsie One\', cursive',
+    googleFamily: 'Sonsie One',
+    searchTerms: ['organic', 'blob', 'soft'],
+  },
+  {
+    id: 'spicy_rice',
+    ariaLabel: 'Dimensional 3D',
+    fontFamily: '\'Spicy Rice\', cursive',
+    googleFamily: 'Spicy Rice',
+    searchTerms: ['3d', 'dimensional', 'bold'],
+  },
+  {
+    id: 'unifraktur',
+    ariaLabel: 'Blackletter gothic',
+    fontFamily: '\'UnifrakturMaguntia\', cursive',
+    googleFamily: 'UnifrakturMaguntia',
+    searchTerms: ['blackletter', 'gothic', 'medieval'],
+  },
+  {
+    id: 'special_elite',
+    ariaLabel: 'Typewriter',
+    fontFamily: '\'Special Elite\', cursive',
+    googleFamily: 'Special Elite',
+    searchTerms: ['typewriter', 'vintage', 'raw'],
+  },
+  {
+    id: 'bungee_inline',
+    ariaLabel: 'Inline urban',
+    fontFamily: '\'Bungee Inline\', sans-serif',
+    googleFamily: 'Bungee Inline',
+    searchTerms: ['inline', 'urban', 'display'],
+  },
+  {
+    id: 'bungee_outline',
+    ariaLabel: 'Outlined urban',
+    fontFamily: '\'Bungee Outline\', sans-serif',
+    googleFamily: 'Bungee Outline',
+    searchTerms: ['outline', 'urban', 'display'],
+  },
+  {
+    id: 'climate_crisis',
+    ariaLabel: 'Compressed variable',
+    fontFamily: '\'Climate Crisis\', sans-serif',
+    googleFamily: 'Climate Crisis',
+    searchTerms: ['compressed', 'variable', 'poster'],
+  },
+  {
+    id: 'protest_riot',
+    ariaLabel: 'Chaotic poster',
+    fontFamily: '\'Protest Riot\', sans-serif',
+    googleFamily: 'Protest Riot',
+    searchTerms: ['riot', 'chaotic', 'poster'],
+  },
+  {
+    id: 'rock_3d',
+    ariaLabel: '3D rock outline',
+    fontFamily: '\'Rock 3D\', sans-serif',
+    googleFamily: 'Rock 3D',
+    searchTerms: ['3d', 'rock', 'outline'],
+  },
+  {
+    id: 'rubik_wet_paint',
+    ariaLabel: 'Paint drip',
+    fontFamily: '\'Rubik Wet Paint\', sans-serif',
+    googleFamily: 'Rubik Wet Paint',
+    searchTerms: ['paint', 'drip', 'messy'],
+  },
+  {
+    id: 'chewy',
+    ariaLabel: 'Bubble display',
+    fontFamily: '\'Chewy\', cursive',
+    googleFamily: 'Chewy',
+    searchTerms: ['bubble', 'rounded', 'playful'],
+  },
+  {
+    id: 'caesar',
+    ariaLabel: 'Roman inscription',
+    fontFamily: '\'Caesar Dressing\', cursive',
+    googleFamily: 'Caesar Dressing',
+    searchTerms: ['roman', 'stone', 'inscription'],
+  },
+  {
+    id: 'ewert',
+    ariaLabel: 'Western wood type',
+    fontFamily: '\'Ewert\', cursive',
+    googleFamily: 'Ewert',
+    searchTerms: ['western', 'wood', 'vintage'],
+  },
+];
+
+export function findTitleFontOptionByFamily(fontFamily: string): TitleFontOption | undefined {
+  return TITLE_FONT_OPTIONS.find(o => o.fontFamily === fontFamily);
+}
+
+export function ensureTitleFontLoaded(fontFamily: string): void {
+  const option = findTitleFontOptionByFamily(fontFamily);
+  if (option?.googleFamily) {
+    loadGoogleFont(option.googleFamily);
+    return;
+  }
+
+  const match = /^'([^']+)'/.exec(fontFamily);
+  if (match?.[1] && !fontFamily.startsWith('var(')) {
+    loadGoogleFont(match[1]);
+  }
+}
+
+export function preloadTitleFontOptions(): void {
+  for (const option of TITLE_FONT_OPTIONS) {
+    ensureTitleFontLoaded(option.fontFamily);
+  }
+}

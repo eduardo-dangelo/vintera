@@ -9,6 +9,7 @@ type MusicStatBadgeProps = {
   compact?: boolean;
   hideLabel?: boolean;
   tooltip?: string;
+  labelColor?: string;
 };
 
 export function MusicStatBadge({
@@ -17,6 +18,7 @@ export function MusicStatBadge({
   compact = false,
   hideLabel = false,
   tooltip,
+  labelColor,
 }: MusicStatBadgeProps) {
   const tooltipTitle = tooltip ?? `${count} ${label}`;
 
@@ -62,8 +64,12 @@ export function MusicStatBadge({
       {!hideLabel && (
         <Typography
           variant="caption"
-          color="text.secondary"
-          sx={{ fontSize: compact ? '0.65rem' : undefined, lineHeight: 1.2 }}
+          color={labelColor ? undefined : 'text.secondary'}
+          sx={{
+            fontSize: compact ? '0.65rem' : undefined,
+            lineHeight: 1.2,
+            ...(labelColor ? { color: labelColor } : {}),
+          }}
         >
           {label}
         </Typography>

@@ -112,8 +112,16 @@
     "upload_logo": "Téléverser le logo du groupe",
     "upload_hero": "Téléverser l'image de bannière",
     "title_font": "Police du titre",
-    "font_default": "Par défaut",
-    "font_display": "Affichage"
+    "title_color": "Couleur du titre",
+    "font_search_placeholder": "Filtrer les styles",
+    "font_custom_current": "Police personnalisée actuelle",
+    "font_no_results": "Aucune police ne correspond",
+    "font_custom_label": "Nom ou lien Google Font",
+    "font_custom_apply": "Appliquer la police",
+    "font_custom_invalid": "Entrez un nom Google Font ou un lien fonts.googleapis.com valide",
+    "member_detail_title": "Membre",
+    "event_detail_title": "Événement",
+    "coming_soon": "Bientôt disponible"
   },
   "Counter": {
     "meta_title": "Compteur",

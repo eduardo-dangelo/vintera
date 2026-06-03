@@ -3,11 +3,15 @@
 import {
   Add as AddIcon,
   ArrowDropDown as ArrowDropDownIcon,
+  EventNote as EventNoteIcon,
+  PersonOutline as PersonOutlineIcon,
 } from '@mui/icons-material';
 import {
+  Box,
   Button,
   Menu,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -30,12 +34,21 @@ const menuItemSx = {
   minHeight: 28,
 } as const;
 
+const stubIconSx = {
+  fontSize: 16,
+  color: 'action.active',
+} as const;
+
 type ProjectDetailNewButtonProps = {
   locale: string;
   projectId: number;
 };
 
 type PopoverType = 'album' | 'song' | null;
+
+type MenuEntry
+  = | { kind: 'action'; type: PopoverType; label: string; iconKind: 'song' | 'album' }
+    | { kind: 'stub'; id: 'member' | 'event'; label: string };
 
 export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
@@ -83,9 +96,11 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
     router.refresh();
   };
 
-  const menuItems = [
-    { type: 'song' as const, label: tMusic('new_song') },
-    { type: 'album' as const, label: tMusic('new_album') },
+  const menuItems: MenuEntry[] = [
+    { kind: 'action', type: 'song', label: tMusic('song_detail_title'), iconKind: 'song' },
+    { kind: 'action', type: 'album', label: tMusic('album_detail_title'), iconKind: 'album' },
+    { kind: 'stub', id: 'member', label: tMusic('member_detail_title') },
+    { kind: 'stub', id: 'event', label: tMusic('event_detail_title') },
   ];
 
   return (
@@ -129,17 +144,34 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
           },
         }}
       >
-        {menuItems.map(({ type, label }) => (
-          <MenuItem
-            key={type}
-            onClick={e => handleSelect(type, e)}
-            onMouseEnter={playHoverSound}
-            sx={menuItemSx}
-          >
-            <GradientIcon kind={type} fontSize={16} gradientOnHover aria-hidden />
-            {label}
-          </MenuItem>
-        ))}
+        {menuItems.map((item) => {
+          if (item.kind === 'action') {
+            return (
+              <MenuItem
+                key={item.type}
+                onClick={e => handleSelect(item.type, e)}
+                onMouseEnter={playHoverSound}
+                sx={menuItemSx}
+              >
+                <GradientIcon kind={item.iconKind} fontSize={16} gradientOnHover aria-hidden />
+                {item.label}
+              </MenuItem>
+            );
+          }
+
+          const StubIcon = item.id === 'member' ? PersonOutlineIcon : EventNoteIcon;
+
+          return (
+            <Tooltip key={item.id} title={tMusic('coming_soon')} placement="left">
+              <Box component="span" sx={{ display: 'block' }}>
+                <MenuItem disabled sx={menuItemSx}>
+                  <StubIcon sx={stubIconSx} aria-hidden />
+                  {item.label}
+                </MenuItem>
+              </Box>
+            </Tooltip>
+          );
+        })}
       </Menu>
 
       <CreateSongPopover

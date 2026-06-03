@@ -21,6 +21,7 @@ export class MusicProjectService {
         name: musicProjectsSchema.name,
         slug: musicProjectsSchema.slug,
         color: musicProjectsSchema.color,
+        coverImageUrl: musicProjectsSchema.coverImageUrl,
         updatedAt: musicProjectsSchema.updatedAt,
       })
       .from(musicProjectsSchema)
@@ -129,7 +130,7 @@ export class MusicProjectService {
         slug,
         description: data.description,
         genre: data.genre,
-        color: data.color ?? '#7c3aed',
+        color: data.color ?? null,
         coverImageUrl: data.coverImageUrl || null,
         metadata: data.metadata,
       })

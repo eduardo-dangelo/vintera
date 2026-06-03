@@ -10,7 +10,7 @@ import { PRIMARY_GRADIENT, primaryGradientSx } from './musicListToolbarStyles';
 export const CREATE_ALBUM_POPOVER_WIDTH = 280;
 export const CREATE_SONG_POPOVER_WIDTH = 300;
 export const CREATE_PROJECT_POPOVER_WIDTH = 320;
-export const CREATE_PROJECT_POPOVER_MAX_HEIGHT = 360;
+export const CREATE_PROJECT_POPOVER_MAX_HEIGHT = 280;
 
 export const POPOVER_PADDING = 1.5;
 export const CONTENT_GAP = 1.5;

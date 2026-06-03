@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Nunito, Oswald } from 'next/font/google';
+import {
+  Bebas_Neue,
+  Nunito,
+  Oswald,
+} from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -22,6 +26,13 @@ const oswald = Oswald({
   subsets: ['latin'],
   weight: ['700'],
   variable: '--font-oswald',
+  display: 'swap',
+});
+
+const bebasNeue = Bebas_Neue({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-bebas-neue',
   display: 'swap',
 });
 
@@ -73,7 +84,10 @@ export default async function RootLayout(props: {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${nunito.variable} ${oswald.variable}`} suppressHydrationWarning>
+      <body
+        className={`${nunito.variable} ${oswald.variable} ${bebasNeue.variable}`}
+        suppressHydrationWarning
+      >
         <NextIntlClientProvider>
           <PostHogProvider>
             <QueryProvider>

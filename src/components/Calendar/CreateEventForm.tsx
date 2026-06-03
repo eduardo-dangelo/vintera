@@ -1,7 +1,7 @@
 'use client';
 
 import type { CalendarEvent, EventReminders } from './types';
-import { Add as AddIcon, Close as CloseIcon, DeleteOutlined as DeleteIcon, Palette as PaletteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, DeleteOutlined as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -20,15 +20,12 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { endOfDay, format } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
+import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
 import { activityKeys, notificationKeys } from '@/queries/keys';
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from './constants';
 import { TimePickerPopover } from './TimePickerPopover';
-
-function isCustomColor(color: string): boolean {
-  return color?.startsWith('#') ?? false;
-}
 
 export type AssetOption = { id: number; name: string | null };
 
@@ -139,8 +136,6 @@ export function CreateEventForm({
   const [notificationPopoverAnchor, setNotificationPopoverAnchor] = useState<HTMLElement | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reminderRows, setReminderRows] = useState<ReminderRow[]>([]);
-  const colorInputRef = useRef<HTMLInputElement>(null);
-
   const isGlobal = !fixedAssetId && (assets?.length ?? 0) > 0;
   const effectiveAssetId = fixedAssetId ?? (typeof selectedAssetId === 'number' ? selectedAssetId : null);
 
@@ -448,86 +443,13 @@ export function CreateEventForm({
               },
             }}
           />
-          <Popover
+          <EventColorPickerPopover
             open={Boolean(colorPickerAnchor)}
             anchorEl={colorPickerAnchor}
             onClose={() => setColorPickerAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <Box sx={{ position: 'relative', p: 2 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(5, 24px)',
-                  gap: 1,
-                }}
-              >
-                {EVENT_COLORS.map(c => (
-                  <Box
-                    key={c.value}
-                    component="button"
-                    type="button"
-                    onClick={() => {
-                      setColor(c.value);
-                      setColorPickerAnchor(null);
-                    }}
-                    aria-label={c.label}
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      bgcolor: c.hex,
-                      border: color === c.value ? '2px solid' : '2px solid transparent',
-                      borderColor: color === c.value ? 'primary.main' : 'transparent',
-                      cursor: 'pointer',
-                      p: 0,
-                    }}
-                  />
-                ))}
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => colorInputRef.current?.click()}
-                  aria-label={t('event_color_custom')}
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    bgcolor: isCustomColor(color) ? color : 'grey.300',
-                    border: isCustomColor(color) ? '2px solid' : '2px solid transparent',
-                    borderColor: isCustomColor(color) ? 'primary.main' : 'transparent',
-                    cursor: 'pointer',
-                    p: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {!isCustomColor(color) && (
-                    <PaletteIcon sx={{ fontSize: 14, color: 'grey.600' }} />
-                  )}
-                </Box>
-              </Box>
-              <input
-                ref={colorInputRef}
-                type="color"
-                value={isCustomColor(color) ? color : '#3b82f6'}
-                onChange={(e) => {
-                  setColor(e.target.value);
-                  setColorPickerAnchor(null);
-                }}
-                style={{
-                  position: 'absolute',
-                  opacity: 0,
-                  width: 0,
-                  height: 0,
-                  pointerEvents: 'none',
-                }}
-                aria-hidden
-              />
-            </Box>
-          </Popover>
+            value={color}
+            onChange={setColor}
+          />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: contentGap }}>
             {allDay
               ? (

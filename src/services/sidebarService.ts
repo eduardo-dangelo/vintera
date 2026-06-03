@@ -8,6 +8,7 @@ export type SidebarRecents = {
     name: string;
     slug: string;
     color: string | null;
+    coverImageUrl: string | null;
     updatedAt: Date;
   }>;
   songs: Array<{

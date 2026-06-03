@@ -38,6 +38,7 @@ import { GlobalTopbar } from './GlobalTopbar';
 import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
 import { GradientIcon } from './MusicProjects/GradientIcon';
+import { MusicCoverImage } from './MusicProjects/MusicCoverImage';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
 import { TopbarActions } from './TopbarActions';
@@ -49,6 +50,7 @@ type SidebarItem = {
   icon: React.ComponentType<{ sx?: object }>;
   kind: MusicItemKind;
   id: number;
+  coverImageUrl?: string | null;
 };
 
 type SidebarSectionProps = {
@@ -177,22 +179,30 @@ function SidebarSection({
                     sx={rowSx(active)}
                   >
                     <ListItemIcon sx={{ minWidth: 24 }}>
-                      {active
+                      {item.kind === 'project' && item.coverImageUrl
                         ? (
-                            <GradientIcon
-                              kind={item.kind}
-                              fontSize={16}
-                              sx={{ display: 'block' }}
+                            <MusicCoverImage
+                              imageUrl={item.coverImageUrl}
+                              type="project"
+                              size={16}
                             />
                           )
-                        : (
-                            <Icon
-                              sx={{
-                                fontSize: 16,
-                                color: menuItemIconColor,
-                              }}
-                            />
-                          )}
+                        : active
+                          ? (
+                              <GradientIcon
+                                kind={item.kind}
+                                fontSize={16}
+                                sx={{ display: 'block' }}
+                              />
+                            )
+                          : (
+                              <Icon
+                                sx={{
+                                  fontSize: 16,
+                                  color: menuItemIconColor,
+                                }}
+                              />
+                            )}
                     </ListItemIcon>
                     <ListItemText
                       primary={item.label}
@@ -284,6 +294,7 @@ export function Sidebar({
     icon: LibraryMusicIcon,
     kind: 'project' as const,
     id: project.id,
+    coverImageUrl: project.coverImageUrl,
   })) ?? [];
 
   const songItems: SidebarItem[] = recentsData?.songs.map(song => ({

@@ -1,4 +1,5 @@
 import z from 'zod';
+import { imageUrlSchema } from '@/validations/imageUrlSchema';
 
 export const MusicProjectValidation = z.object({
   name: z.string().min(1).max(200),
@@ -6,7 +7,7 @@ export const MusicProjectValidation = z.object({
   description: z.string().max(5000).optional(),
   genre: z.string().max(100).optional(),
   color: z.string().max(50).optional(),
-  coverImageUrl: z.string().url().optional().or(z.literal('')),
+  coverImageUrl: imageUrlSchema.optional(),
   metadata: z.record(z.string(), z.any()).optional(),
 });
 

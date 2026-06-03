@@ -1,10 +1,11 @@
 import z from 'zod';
+import { imageUrlSchema } from '@/validations/imageUrlSchema';
 
 export const AlbumValidation = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(5000).optional(),
   releaseDate: z.coerce.date().optional().nullable(),
-  coverImageUrl: z.string().url().optional().or(z.literal('')),
+  coverImageUrl: imageUrlSchema.optional(),
   sortOrder: z.number().int().optional(),
 });
 

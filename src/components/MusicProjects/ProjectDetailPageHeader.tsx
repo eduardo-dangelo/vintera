@@ -8,8 +8,6 @@ import {
   Box,
   Breadcrumbs,
   IconButton,
-  Menu,
-  MenuItem,
   ThemeProvider,
   Tooltip,
   Typography,
@@ -20,7 +18,14 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
+import {
+  DEFAULT_HEADER_TEXT_COLOR,
+  HEADER_TEXT_COLOR_COLUMNS,
+  HEADER_TEXT_COLOR_ROWS,
+  resolveProjectHeaderTextColor,
+} from '@/components/MusicProjects/headerTextColors';
 import { MusicCoverImage } from '@/components/MusicProjects/MusicCoverImage';
 import {
   createHeroDarkTheme,
@@ -49,8 +54,12 @@ import {
   PROJECT_DETAIL_LOGO_SIZE,
 } from '@/components/MusicProjects/projectDetailPageHeaderStyles';
 import { ProjectEditableTitle } from '@/components/MusicProjects/ProjectEditableTitle';
+import { ProjectTitleFontPicker } from '@/components/MusicProjects/ProjectTitleFontPicker';
+import {
+  DEFAULT_TITLE_FONT_FAMILY,
+  ensureTitleFontLoaded,
+} from '@/components/MusicProjects/projectTitleFonts';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
-import { glassPaperSx } from '@/utils/glassPaperStyles';
 import {
   mergeMusicProjectMetadata,
   parseMusicProjectMetadata,
@@ -65,16 +74,12 @@ const heroImageStyle = {
 
 const TITLE_COLOR_EARLY_SWITCH_PX = 28;
 
-export const TITLE_FONT_OPTIONS = [
-  { id: 'default', labelKey: 'font_default' as const, value: 'var(--font-nunito), sans-serif' },
-  { id: 'display', labelKey: 'font_display' as const, value: 'var(--font-oswald), sans-serif' },
-] as const;
-
 type ProjectDetailPageHeaderProps = {
   locale: string;
   projectId: number;
   name: string;
   coverImageUrl: string | null;
+  headerTextColor?: string | null;
   metadata: unknown;
   albumCount: number;
   songCount: number;
@@ -109,6 +114,7 @@ export function ProjectDetailPageHeader({
   projectId,
   name,
   coverImageUrl,
+  headerTextColor,
   metadata: metadataRaw,
   albumCount,
   songCount,
@@ -121,12 +127,15 @@ export function ProjectDetailPageHeader({
 
   const parsedMetadata = useMemo(() => parseMusicProjectMetadata(metadataRaw), [metadataRaw]);
   const heroImageSrc = parsedMetadata.heroImageUrl ?? DEFAULT_HERO_IMAGE;
-  const titleFontFamily = parsedMetadata.titleFontFamily ?? TITLE_FONT_OPTIONS[0].value;
+  const serverTitleFontFamily = parsedMetadata.titleFontFamily ?? DEFAULT_TITLE_FONT_FAMILY;
 
+  const [optimisticHeaderColor, setOptimisticHeaderColor] = useState<string | null>(null);
+  const [optimisticTitleFontFamily, setOptimisticTitleFontFamily] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isHeroTextOutOfView, setIsHeroTextOutOfView] = useState(false);
-  const [fontMenuAnchor, setFontMenuAnchor] = useState<null | HTMLElement>(null);
+  const [fontPickerAnchor, setFontPickerAnchor] = useState<null | HTMLElement>(null);
+  const [colorPickerAnchor, setColorPickerAnchor] = useState<null | HTMLElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
 
@@ -139,6 +148,20 @@ export function ProjectDetailPageHeader({
   const hasHeroImage = Boolean(heroImageSrc);
   const topOffset = isMobile ? 56 : 0;
   const onHeroImage = hasHeroImage && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
+  const iconButtonSize = useCompactHeader ? 26 : 32;
+
+  const resolvedHeaderColor = optimisticHeaderColor && headerTextColor !== optimisticHeaderColor
+    ? optimisticHeaderColor
+    : resolveProjectHeaderTextColor(headerTextColor);
+
+  const titleFontFamily = optimisticTitleFontFamily
+    && parsedMetadata.titleFontFamily !== optimisticTitleFontFamily
+    ? optimisticTitleFontFamily
+    : serverTitleFontFamily;
+
+  useEffect(() => {
+    ensureTitleFontLoaded(titleFontFamily);
+  }, [titleFontFamily]);
 
   useEffect(() => {
     const heroBand = heroBandRef.current;
@@ -180,12 +203,19 @@ export function ProjectDetailPageHeader({
   const showStickyGlass = hasHeroImage ? isHeroOutOfView : isStuck;
   const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
 
-  const heroTitleStyle = getHeroTitleSx(
-    hasHeroImage,
-    useCompactHeader,
-    isHeroTextOutOfView,
-    theme,
-  ) as Record<string, unknown>;
+  const headerTextSx = { color: resolvedHeaderColor };
+
+  const heroTitleStyle = {
+    ...getHeroTitleSx(
+      hasHeroImage,
+      useCompactHeader,
+      isHeroTextOutOfView,
+      theme,
+    ),
+    ...headerTextSx,
+  } as Record<string, unknown>;
+
+  const breadcrumbColor = onHeroImage ? resolvedHeaderColor : resolvedHeaderColor;
 
   const breadcrumbSx = {
     'position': 'absolute',
@@ -193,11 +223,13 @@ export function ProjectDetailPageHeader({
     'left': { xs: 16, sm: 24 },
     'zIndex': 2,
     '& .MuiBreadcrumbs-li': {
-      color: onHeroImage ? 'rgba(255, 255, 255, 0.85)' : 'text.secondary',
+      color: breadcrumbColor,
       fontSize: '0.8125rem',
+      opacity: onHeroImage ? 0.9 : 1,
     },
     '& .MuiBreadcrumbs-separator': {
-      color: onHeroImage ? 'rgba(255, 255, 255, 0.55)' : 'text.disabled',
+      color: breadcrumbColor,
+      opacity: onHeroImage ? 0.55 : 0.7,
     },
     '& a': {
       'color': 'inherit',
@@ -213,14 +245,33 @@ export function ProjectDetailPageHeader({
     });
   };
 
-  const handleFontSelect = async (fontValue: string) => {
-    setFontMenuAnchor(null);
-    await updateProject.mutateAsync({
-      projectId,
-      data: {
-        metadata: mergeMusicProjectMetadata(metadataRaw, { titleFontFamily: fontValue }),
-      },
-    });
+  const handleFontSelect = (fontValue: string) => {
+    ensureTitleFontLoaded(fontValue);
+    setOptimisticTitleFontFamily(fontValue);
+    setFontPickerAnchor(null);
+    updateProject
+      .mutateAsync({
+        projectId,
+        data: {
+          metadata: mergeMusicProjectMetadata(metadataRaw, { titleFontFamily: fontValue }),
+        },
+      })
+      .catch(() => {
+        setOptimisticTitleFontFamily(null);
+      });
+  };
+
+  const handleColorSelect = (hex: string) => {
+    setOptimisticHeaderColor(hex);
+    setColorPickerAnchor(null);
+    updateProject
+      .mutateAsync({
+        projectId,
+        data: { color: hex },
+      })
+      .catch(() => {
+        setOptimisticHeaderColor(null);
+      });
   };
 
   const handleLogoFile = async (file: File) => {
@@ -267,28 +318,58 @@ export function ProjectDetailPageHeader({
     }
   };
 
-  const fontPickerButton = (
-    <Tooltip title={t('title_font')}>
-      <IconButton
-        size="small"
-        aria-label={t('title_font')}
-        onClick={e => setFontMenuAnchor(e.currentTarget)}
-        sx={{
-          flexShrink: 0,
-          width: useCompactHeader ? 26 : 32,
-          height: useCompactHeader ? 26 : 32,
-        }}
-      >
-        <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
-      </IconButton>
-    </Tooltip>
+  const iconButtonSx = {
+    flexShrink: 0,
+    width: iconButtonSize,
+    height: iconButtonSize,
+  };
+
+  const titleAdornments = (
+    <>
+      <Tooltip title={t('title_font')}>
+        <IconButton
+          size="small"
+          aria-label={t('title_font')}
+          onClick={e => setFontPickerAnchor(e.currentTarget)}
+          sx={{
+            ...iconButtonSx,
+            'color': `${resolvedHeaderColor} !important`,
+            '& .MuiSvgIcon-root': {
+              color: 'inherit !important',
+            },
+          }}
+        >
+          <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
+        </IconButton>
+      </Tooltip>
+      <Tooltip title={t('title_color')}>
+        <IconButton
+          size="small"
+          aria-label={t('title_color')}
+          onClick={e => setColorPickerAnchor(e.currentTarget)}
+          sx={iconButtonSx}
+        >
+          <Box
+            component="span"
+            sx={{
+              width: useCompactHeader ? 14 : 16,
+              height: useCompactHeader ? 14 : 16,
+              borderRadius: '50%',
+              bgcolor: resolvedHeaderColor,
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
+              display: 'block',
+            }}
+          />
+        </IconButton>
+      </Tooltip>
+    </>
   );
 
   const statsRow = (
     <MusicStatBadgeRow compact={useCompactHeader} nowrap>
-      <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact />
-      <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact />
-      <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact />
+      <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact labelColor={resolvedHeaderColor} />
+      <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact labelColor={resolvedHeaderColor} />
+      <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact labelColor={resolvedHeaderColor} />
     </MusicStatBadgeRow>
   );
 
@@ -423,7 +504,8 @@ export function ProjectDetailPageHeader({
                     compact={useCompactHeader}
                     truncate
                     heroTitleStyle={heroTitleStyle}
-                    fontPickerAdornment={fontPickerButton}
+                    titleAdornments={titleAdornments}
+                    keepAdornmentsVisible={Boolean(fontPickerAnchor) || Boolean(colorPickerAnchor)}
                     onSave={handleSaveName}
                   />
                 </Box>
@@ -454,32 +536,28 @@ export function ProjectDetailPageHeader({
         </Box>
       </Box>
 
-      <Menu
-        anchorEl={fontMenuAnchor}
-        open={Boolean(fontMenuAnchor)}
-        onClose={() => setFontMenuAnchor(null)}
+      <ProjectTitleFontPicker
+        anchorEl={fontPickerAnchor}
+        open={Boolean(fontPickerAnchor)}
+        onClose={() => setFontPickerAnchor(null)}
+        previewLabel={name}
+        selectedFontFamily={titleFontFamily}
+        onSelect={handleFontSelect}
+      />
+
+      <EventColorPickerPopover
+        open={Boolean(colorPickerAnchor)}
+        anchorEl={colorPickerAnchor}
+        onClose={() => setColorPickerAnchor(null)}
+        value={resolvedHeaderColor}
+        onChange={handleColorSelect}
+        valueMode="hex"
+        colorRows={HEADER_TEXT_COLOR_ROWS}
+        columns={HEADER_TEXT_COLOR_COLUMNS}
+        defaultCustomHex={DEFAULT_HEADER_TEXT_COLOR}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        slotProps={{
-          paper: {
-            sx: theme => ({
-              ...glassPaperSx(theme),
-              minWidth: 160,
-            }),
-          },
-        }}
-      >
-        {TITLE_FONT_OPTIONS.map(option => (
-          <MenuItem
-            key={option.id}
-            selected={titleFontFamily === option.value}
-            onClick={() => void handleFontSelect(option.value)}
-            sx={{ fontFamily: option.value, fontSize: '0.9375rem' }}
-          >
-            {t(option.labelKey)}
-          </MenuItem>
-        ))}
-      </Menu>
+      />
     </Fragment>
   );
 }

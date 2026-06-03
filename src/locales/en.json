@@ -112,8 +112,16 @@
     "upload_logo": "Upload band logo",
     "upload_hero": "Upload hero image",
     "title_font": "Title font",
-    "font_default": "Default",
-    "font_display": "Display"
+    "title_color": "Title color",
+    "font_search_placeholder": "Filter styles",
+    "font_custom_current": "Current custom font",
+    "font_no_results": "No fonts match your search",
+    "font_custom_label": "Google Font name or link",
+    "font_custom_apply": "Apply custom font",
+    "font_custom_invalid": "Enter a valid Google Font name or fonts.googleapis.com link",
+    "member_detail_title": "Member",
+    "event_detail_title": "Event",
+    "coming_soon": "Coming soon"
   },
   "Counter": {
     "meta_title": "Counter",

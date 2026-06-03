@@ -4,7 +4,7 @@ import { TextField } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateMusicProject } from '@/queries/hooks/music-projects/useCreateMusicProject';
-import { toTitleCase } from '@/utils/toTitleCase';
+import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
   CREATE_PROJECT_POPOVER_MAX_HEIGHT,
   CREATE_PROJECT_POPOVER_WIDTH,
@@ -75,8 +75,7 @@ export function CreateProjectPopover({
         size="small"
         label={t('field_name')}
         value={name}
-        onChange={e => setName(e.target.value)}
-        onBlur={e => setName(toTitleCase(e.target.value))}
+        onChange={e => setName(toTitleCaseInput(e.target.value))}
         required
         sx={createPopoverFieldSx}
         slotProps={requiredLabelSlotProps}

@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCreateSong } from '@/queries/hooks/music-projects/useCreateSong';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
-import { toTitleCase } from '@/utils/toTitleCase';
+import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
   CREATE_SONG_POPOVER_WIDTH,
   createPopoverFieldSx,
@@ -102,8 +102,7 @@ export function CreateSongPopover({
         size="small"
         label={t('field_title')}
         value={title}
-        onChange={e => setTitle(e.target.value)}
-        onBlur={e => setTitle(toTitleCase(e.target.value))}
+        onChange={e => setTitle(toTitleCaseInput(e.target.value))}
         required
         sx={createPopoverFieldSx}
         slotProps={requiredLabelSlotProps}

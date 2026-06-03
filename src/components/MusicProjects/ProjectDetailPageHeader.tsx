@@ -44,6 +44,8 @@ import { MusicStatBadge, MusicStatBadgeRow } from '@/components/MusicProjects/Mu
 import { ProjectDetailNewButton } from '@/components/MusicProjects/ProjectDetailNewButton';
 import {
   getProjectDetailActionsSx,
+  getProjectDetailBreadcrumbSx,
+  getProjectDetailBreadcrumbWrapperSx,
   getProjectDetailLeftGroupSx,
   getProjectDetailLogoAbsoluteSx,
   getProjectDetailLogoButtonSx,
@@ -215,29 +217,6 @@ export function ProjectDetailPageHeader({
     ...headerTextSx,
   } as Record<string, unknown>;
 
-  const breadcrumbColor = onHeroImage ? resolvedHeaderColor : resolvedHeaderColor;
-
-  const breadcrumbSx = {
-    'position': 'absolute',
-    'top': { xs: 12, md: 16 },
-    'left': { xs: 16, sm: 24 },
-    'zIndex': 2,
-    '& .MuiBreadcrumbs-li': {
-      color: breadcrumbColor,
-      fontSize: '0.8125rem',
-      opacity: onHeroImage ? 0.9 : 1,
-    },
-    '& .MuiBreadcrumbs-separator': {
-      color: breadcrumbColor,
-      opacity: onHeroImage ? 0.55 : 0.7,
-    },
-    '& a': {
-      'color': 'inherit',
-      'textDecoration': 'none',
-      '&:hover': { textDecoration: 'underline' },
-    },
-  };
-
   const handleSaveName = async (newName: string) => {
     await updateProject.mutateAsync({
       projectId,
@@ -403,25 +382,28 @@ export function ProjectDetailPageHeader({
         </Box>
         <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
 
-        <Breadcrumbs aria-label="breadcrumb" sx={breadcrumbSx}>
-          <Link href={`/${locale}/projects`}>
-            {t('breadcrumb_projects')}
-          </Link>
-          <Typography
-            component="span"
-            color="inherit"
-            sx={{
-              fontSize: 'inherit',
-              fontWeight: 500,
-              maxWidth: { xs: 160, sm: 320 },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {name}
-          </Typography>
-        </Breadcrumbs>
+        <Box sx={getProjectDetailBreadcrumbWrapperSx()}>
+          <Breadcrumbs aria-label="breadcrumb" sx={getProjectDetailBreadcrumbSx()}>
+            <Link href={`/${locale}/projects`}>
+              {t('breadcrumb_projects')}
+            </Link>
+            <Typography
+              component="span"
+              color="inherit"
+              sx={{
+                fontSize: 'inherit',
+                fontWeight: 500,
+                maxWidth: { xs: 140, sm: 280 },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                display: 'block',
+              }}
+            >
+              {name}
+            </Typography>
+          </Breadcrumbs>
+        </Box>
 
         <Tooltip title={t('upload_hero')}>
           <IconButton

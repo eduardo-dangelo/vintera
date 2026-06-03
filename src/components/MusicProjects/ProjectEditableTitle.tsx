@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 
 const IDLE_SAVE_MS = 2500;
 
@@ -40,7 +41,6 @@ export function ProjectEditableTitle({
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const adornmentRowHeight = compact ? 26 : 32;
   const showAdornments = (isHovered || keepAdornmentsVisible) && !isEditing && Boolean(titleAdornments);
 
   useEffect(() => {
@@ -78,12 +78,19 @@ export function ProjectEditableTitle({
       latestNameRef.current = name;
       return;
     }
-    if (trimmed === name) {
+    const normalized = toTitleCase(trimmed);
+    if (normalized === name) {
+      if (normalized !== localName) {
+        setLocalName(normalized);
+        latestNameRef.current = normalized;
+      }
       return;
     }
     setSaving(true);
     try {
-      await onSave(trimmed);
+      await onSave(normalized);
+      setLocalName(normalized);
+      latestNameRef.current = normalized;
     } finally {
       setSaving(false);
     }
@@ -99,7 +106,7 @@ export function ProjectEditableTitle({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = toTitleCaseInput(e.target.value);
     setLocalName(value);
     latestNameRef.current = value;
 
@@ -143,11 +150,24 @@ export function ProjectEditableTitle({
     ? { xs: '1.125rem', sm: '1.25rem' }
     : { xs: '1.5rem', sm: '2.125rem' };
 
+  const titleLineHeight = compact ? 1.2 : 1.25;
+  const titleMinHeight = compact
+    ? '1.5rem'
+    : { xs: '1.875rem', sm: '2.65rem' };
+
+  const truncateSx = truncate
+    ? {
+        overflowX: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }
+    : {};
+
   const inputSx = {
     '& .MuiInput-root': {
       fontSize,
       'fontWeight': 700,
-      'lineHeight': 1,
+      'lineHeight': titleLineHeight,
       'color': 'text.primary',
       'fontFamily': fontFamily ?? 'inherit',
       '&:before': { borderBottom: 'none' },
@@ -157,10 +177,8 @@ export function ProjectEditableTitle({
     },
     '& input': {
       padding: 0,
-      overflow: truncate ? 'hidden' : 'visible',
-      textOverflow: truncate ? 'ellipsis' : undefined,
-      whiteSpace: truncate ? 'nowrap' : undefined,
       fontFamily: fontFamily ?? 'inherit',
+      ...truncateSx,
     },
   };
 
@@ -180,7 +198,7 @@ export function ProjectEditableTitle({
       <Box
         sx={{
           display: 'inline-flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           gap: 0.5,
           minWidth: 0,
           maxWidth: '100%',
@@ -190,8 +208,8 @@ export function ProjectEditableTitle({
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            minHeight: adornmentRowHeight,
+            alignItems: 'flex-start',
+            minHeight: titleMinHeight,
             minWidth: 0,
             flex: truncate ? '1 1 0' : undefined,
           }}
@@ -222,15 +240,13 @@ export function ProjectEditableTitle({
                   sx={{
                     fontSize,
                     fontWeight: 700,
-                    lineHeight: 1,
+                    lineHeight: titleLineHeight,
                     color: 'text.primary',
                     fontFamily: fontFamily ?? 'inherit',
                     cursor: 'pointer',
                     width: 'fit-content',
                     maxWidth: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    ...truncateSx,
                     ...heroTitleStyle,
                   }}
                 >
@@ -246,7 +262,7 @@ export function ProjectEditableTitle({
               'display': 'flex',
               'alignItems': 'center',
               'gap': 0.25,
-              'minHeight': adornmentRowHeight,
+              'minHeight': titleMinHeight,
               'opacity': showAdornments ? 1 : 0,
               'maxWidth': showAdornments ? 88 : 0,
               'overflow': 'hidden',

@@ -86,7 +86,6 @@ export function getProjectDetailTitleGroupSx(): SxProps<Theme> {
     alignItems: 'center',
     minWidth: 0,
     flex: '1 1 0',
-    overflow: 'hidden',
     flexWrap: 'nowrap',
   };
 }
@@ -94,5 +93,48 @@ export function getProjectDetailTitleGroupSx(): SxProps<Theme> {
 export function getProjectDetailActionsSx(): SxProps<Theme> {
   return {
     flexShrink: 0,
+  };
+}
+
+/** Frosted pill behind hero breadcrumbs — matches hero camera button / logo corner radius. */
+export function getProjectDetailBreadcrumbWrapperSx(): SxProps<Theme> {
+  return {
+    position: 'absolute',
+    top: { xs: 12, md: 16 },
+    left: { xs: 16, sm: 24 },
+    zIndex: 2,
+    display: 'inline-flex',
+    alignItems: 'center',
+    minWidth: 0,
+    maxWidth: { xs: 'calc(100% - 72px)', sm: 'calc(100% - 96px)' },
+    borderRadius: 1,
+    px: 1.25,
+    py: 0.625,
+    bgcolor: 'rgba(0, 0, 0, 0.05)',
+    backdropFilter: 'blur(6px)',
+    WebkitBackdropFilter: 'blur(6px)',
+  };
+}
+
+export function getProjectDetailBreadcrumbSx(): SxProps<Theme> {
+  return {
+    'minWidth': 0,
+    '& .MuiBreadcrumbs-ol': {
+      flexWrap: 'nowrap',
+    },
+    '& .MuiBreadcrumbs-li': {
+      color: '#fff',
+      fontSize: '0.8125rem',
+      minWidth: 0,
+    },
+    '& .MuiBreadcrumbs-separator': {
+      color: '#fff',
+      opacity: 0.55,
+    },
+    '& a': {
+      'color': 'inherit',
+      'textDecoration': 'none',
+      '&:hover': { textDecoration: 'underline' },
+    },
   };
 }

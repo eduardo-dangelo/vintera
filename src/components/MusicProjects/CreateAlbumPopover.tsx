@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateAlbum } from '@/queries/hooks/music-projects/useCreateAlbum';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
-import { toTitleCase } from '@/utils/toTitleCase';
+import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
   CREATE_ALBUM_POPOVER_WIDTH,
   createPopoverFieldSx,
@@ -96,8 +96,7 @@ export function CreateAlbumPopover({
         size="small"
         label={t('field_name')}
         value={name}
-        onChange={e => setName(e.target.value)}
-        onBlur={e => setName(toTitleCase(e.target.value))}
+        onChange={e => setName(toTitleCaseInput(e.target.value))}
         required
         sx={createPopoverFieldSx}
         slotProps={requiredLabelSlotProps}

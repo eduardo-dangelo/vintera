@@ -133,12 +133,12 @@ export function getHeroTitleSx(
   return {
     'fontWeight': 700,
     'minWidth': 0,
+    'lineHeight': 1.25,
     'color': 'text.primary',
     ...(onHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
     ...(isCompact
       ? {
           fontSize: { xs: '1.125rem', sm: '1.25rem' },
-          lineHeight: 1.25,
         }
       : {}),
     '@media (prefers-reduced-motion: no-preference)': {

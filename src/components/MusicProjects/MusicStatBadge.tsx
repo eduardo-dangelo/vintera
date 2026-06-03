@@ -75,15 +75,21 @@ export function MusicStatBadge({
 type MusicStatBadgeRowProps = {
   children: ReactNode;
   compact?: boolean;
+  nowrap?: boolean;
 };
 
-export function MusicStatBadgeRow({ children, compact = false }: MusicStatBadgeRowProps) {
+export function MusicStatBadgeRow({
+  children,
+  compact = false,
+  nowrap = false,
+}: MusicStatBadgeRowProps) {
   return (
     <Box
       sx={{
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: nowrap ? 'nowrap' : 'wrap',
         alignItems: 'center',
+        flexShrink: nowrap ? 0 : undefined,
         gap: compact ? 1 : 1.5,
       }}
     >

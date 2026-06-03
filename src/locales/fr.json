@@ -61,6 +61,7 @@
     "song_count": "{count} chansons",
     "albums_stat_label": "albums",
     "songs_stat_label": "chansons",
+    "members_stat_label": "membres",
     "status_idea": "Idée",
     "status_demo": "Démo",
     "status_recording": "Enregistrement",
@@ -106,7 +107,13 @@
     "filter_projects_placeholder": "Sélectionner des projets",
     "no_results_filter_songs": "Aucune chanson ne correspond aux projets sélectionnés",
     "no_results_filter_albums": "Aucun album ne correspond aux projets sélectionnés",
-    "release_date": "Date de sortie"
+    "release_date": "Date de sortie",
+    "saving": "Enregistrement...",
+    "upload_logo": "Téléverser le logo du groupe",
+    "upload_hero": "Téléverser l'image de bannière",
+    "title_font": "Police du titre",
+    "font_default": "Par défaut",
+    "font_display": "Affichage"
   },
   "Counter": {
     "meta_title": "Compteur",

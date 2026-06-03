@@ -5,6 +5,8 @@ import { globalTopbarGlassSx } from '@/utils/glassPaperStyles';
 /** Overlap of sticky bar onto hero band (title sits on hero bottom). */
 export const STICKY_BAR_OVERLAP = { xs: 72, md: 80 } as const;
 
+export type HeroStickyBarOverlap = { xs: number; md: number };
+
 export function createHeroDarkTheme(baseTheme: Theme): Theme {
   return createTheme(baseTheme, {
     palette: {
@@ -70,6 +72,7 @@ export function getStickyBarSx(
   theme: Theme,
   isMobile: boolean,
   showGlass: boolean,
+  overlap: HeroStickyBarOverlap = STICKY_BAR_OVERLAP,
 ): SxProps<Theme> {
   return {
     mx: { xs: -2, sm: -3 },
@@ -78,8 +81,8 @@ export function getStickyBarSx(
     top: isMobile ? 56 : 0,
     zIndex: theme.zIndex.appBar - 1,
     mt: {
-      xs: `-${STICKY_BAR_OVERLAP.xs}px`,
-      md: `-${STICKY_BAR_OVERLAP.md}px`,
+      xs: `-${overlap.xs}px`,
+      md: `-${overlap.md}px`,
     },
     mb: 4,
     ...(showGlass ? getStickyHeaderGlassSx(theme) : {}),

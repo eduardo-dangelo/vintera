@@ -1,5 +1,6 @@
 'use client';
 
+import type { MusicPersonPreview } from '@/types/musicPeople';
 import { useQuery } from '@tanstack/react-query';
 import { musicProjectKeys } from '@/queries/keys';
 
@@ -44,6 +45,7 @@ export type MusicProjectDetail = {
     createdAt: string;
     updatedAt: string;
   }>;
+  members: MusicPersonPreview[];
 };
 
 export function useMusicProject(locale: string, projectId: number) {

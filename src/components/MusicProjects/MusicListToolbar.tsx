@@ -6,7 +6,7 @@ import { Box, useTheme } from '@mui/material';
 import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
 import { ListViewControls } from '@/components/common/ListViewControls';
 import { MusicListProjectFilter } from './MusicListProjectFilter';
-import { getToolbarIconButtonSx } from './musicListToolbarStyles';
+import { getHeroActionsToolbarSx, getToolbarIconButtonSx } from './musicListToolbarStyles';
 
 type MusicListToolbarProps = {
   viewMode: ListViewMode;
@@ -44,26 +44,7 @@ export function MusicListToolbar({
     && onSelectedProjectIdsChange != null;
 
   return (
-    <Box
-      sx={{
-        'display': 'flex',
-        'alignItems': 'center',
-        'justifyContent': 'flex-end',
-        'gap': { xs: 0.75, sm: 1 },
-        'flexWrap': 'nowrap',
-        'minWidth': 0,
-        '& .MuiButton-root': {
-          minHeight: { xs: 30, sm: 34 },
-          py: { xs: 0.375, sm: 0.5 },
-          px: { xs: 1.25, sm: 1.5 },
-          fontSize: { xs: '0.875rem', sm: '0.9375rem' },
-          whiteSpace: 'nowrap',
-        },
-        '& .MuiButton-startIcon > *:nth-of-type(1)': {
-          fontSize: { xs: 16, sm: 18 },
-        },
-      }}
-    >
+    <Box sx={getHeroActionsToolbarSx()}>
       {showViewControls && (
         <>
           <ListViewControls

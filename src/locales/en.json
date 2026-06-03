@@ -61,6 +61,7 @@
     "song_count": "{count} songs",
     "albums_stat_label": "albums",
     "songs_stat_label": "songs",
+    "members_stat_label": "members",
     "status_idea": "Idea",
     "status_demo": "Demo",
     "status_recording": "Recording",
@@ -106,7 +107,13 @@
     "filter_projects_placeholder": "Select projects",
     "no_results_filter_songs": "No songs match the selected projects",
     "no_results_filter_albums": "No albums match the selected projects",
-    "release_date": "Release date"
+    "release_date": "Release date",
+    "saving": "Saving...",
+    "upload_logo": "Upload band logo",
+    "upload_hero": "Upload hero image",
+    "title_font": "Title font",
+    "font_default": "Default",
+    "font_display": "Display"
   },
   "Counter": {
     "meta_title": "Counter",

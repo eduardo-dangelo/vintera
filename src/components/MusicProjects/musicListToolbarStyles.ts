@@ -22,3 +22,39 @@ export function getToolbarIconButtonSx(theme: Theme): SxProps<Theme> {
     },
   };
 }
+
+/** Right-aligned hero header actions row (list toolbar + project detail stats/button). */
+export function getHeroActionsToolbarSx(): SxProps<Theme> {
+  return {
+    'display': 'flex',
+    'alignItems': 'center',
+    'justifyContent': 'flex-end',
+    'gap': { xs: 0.75, sm: 1 },
+    'flexWrap': 'nowrap',
+    'minWidth': 0,
+    '& .MuiButton-root': {
+      minHeight: { xs: 30, sm: 34 },
+      py: { xs: 0.375, sm: 0.5 },
+      px: { xs: 1.25, sm: 1.5 },
+      fontSize: { xs: '0.875rem', sm: '0.9375rem' },
+      whiteSpace: 'nowrap',
+    },
+    '& .MuiButton-startIcon > *:nth-of-type(1), & .MuiButton-endIcon > *:nth-of-type(1)': {
+      fontSize: { xs: 16, sm: 18 },
+    },
+  };
+}
+
+export function getHeroActionsDividerSx(
+  theme: Theme,
+  onHeroImage: boolean,
+): SxProps<Theme> {
+  return {
+    height: 20,
+    width: '1px',
+    flexShrink: 0,
+    alignSelf: 'center',
+    bgcolor: onHeroImage ? 'rgba(255, 255, 255, 0.2)' : theme.palette.grey[300],
+    mx: 0.5,
+  };
+}

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ArrowBack,
   Delete as DeleteIcon,
   MoreVert,
 } from '@mui/icons-material';
@@ -26,6 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
 import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
+import { ProjectDetailPageHeader } from '@/components/MusicProjects/ProjectDetailPageHeader';
 import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
 import { useDeleteSong } from '@/queries/hooks/music-projects/useDeleteSong';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
@@ -82,7 +82,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
     );
   }
 
-  const { project, albums, songs } = data;
+  const { project, albums, songs, members } = data;
   const accent = project.color || '#7c3aed';
 
   const handleDeleteProject = async () => {
@@ -93,14 +93,16 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
 
   return (
     <Box>
-      <Button
-        component={Link}
-        href={`/${locale}/projects`}
-        startIcon={<ArrowBack />}
-        sx={{ mb: 3, textTransform: 'none', color: 'text.secondary' }}
-      >
-        {t('back_to_projects')}
-      </Button>
+      <ProjectDetailPageHeader
+        locale={locale}
+        projectId={projectId}
+        name={project.name}
+        coverImageUrl={project.coverImageUrl}
+        metadata={project.metadata}
+        albumCount={albums.length}
+        songCount={songs.length}
+        memberCount={members.length}
+      />
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -132,9 +134,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                 </MenuItem>
               </Menu>
             </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
-              {project.name}
-            </Typography>
             {project.genre && (
               <Chip label={project.genre} size="small" sx={{ mb: 2, bgcolor: `${accent}33`, color: accent }} />
             )}
@@ -143,14 +142,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                 {project.description}
               </Typography>
             )}
-            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-              <Typography variant="caption" color="text.secondary">
-                {t('album_count', { count: albums.length })}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {t('song_count', { count: songs.length })}
-              </Typography>
-            </Box>
           </Box>
         </Grid>
 

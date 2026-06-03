@@ -7,6 +7,10 @@ import { omitStatus, omitStatusFromArray } from '@/utils/omitMusicStatus';
 import { ensureUniqueSlug, slugify } from '@/utils/slugify';
 import { toTitleCase } from '@/utils/toTitleCase';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export type MusicProjectData = MusicProjectInput | UpdateMusicProjectInput;
 
 export class MusicProjectService {
@@ -91,10 +95,13 @@ export class MusicProjectService {
       .where(eq(songsSchema.musicProjectId, projectId))
       .orderBy(songsSchema.trackNumber, songsSchema.title);
 
+    const membersByProject = await getMembersByProjectIds([projectId]);
+
     return {
       project,
       albums: omitStatusFromArray(albums),
       songs: omitStatusFromArray(songs),
+      members: membersByProject.get(projectId) ?? [],
     };
   }
 
@@ -141,6 +148,11 @@ export class MusicProjectService {
     data: UpdateMusicProjectInput,
     userId: string,
   ) {
+    const existing = await this.getProjectById(projectId, userId);
+    if (!existing) {
+      return null;
+    }
+
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
@@ -161,7 +173,8 @@ export class MusicProjectService {
       updateData.coverImageUrl = data.coverImageUrl || null;
     }
     if (data.metadata !== undefined) {
-      updateData.metadata = data.metadata;
+      const existingMetadata = isRecord(existing.metadata) ? existing.metadata : {};
+      updateData.metadata = { ...existingMetadata, ...data.metadata };
     }
     if (data.slug !== undefined) {
       const baseSlug = slugify(data.slug);

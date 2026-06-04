@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Box, Tooltip, Typography } from '@mui/material';
+import { getHeroStatBadgeSx } from '@/utils/heroChromeTextColor';
 
 type MusicStatBadgeProps = {
   count: number;
@@ -9,7 +10,10 @@ type MusicStatBadgeProps = {
   compact?: boolean;
   hideLabel?: boolean;
   tooltip?: string;
+  /** Label text color (list cards, etc.). */
   labelColor?: string;
+  /** Hero header: styles count chip + label for readable contrast on any background. */
+  chromeColor?: string;
 };
 
 export function MusicStatBadge({
@@ -19,8 +23,10 @@ export function MusicStatBadge({
   hideLabel = false,
   tooltip,
   labelColor,
+  chromeColor,
 }: MusicStatBadgeProps) {
   const tooltipTitle = tooltip ?? `${count} ${label}`;
+  const chromeSx = chromeColor ? getHeroStatBadgeSx(chromeColor, compact) : null;
 
   const countChip = (
     <Box
@@ -33,11 +39,15 @@ export function MusicStatBadge({
         height: compact ? 20 : 24,
         px: compact ? 0.75 : 1,
         borderRadius: '9999px',
-        bgcolor: 'action.hover',
-        color: 'text.secondary',
-        fontSize: compact ? '0.65rem' : '0.7rem',
-        fontWeight: 600,
-        lineHeight: 1,
+        ...(chromeSx
+          ? chromeSx.chip
+          : {
+              bgcolor: 'action.hover',
+              color: 'text.secondary',
+              fontSize: compact ? '0.65rem' : '0.7rem',
+              fontWeight: 600,
+              lineHeight: 1,
+            }),
       }}
     >
       {count}
@@ -64,11 +74,12 @@ export function MusicStatBadge({
       {!hideLabel && (
         <Typography
           variant="caption"
-          color={labelColor ? undefined : 'text.secondary'}
+          color={chromeSx || labelColor ? undefined : 'text.secondary'}
           sx={{
             fontSize: compact ? '0.65rem' : undefined,
             lineHeight: 1.2,
-            ...(labelColor ? { color: labelColor } : {}),
+            ...(chromeSx ? chromeSx.label : {}),
+            ...(labelColor && !chromeSx ? { color: labelColor } : {}),
           }}
         >
           {label}

@@ -52,18 +52,41 @@ export function getHeroBackgroundSx(theme: Theme): SxProps<Theme> {
   };
 }
 
-export function getHeroOverlaySx(theme: Theme, hasHeroImage: boolean): SxProps<Theme> {
+export type HeroOverlayKind = 'image' | 'rich' | 'solid' | 'theme';
+
+export function getHeroOverlaySx(
+  theme: Theme,
+  hasHeroBackdrop: boolean,
+  overlayKind: HeroOverlayKind = 'image',
+): SxProps<Theme> {
   const isLight = theme.palette.mode === 'light';
+
+  let gradient: string;
+  if (!hasHeroBackdrop) {
+    gradient = isLight
+      ? 'linear-gradient(to top, rgba(0, 0, 0, 0.12) 0%, transparent 60%)'
+      : 'linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 60%)';
+  } else if (overlayKind === 'image') {
+    gradient = 'linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 100%)';
+  } else if (overlayKind === 'solid') {
+    gradient = isLight
+      ? 'linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 55%)'
+      : 'linear-gradient(to top, rgba(0, 0, 0, 0.28) 0%, transparent 60%)';
+  } else if (overlayKind === 'theme') {
+    gradient = isLight
+      ? 'linear-gradient(to top, rgba(0, 0, 0, 0.12) 0%, transparent 60%)'
+      : 'linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 60%)';
+  } else {
+    gradient = isLight
+      ? 'linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.15) 50%, transparent 100%)'
+      : 'linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 45%, transparent 100%)';
+  }
 
   return {
     position: 'absolute',
     inset: 0,
     zIndex: 1,
-    background: hasHeroImage
-      ? 'linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.45) 45%, transparent 100%)'
-      : isLight
-        ? 'linear-gradient(to top, rgba(0, 0, 0, 0.12) 0%, transparent 60%)'
-        : 'linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 60%)',
+    background: gradient,
     pointerEvents: 'none',
   };
 }

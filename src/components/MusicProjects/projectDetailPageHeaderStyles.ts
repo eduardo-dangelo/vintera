@@ -116,19 +116,19 @@ export function getProjectDetailBreadcrumbWrapperSx(): SxProps<Theme> {
   };
 }
 
-export function getProjectDetailBreadcrumbSx(): SxProps<Theme> {
+export function getProjectDetailBreadcrumbSx(textColor: string = '#fff'): SxProps<Theme> {
   return {
     'minWidth': 0,
     '& .MuiBreadcrumbs-ol': {
       flexWrap: 'nowrap',
     },
     '& .MuiBreadcrumbs-li': {
-      color: '#fff',
+      color: textColor,
       fontSize: '0.8125rem',
       minWidth: 0,
     },
     '& .MuiBreadcrumbs-separator': {
-      color: '#fff',
+      color: textColor,
       opacity: 0.55,
     },
     '& a': {

@@ -1,5 +1,7 @@
 'use client';
 
+import type { HeroBackgroundPreset } from '@/components/MusicProjects/heroBackgroundPresets';
+import type { HeroBackgroundOverrides, MusicProjectMetadata } from '@/utils/musicProjectMetadata';
 import {
   PhotoCamera as PhotoCameraIcon,
   TextFields as TextFieldsIcon,
@@ -26,10 +28,13 @@ import {
   HEADER_TEXT_COLOR_ROWS,
   resolveProjectHeaderTextColor,
 } from '@/components/MusicProjects/headerTextColors';
+import {
+  applyHeroPresetRecipe,
+  resolveHeroBackground,
+} from '@/components/MusicProjects/heroBackgroundPresets';
 import { MusicCoverImage } from '@/components/MusicProjects/MusicCoverImage';
 import {
   createHeroDarkTheme,
-  getHeroBackgroundSx,
   getHeroBandSx,
   getHeroOverlaySx,
   getHeroTitleSx,
@@ -56,18 +61,20 @@ import {
   PROJECT_DETAIL_LOGO_SIZE,
 } from '@/components/MusicProjects/projectDetailPageHeaderStyles';
 import { ProjectEditableTitle } from '@/components/MusicProjects/ProjectEditableTitle';
+import { ProjectHeroBackgroundPicker } from '@/components/MusicProjects/ProjectHeroBackgroundPicker';
 import { ProjectTitleFontPicker } from '@/components/MusicProjects/ProjectTitleFontPicker';
 import {
   DEFAULT_TITLE_FONT_FAMILY,
   ensureTitleFontLoaded,
 } from '@/components/MusicProjects/projectTitleFonts';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
+import { resolveHeroChromeTextColor } from '@/utils/heroChromeTextColor';
 import {
+  buildHeroBackgroundMetadataPatch,
+  mergeHeroBackgroundOverrides,
   mergeMusicProjectMetadata,
   parseMusicProjectMetadata,
 } from '@/utils/musicProjectMetadata';
-
-const DEFAULT_HERO_IMAGE = '/assets/images/music-projects-hero.png';
 
 const heroImageStyle = {
   objectFit: 'cover' as const,
@@ -81,7 +88,8 @@ type ProjectDetailPageHeaderProps = {
   projectId: number;
   name: string;
   coverImageUrl: string | null;
-  headerTextColor?: string | null;
+  /** Project.color — title and title adornments only */
+  titleColor?: string | null;
   metadata: unknown;
   albumCount: number;
   songCount: number;
@@ -116,7 +124,7 @@ export function ProjectDetailPageHeader({
   projectId,
   name,
   coverImageUrl,
-  headerTextColor,
+  titleColor,
   metadata: metadataRaw,
   albumCount,
   songCount,
@@ -128,18 +136,40 @@ export function ProjectDetailPageHeader({
   const updateProject = useUpdateMusicProject(locale);
 
   const parsedMetadata = useMemo(() => parseMusicProjectMetadata(metadataRaw), [metadataRaw]);
-  const heroImageSrc = parsedMetadata.heroImageUrl ?? DEFAULT_HERO_IMAGE;
   const serverTitleFontFamily = parsedMetadata.titleFontFamily ?? DEFAULT_TITLE_FONT_FAMILY;
 
   const [optimisticHeaderColor, setOptimisticHeaderColor] = useState<string | null>(null);
   const [optimisticTitleFontFamily, setOptimisticTitleFontFamily] = useState<string | null>(null);
+  const [optimisticHeroMetadata, setOptimisticHeroMetadata] = useState<MusicProjectMetadata | null>(null);
   const [isStuck, setIsStuck] = useState(false);
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isHeroTextOutOfView, setIsHeroTextOutOfView] = useState(false);
   const [fontPickerAnchor, setFontPickerAnchor] = useState<null | HTMLElement>(null);
   const [colorPickerAnchor, setColorPickerAnchor] = useState<null | HTMLElement>(null);
+  const [heroPickerAnchor, setHeroPickerAnchor] = useState<null | HTMLElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
+
+  const pendingHeroMetadata = useMemo(() => {
+    if (!optimisticHeroMetadata) {
+      return null;
+    }
+    const server = parseMusicProjectMetadata(metadataRaw);
+    if (JSON.stringify(server) === JSON.stringify(optimisticHeroMetadata)) {
+      return null;
+    }
+    return optimisticHeroMetadata;
+  }, [metadataRaw, optimisticHeroMetadata]);
+
+  const effectiveMetadata = useMemo(
+    () => mergeMusicProjectMetadata(metadataRaw, pendingHeroMetadata ?? {}),
+    [metadataRaw, pendingHeroMetadata],
+  );
+
+  const resolvedHero = useMemo(
+    () => resolveHeroBackground(effectiveMetadata, theme),
+    [effectiveMetadata, theme],
+  );
 
   const heroBandRef = useRef<HTMLDivElement>(null);
   const stickyBarRef = useRef<HTMLDivElement>(null);
@@ -147,19 +177,29 @@ export function ProjectDetailPageHeader({
   const heroInputRef = useRef<HTMLInputElement>(null);
 
   const useCompactHeader = isMobile || isStuck;
-  const hasHeroImage = Boolean(heroImageSrc);
+  const hasHeroBackdrop = resolvedHero.hasHeroBackdrop;
   const topOffset = isMobile ? 56 : 0;
-  const onHeroImage = hasHeroImage && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
+  const onHeroImage = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
   const iconButtonSize = useCompactHeader ? 26 : 32;
 
-  const resolvedHeaderColor = optimisticHeaderColor && headerTextColor !== optimisticHeaderColor
-    ? optimisticHeaderColor
-    : resolveProjectHeaderTextColor(headerTextColor);
+  const pendingTitleColor
+    = optimisticHeaderColor && titleColor !== optimisticHeaderColor
+      ? optimisticHeaderColor
+      : null;
 
-  const titleFontFamily = optimisticTitleFontFamily
-    && parsedMetadata.titleFontFamily !== optimisticTitleFontFamily
-    ? optimisticTitleFontFamily
-    : serverTitleFontFamily;
+  const resolvedTitleColor
+    = pendingTitleColor ?? resolveProjectHeaderTextColor(titleColor);
+
+  const resolvedChromeColor = useMemo(
+    () => resolveHeroChromeTextColor(resolvedHero, theme),
+    [resolvedHero, theme],
+  );
+
+  const titleFontFamily
+    = optimisticTitleFontFamily
+      && parsedMetadata.titleFontFamily !== optimisticTitleFontFamily
+      ? optimisticTitleFontFamily
+      : serverTitleFontFamily;
 
   useEffect(() => {
     ensureTitleFontLoaded(titleFontFamily);
@@ -178,7 +218,7 @@ export function ProjectDetailPageHeader({
       const { top } = stickyBar.getBoundingClientRect();
       setIsStuck(top <= topOffset + 0.5);
 
-      if (!hasHeroImage || !heroBand) {
+      if (!hasHeroBackdrop || !heroBand) {
         setIsHeroOutOfView(true);
         setIsHeroTextOutOfView(true);
         return;
@@ -198,24 +238,68 @@ export function ProjectDetailPageHeader({
       scrollRoot?.removeEventListener('scroll', updateHeaderState);
       window.removeEventListener('resize', updateHeaderState);
     };
-  }, [hasHeroImage, topOffset]);
+  }, [hasHeroBackdrop, topOffset]);
 
   const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
-  const useHeroBarTheme = hasHeroImage && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
-  const showStickyGlass = hasHeroImage ? isHeroOutOfView : isStuck;
+  const useHeroBarTheme = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
+  const showStickyGlass = hasHeroBackdrop ? isHeroOutOfView : isStuck;
   const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
 
-  const headerTextSx = { color: resolvedHeaderColor };
+  const titleTextSx = { color: resolvedTitleColor };
 
   const heroTitleStyle = {
     ...getHeroTitleSx(
-      hasHeroImage,
+      hasHeroBackdrop,
       useCompactHeader,
       isHeroTextOutOfView,
       theme,
     ),
-    ...headerTextSx,
+    ...titleTextSx,
   } as Record<string, unknown>;
+
+  const breadcrumbSx = useMemo(
+    () => getProjectDetailBreadcrumbSx(resolvedChromeColor),
+    [resolvedChromeColor],
+  );
+
+  const persistHeroBackground = async (patch: MusicProjectMetadata) => {
+    const prev = parseMusicProjectMetadata(metadataRaw);
+    let merged = mergeMusicProjectMetadata(metadataRaw, patch);
+    let titleColorPatch: string | undefined;
+    const presetChanged = patch.heroBackgroundPreset !== undefined
+      && patch.heroBackgroundPreset !== prev.heroBackgroundPreset;
+    const kindChanged = patch.heroBackgroundKind !== undefined
+      && patch.heroBackgroundKind !== prev.heroBackgroundKind
+      && patch.heroBackgroundKind !== 'image';
+    if (presetChanged || kindChanged) {
+      const resolved = resolveHeroBackground(merged, theme);
+      const chromeColor = resolveHeroChromeTextColor(resolved, theme);
+      merged = {
+        ...merged,
+        heroChromeTextColor: chromeColor,
+      };
+      titleColorPatch = chromeColor;
+    }
+    setOptimisticHeroMetadata(merged);
+    if (titleColorPatch) {
+      setOptimisticHeaderColor(titleColorPatch);
+    }
+    try {
+      await updateProject.mutateAsync({
+        projectId,
+        data: {
+          metadata: merged,
+          ...(titleColorPatch ? { color: titleColorPatch } : {}),
+        },
+      });
+    } catch {
+      setOptimisticHeroMetadata(null);
+      if (titleColorPatch) {
+        setOptimisticHeaderColor(null);
+      }
+      throw new Error('Failed to save hero background');
+    }
+  };
 
   const handleSaveName = async (newName: string) => {
     await updateProject.mutateAsync({
@@ -243,7 +327,7 @@ export function ProjectDetailPageHeader({
   const handleColorSelect = (hex: string) => {
     setOptimisticHeaderColor(hex);
     setColorPickerAnchor(null);
-    updateProject
+    void updateProject
       .mutateAsync({
         projectId,
         data: { color: hex },
@@ -268,17 +352,38 @@ export function ProjectDetailPageHeader({
 
   const handleHeroFile = async (file: File) => {
     setUploadingHero(true);
+    setHeroPickerAnchor(null);
     try {
       const url = await uploadProjectImage(locale, projectId, file, 'hero');
-      await updateProject.mutateAsync({
-        projectId,
-        data: {
-          metadata: mergeMusicProjectMetadata(metadataRaw, { heroImageUrl: url }),
-        },
-      });
+      await persistHeroBackground(buildHeroBackgroundMetadataPatch('image', { imageUrl: url }));
     } finally {
       setUploadingHero(false);
     }
+  };
+
+  const handleSelectPreset = (preset: HeroBackgroundPreset) => {
+    void persistHeroBackground(applyHeroPresetRecipe(metadataRaw, preset));
+  };
+
+  const handleSelectCustomSolid = (hex: string) => {
+    void persistHeroBackground(
+      buildHeroBackgroundMetadataPatch('solid', {
+        color: hex,
+        overrides: { backgroundColor: hex, gradientStops: [hex] },
+      }),
+    );
+  };
+
+  const handleApplyCustom = (partial: Partial<HeroBackgroundOverrides>) => {
+    const merged = mergeHeroBackgroundOverrides(metadataRaw, partial);
+    const overridesOnly: MusicProjectMetadata = {
+      heroBackgroundOverrides: merged.heroBackgroundOverrides,
+    };
+    const prev = parseMusicProjectMetadata(metadataRaw);
+    if (prev.heroBackgroundKind !== 'composed' && prev.heroBackgroundKind !== 'image') {
+      overridesOnly.heroBackgroundKind = 'composed';
+    }
+    void persistHeroBackground(overridesOnly);
   };
 
   const onLogoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -312,7 +417,7 @@ export function ProjectDetailPageHeader({
           onClick={e => setFontPickerAnchor(e.currentTarget)}
           sx={{
             ...iconButtonSx,
-            'color': `${resolvedHeaderColor} !important`,
+            'color': `${resolvedTitleColor} !important`,
             '& .MuiSvgIcon-root': {
               color: 'inherit !important',
             },
@@ -334,7 +439,7 @@ export function ProjectDetailPageHeader({
               width: useCompactHeader ? 14 : 16,
               height: useCompactHeader ? 14 : 16,
               borderRadius: '50%',
-              bgcolor: resolvedHeaderColor,
+              bgcolor: resolvedTitleColor,
               boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
               display: 'block',
             }}
@@ -346,9 +451,9 @@ export function ProjectDetailPageHeader({
 
   const statsRow = (
     <MusicStatBadgeRow compact={useCompactHeader} nowrap>
-      <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact labelColor={resolvedHeaderColor} />
-      <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact labelColor={resolvedHeaderColor} />
-      <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact labelColor={resolvedHeaderColor} />
+      <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={resolvedChromeColor} />
+      <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={resolvedChromeColor} />
+      <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={resolvedChromeColor} />
     </MusicStatBadgeRow>
   );
 
@@ -370,20 +475,22 @@ export function ProjectDetailPageHeader({
       />
 
       <Box ref={heroBandRef} sx={getHeroBandSx()}>
-        <Box sx={getHeroBackgroundSx(theme)}>
-          <Image
-            src={heroImageSrc}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            style={heroImageStyle}
-          />
+        <Box sx={resolvedHero.backgroundSx}>
+          {resolvedHero.kind === 'image' && resolvedHero.imageUrl && (
+            <Image
+              src={resolvedHero.imageUrl}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              style={heroImageStyle}
+            />
+          )}
         </Box>
-        <Box sx={getHeroOverlaySx(theme, hasHeroImage)} />
+        <Box sx={getHeroOverlaySx(theme, hasHeroBackdrop, resolvedHero.overlayKind)} />
 
         <Box sx={getProjectDetailBreadcrumbWrapperSx()}>
-          <Breadcrumbs aria-label="breadcrumb" sx={getProjectDetailBreadcrumbSx()}>
+          <Breadcrumbs aria-label="breadcrumb" sx={breadcrumbSx}>
             <Link href={`/${locale}/projects`}>
               {t('breadcrumb_projects')}
             </Link>
@@ -405,10 +512,10 @@ export function ProjectDetailPageHeader({
           </Breadcrumbs>
         </Box>
 
-        <Tooltip title={t('upload_hero')}>
+        <Tooltip title={t('hero_background')}>
           <IconButton
-            aria-label={t('upload_hero')}
-            onClick={() => heroInputRef.current?.click()}
+            aria-label={t('hero_background')}
+            onClick={e => setHeroPickerAnchor(e.currentTarget)}
             disabled={uploadingHero}
             sx={{
               'position': 'absolute',
@@ -487,7 +594,11 @@ export function ProjectDetailPageHeader({
                     truncate
                     heroTitleStyle={heroTitleStyle}
                     titleAdornments={titleAdornments}
-                    keepAdornmentsVisible={Boolean(fontPickerAnchor) || Boolean(colorPickerAnchor)}
+                    keepAdornmentsVisible={
+                      Boolean(fontPickerAnchor)
+                      || Boolean(colorPickerAnchor)
+                      || Boolean(heroPickerAnchor)
+                    }
                     onSave={handleSaveName}
                   />
                 </Box>
@@ -496,7 +607,7 @@ export function ProjectDetailPageHeader({
               <Box sx={getProjectDetailActionsSx()}>
                 <Box
                   sx={getHeroToolbarWrapperSx(
-                    hasHeroImage,
+                    hasHeroBackdrop,
                     useCompactHeader,
                     isHeroTextOutOfView,
                     theme,
@@ -531,14 +642,28 @@ export function ProjectDetailPageHeader({
         open={Boolean(colorPickerAnchor)}
         anchorEl={colorPickerAnchor}
         onClose={() => setColorPickerAnchor(null)}
-        value={resolvedHeaderColor}
+        value={resolvedTitleColor}
         onChange={handleColorSelect}
         valueMode="hex"
         colorRows={HEADER_TEXT_COLOR_ROWS}
         columns={HEADER_TEXT_COLOR_COLUMNS}
         defaultCustomHex={DEFAULT_HEADER_TEXT_COLOR}
+        swatchVariant="square"
+        customColorAriaLabel={t('hero_bg_custom_color')}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      />
+
+      <ProjectHeroBackgroundPicker
+        anchorEl={heroPickerAnchor}
+        open={Boolean(heroPickerAnchor)}
+        onClose={() => setHeroPickerAnchor(null)}
+        resolved={resolvedHero}
+        onSelectPreset={handleSelectPreset}
+        onSelectCustomSolid={handleSelectCustomSolid}
+        onApplyCustom={handleApplyCustom}
+        onUploadClick={() => heroInputRef.current?.click()}
+        uploading={uploadingHero}
       />
     </Fragment>
   );

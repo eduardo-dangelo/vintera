@@ -36,6 +36,8 @@ function getSwatchBorderSx(hex: string) {
     : { boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.12)' };
 }
 
+type SwatchVariant = 'circle' | 'square';
+
 type EventColorPickerPopoverProps = {
   open: boolean;
   anchorEl: HTMLElement | null;
@@ -48,6 +50,10 @@ type EventColorPickerPopoverProps = {
   colorRows?: readonly (readonly ColorPickerPreset[])[];
   columns?: number;
   defaultCustomHex?: string;
+  /** Square swatches match hero background preset picker. */
+  swatchVariant?: SwatchVariant;
+  swatchSize?: number;
+  customColorAriaLabel?: string;
   anchorOrigin?: { vertical: 'top' | 'bottom' | 'center'; horizontal: 'left' | 'right' | 'center' };
   transformOrigin?: { vertical: 'top' | 'bottom' | 'center'; horizontal: 'left' | 'right' | 'center' };
 };
@@ -63,11 +69,17 @@ export function EventColorPickerPopover({
   colorRows,
   columns = 5,
   defaultCustomHex,
+  swatchVariant = 'circle',
+  swatchSize,
+  customColorAriaLabel,
   anchorOrigin = { vertical: 'bottom', horizontal: 'right' },
   transformOrigin = { vertical: 'top', horizontal: 'right' },
 }: EventColorPickerPopoverProps) {
   const t = useTranslations('Calendar');
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const isSquare = swatchVariant === 'square';
+  const size = swatchSize ?? (isSquare ? 28 : 24);
+  const swatchRadius = isSquare ? 1 : '50%';
 
   const isHexMode = valueMode === 'hex';
   const flatColors = useMemo(
@@ -98,6 +110,8 @@ export function EventColorPickerPopover({
       ?? EVENT_COLORS.find(c => c.value === 'blue')?.hex
       ?? '#3b82f6';
 
+  const showCustomColor = isCustomSelected || (isHexMode && isCustomHexColor(value));
+
   const renderSwatch = (c: ColorPickerPreset) => (
     <Box
       key={c.value}
@@ -106,9 +120,9 @@ export function EventColorPickerPopover({
       onClick={() => handlePresetClick(c.hex, c.value)}
       aria-label={c.label}
       sx={{
-        width: 24,
-        height: 24,
-        borderRadius: '50%',
+        width: size,
+        height: size,
+        borderRadius: swatchRadius,
         bgcolor: c.hex,
         border: '2px solid',
         borderColor: isPresetSelected(c.hex, c.value) ? 'primary.main' : 'transparent',
@@ -124,35 +138,32 @@ export function EventColorPickerPopover({
       component="button"
       type="button"
       onClick={() => colorInputRef.current?.click()}
-      aria-label={t('event_color_custom')}
+      aria-label={customColorAriaLabel ?? t('event_color_custom')}
       sx={{
-        width: 24,
-        height: 24,
-        borderRadius: '50%',
-        bgcolor: isCustomSelected || (isHexMode && isCustomHexColor(value))
-          ? (isHexMode ? value : value)
-          : 'grey.300',
+        width: size,
+        height: size,
+        borderRadius: swatchRadius,
+        bgcolor: showCustomColor && isHexMode ? value : 'grey.300',
         border: '2px solid',
-        borderColor: (isCustomSelected || (isHexMode && isCustomHexColor(value)))
-          ? 'primary.main'
-          : 'transparent',
+        borderColor: showCustomColor ? 'primary.main' : 'transparent',
         cursor: 'pointer',
         p: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.12)',
+        ...(showCustomColor && isHexMode ? getSwatchBorderSx(value) : {}),
       }}
     >
-      {!(isCustomSelected || (isHexMode && isCustomHexColor(value))) && (
-        <PaletteIcon sx={{ fontSize: 14, color: 'grey.600' }} />
+      {!showCustomColor && (
+        <PaletteIcon sx={{ fontSize: isSquare ? 16 : 14, color: 'grey.600' }} />
       )}
     </Box>
   );
 
   const rowGridSx = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${columns}, 24px)`,
+    gridTemplateColumns: `repeat(${columns}, ${size}px)`,
     gap: 1,
   } as const;
 

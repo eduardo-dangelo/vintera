@@ -98,7 +98,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
         projectId={projectId}
         name={project.name}
         coverImageUrl={project.coverImageUrl}
-        headerTextColor={project.color}
+        titleColor={project.color}
         metadata={project.metadata}
         albumCount={albums.length}
         songCount={songs.length}

@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { primaryGradientTextSx } from '@/utils/primaryGradientStyles';
 
 type Asset = {
   id: number;
@@ -57,12 +58,12 @@ function LinkCard({ link, index, isEditing, onLinkChange, onRemoveLink, t }: Lin
     >
       <Typography
         variant="subtitle2"
-        sx={{
-          color: 'primary.main',
+        sx={theme => ({
+          ...primaryGradientTextSx(theme),
           fontWeight: 600,
           mb: 1,
           textTransform: 'uppercase',
-        }}
+        })}
       >
         {isEditing
           ? (
@@ -97,14 +98,14 @@ function LinkCard({ link, index, isEditing, onLinkChange, onRemoveLink, t }: Lin
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{
+                sx={theme => ({
                   'display': 'flex',
                   'alignItems': 'center',
                   'gap': 0.5,
                   'color': 'text.primary',
                   'textDecoration': 'underline',
-                  '&:hover': { color: 'primary.main' },
-                }}
+                  '&:hover': primaryGradientTextSx(theme),
+                })}
               >
                 {link.icon && <span>{link.icon}</span>}
                 <Typography variant="body2">{link.url}</Typography>
@@ -198,7 +199,7 @@ export function PropertyQuickLinksSection({
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+        <Typography variant="h6" sx={theme => ({ fontWeight: 600, ...primaryGradientTextSx(theme) })}>
           {t('property_quick_links_title')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>

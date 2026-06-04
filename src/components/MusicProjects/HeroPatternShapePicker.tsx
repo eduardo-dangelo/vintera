@@ -1,6 +1,7 @@
 'use client';
 
 import type { SxProps, Theme } from '@mui/material/styles';
+import type { SystemStyleObject } from '@mui/system';
 import type { HeroPatternShape } from '@/components/MusicProjects/heroPatternShapes';
 import type { HeroBackgroundOverrides } from '@/utils/musicProjectMetadata';
 import { BlockOutlined as BlockOutlinedIcon } from '@mui/icons-material';
@@ -21,17 +22,23 @@ type HeroPatternShapePickerProps = {
   includeNoneOption?: boolean;
 };
 
-const tileSx = (selected: boolean) => ({
+const tileBaseSx = {
   width: '100%',
   aspectRatio: '16 / 10',
   borderRadius: 1,
-  border: '2px solid',
-  borderColor: selected ? 'primary.main' : 'divider',
   cursor: 'pointer',
   p: 0,
   overflow: 'hidden',
   position: 'relative' as const,
-});
+};
+
+function tileBorderSx(theme: Theme, selected: boolean): SystemStyleObject<Theme> {
+  // Pattern/preset tiles render preview backgrounds via backgroundImage — the
+  // gradient-border backgroundImage trick conflicts with those, so use solid border.
+  return selected
+    ? { border: '2px solid', borderColor: theme.palette.primary.main }
+    : { border: '2px solid', borderColor: 'divider' };
+}
 
 function getShapePreviewSx(
   shapeId: string,
@@ -100,10 +107,11 @@ export function HeroPatternShapePicker({
             onClick={() => onSelect(shape.id)}
             aria-label={t(shape.labelKey as Parameters<typeof t>[0])}
             title={t(shape.labelKey as Parameters<typeof t>[0])}
-            sx={{
-              ...tileSx(selected),
+            sx={theme => ({
+              ...tileBaseSx,
+              ...tileBorderSx(theme, selected),
               ...(getShapePreviewSx(shape.id, previewOverrides) as Record<string, unknown>),
-            }}
+            })}
           />
         );
       })}
@@ -114,8 +122,9 @@ export function HeroPatternShapePicker({
           onClick={() => onSelect(PATTERN_NONE_ID)}
           aria-label={noneLabel}
           title={noneLabel}
-          sx={{
-            ...tileSx(selectedId === PATTERN_NONE_ID),
+          sx={theme => ({
+            ...tileBaseSx,
+            ...tileBorderSx(theme, selectedId === PATTERN_NONE_ID),
             ...(getNonePreviewSx(previewOverrides) as Record<string, unknown>),
             'display': 'flex',
             'alignItems': 'center',
@@ -127,7 +136,7 @@ export function HeroPatternShapePicker({
               bgcolor: 'rgba(0, 0, 0, 0.12)',
               pointerEvents: 'none',
             },
-          }}
+          })}
         >
           <BlockOutlinedIcon
             sx={{
@@ -181,17 +190,11 @@ export function HeroPresetTilePicker({
             onClick={() => onSelect(preset.id)}
             aria-label={t(preset.labelKey as Parameters<typeof t>[0])}
             title={t(preset.labelKey as Parameters<typeof t>[0])}
-            sx={{
-              width: '100%',
-              aspectRatio: '16 / 10',
-              borderRadius: 1,
-              border: '2px solid',
-              borderColor: selected ? 'primary.main' : 'divider',
-              cursor: 'pointer',
-              p: 0,
-              overflow: 'hidden',
+            sx={theme => ({
+              ...tileBaseSx,
+              ...tileBorderSx(theme, selected),
               ...(preset.previewSx as Record<string, unknown>),
-            }}
+            })}
           />
         );
       })}

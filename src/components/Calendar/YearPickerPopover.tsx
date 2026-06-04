@@ -2,6 +2,7 @@
 
 import { Box, Typography } from '@mui/material';
 import { Popover } from '@/components/common/Popover';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 const YEAR_RANGE = 12;
 const BASE_YEAR_OFFSET = 6;
@@ -41,18 +42,27 @@ export function YearPickerPopover({
             component="button"
             type="button"
             onClick={() => onSelect(year)}
-            sx={{
-              'py': 1,
-              'px': 2,
-              'border': 'none',
-              'borderRadius': 0,
-              'bgcolor': 'transparent',
-              'cursor': 'pointer',
-              'textAlign': 'left',
-              'width': '100%',
-              '&:hover': { bgcolor: 'action.hover' },
-              ...(year === currentYear ? { 'bgcolor': 'primary.main', 'color': 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } } : {}),
-            }}
+            sx={theme => ({
+              py: 1,
+              px: 2,
+              border: 'none',
+              borderRadius: 0,
+              bgcolor: 'transparent',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              ...(year === currentYear
+                ? {
+                    ...primaryGradientFillSx(theme),
+                    '&:hover': {
+                      ...primaryGradientFillSx(theme),
+                      filter: 'brightness(1.05)',
+                    },
+                  }
+                : {
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }),
+            })}
             aria-label={`Select year ${year}`}
             aria-current={year === currentYear ? 'true' : undefined}
           >

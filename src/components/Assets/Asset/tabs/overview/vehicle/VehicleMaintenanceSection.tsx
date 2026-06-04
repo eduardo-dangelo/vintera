@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { Card } from '@/components/common/Card';
 import { Asset } from '@/entities';
 import { useHoverSound } from '@/hooks/useHoverSound';
+import { primaryGradientTextSx } from '@/utils/primaryGradientStyles';
 import { MotHistorySidePanel } from './MotHistorySidePanel';
 import { VehicleMileageChart } from './VehicleMileageChart';
 
@@ -605,15 +606,15 @@ export function VehicleMaintenanceSection({
                                 href={link.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                sx={{
+                                sx={theme => ({
                                   'display': 'flex',
                                   'alignItems': 'center',
                                   'gap': 0.5,
                                   'color': 'text.primary',
                                   'textDecoration': 'underline',
                                   'mb': 0.5,
-                                  '&:hover': { color: 'primary.main' },
-                                }}
+                                  '&:hover': primaryGradientTextSx(theme),
+                                })}
                               >
                                 {link.icon && <span>{link.icon}</span>}
                                 <Typography variant="body2">{link.label}</Typography>
@@ -628,14 +629,14 @@ export function VehicleMaintenanceSection({
                             href={finance.links[0]?.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            sx={{
+                            sx={theme => ({
                               'display': 'inline-flex',
                               'alignItems': 'center',
                               'gap': 0.5,
-                              'color': 'primary.main',
                               'textDecoration': 'none',
+                              ...primaryGradientTextSx(theme),
                               '&:hover': { textDecoration: 'underline' },
-                            }}
+                            })}
                           >
                             {t('details')}
                             <OpenInNewIcon sx={{ fontSize: 14 }} />

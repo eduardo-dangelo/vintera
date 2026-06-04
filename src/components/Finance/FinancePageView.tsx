@@ -82,6 +82,10 @@ import { FINANCE_ENTRY_CATEGORIES } from '@/entities';
 import { useGetAssets as useGetAssetsList } from '@/queries/hooks/assets/useGetAssets';
 import { useCreateFinanceEntry, useDeleteFinanceEntry, useFinanceEntries, useUpdateFinanceEntry } from '@/queries/hooks/finance-entries';
 import { useGetUserPreferences } from '@/queries/hooks/users';
+import {
+  primaryGradientBorderSx,
+  primaryGradientLinkButtonSx,
+} from '@/utils/primaryGradientStyles';
 
 type FinancePageViewProps = {
   locale: string;
@@ -2306,16 +2310,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                       component="button"
                       type="button"
                       onClick={() => setShowFinanceAgreementDetails(true)}
-                      sx={{
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        p: 0,
-                        m: 0,
-                        font: 'inherit',
-                        color: 'primary.main',
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                      }}
+                      sx={theme => primaryGradientLinkButtonSx(theme)}
                     >
                       enter the details manually
                     </Box>
@@ -2330,16 +2325,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                         component="button"
                         type="button"
                         onClick={() => setShowInsuranceDetails(true)}
-                        sx={{
-                          border: 'none',
-                          backgroundColor: 'transparent',
-                          p: 0,
-                          m: 0,
-                          font: 'inherit',
-                          color: 'primary.main',
-                          cursor: 'pointer',
-                          textDecoration: 'none',
-                        }}
+                        sx={theme => primaryGradientLinkButtonSx(theme)}
                       >
                         add details manually
                       </Box>
@@ -2354,16 +2340,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                           component="button"
                           type="button"
                           onClick={() => setShowGasDetails(true)}
-                          sx={{
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            p: 0,
-                            m: 0,
-                            font: 'inherit',
-                            color: 'primary.main',
-                            cursor: 'pointer',
-                            textDecoration: 'none',
-                          }}
+                          sx={theme => primaryGradientLinkButtonSx(theme)}
                         >
                           add details manually
                         </Box>
@@ -2374,7 +2351,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                         <Typography variant="caption" color="text.secondary">
                           Upload your repair receipt or
                           {' '}
-                          <Box component="button" type="button" onClick={() => setShowRepairDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                          <Box component="button" type="button" onClick={() => setShowRepairDetails(true)} sx={theme => primaryGradientLinkButtonSx(theme)}>
                             add details manually
                           </Box>
                         </Typography>
@@ -2384,7 +2361,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                           <Typography variant="caption" color="text.secondary">
                             Upload your tax document or
                             {' '}
-                            <Box component="button" type="button" onClick={() => setShowTaxDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                            <Box component="button" type="button" onClick={() => setShowTaxDetails(true)} sx={theme => primaryGradientLinkButtonSx(theme)}>
                               add details manually
                             </Box>
                           </Typography>
@@ -2394,7 +2371,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                             <Typography variant="caption" color="text.secondary">
                               Upload your service receipt or
                               {' '}
-                              <Box component="button" type="button" onClick={() => setShowServiceDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                              <Box component="button" type="button" onClick={() => setShowServiceDetails(true)} sx={theme => primaryGradientLinkButtonSx(theme)}>
                                 add details manually
                               </Box>
                             </Typography>
@@ -2404,7 +2381,7 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                               <Typography variant="caption" color="text.secondary">
                                 Upload your MOT document or
                                 {' '}
-                                <Box component="button" type="button" onClick={() => setShowMotDetails(true)} sx={{ border: 'none', backgroundColor: 'transparent', p: 0, m: 0, font: 'inherit', color: 'primary.main', cursor: 'pointer', textDecoration: 'none' }}>
+                                <Box component="button" type="button" onClick={() => setShowMotDetails(true)} sx={theme => primaryGradientLinkButtonSx(theme)}>
                                   add details manually
                                 </Box>
                               </Typography>
@@ -2497,16 +2474,17 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                       setColorPickerAnchor(null);
                     }}
                     aria-label={c.label}
-                    sx={{
+                    sx={theme => ({
                       width: 24,
                       height: 24,
                       borderRadius: '50%',
                       bgcolor: c.hex,
-                      border: financeColor === c.hex ? '2px solid' : '2px solid transparent',
-                      borderColor: financeColor === c.hex ? 'primary.main' : 'transparent',
                       cursor: 'pointer',
                       p: 0,
-                    }}
+                      ...(financeColor === c.hex
+                        ? primaryGradientBorderSx(theme, 2, c.hex)
+                        : { border: '2px solid transparent' }),
+                    })}
                   />
                 ))}
                 <Box
@@ -2514,19 +2492,20 @@ export function FinancePageView({ locale, assetId, assetName: _assetName, assetT
                   type="button"
                   onClick={() => colorInputRef.current?.click()}
                   aria-label="Custom color"
-                  sx={{
+                  sx={theme => ({
                     width: 24,
                     height: 24,
                     borderRadius: '50%',
                     bgcolor: isCustomColor(financeColor) ? financeColor : 'grey.300',
-                    border: isCustomColor(financeColor) ? '2px solid' : '2px solid transparent',
-                    borderColor: isCustomColor(financeColor) ? 'primary.main' : 'transparent',
                     cursor: 'pointer',
                     p: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                  }}
+                    ...(isCustomColor(financeColor)
+                      ? primaryGradientBorderSx(theme, 2, financeColor)
+                      : { border: '2px solid transparent' }),
+                  })}
                 >
                   {!isCustomColor(financeColor) && <PaletteIcon sx={{ fontSize: 14, color: 'grey.600' }} />}
                 </Box>

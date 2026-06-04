@@ -5,7 +5,7 @@ import {
   glassPopoverCancelButtonSx,
   glassPopoverConfirmButtonSx,
 } from '@/utils/glassPaperStyles';
-import { PRIMARY_GRADIENT, primaryGradientSx } from './musicListToolbarStyles';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 export const CREATE_ALBUM_POPOVER_WIDTH = 280;
 export const CREATE_SONG_POPOVER_WIDTH = 300;
@@ -84,9 +84,9 @@ export const createPopoverCancelButtonSx: SxProps<Theme> = {
   minWidth: 'auto',
 };
 
-export const createPopoverCreateButtonSx: SxProps<Theme> = {
+export const createPopoverCreateButtonSx: SxProps<Theme> = theme => ({
   ...glassPopoverConfirmButtonSx,
-  ...primaryGradientSx,
+  ...primaryGradientFillSx(theme),
   'color': 'common.white',
   'boxShadow': 'none',
   '&:hover': {
@@ -95,7 +95,7 @@ export const createPopoverCreateButtonSx: SxProps<Theme> = {
     filter: 'brightness(1.05)',
   },
   '&.Mui-disabled': {
-    'background': PRIMARY_GRADIENT,
+    'background': theme.palette.gradients.primary,
     'color': 'common.white',
     'opacity': 0.55,
     'filter': 'grayscale(1)',
@@ -104,4 +104,4 @@ export const createPopoverCreateButtonSx: SxProps<Theme> = {
       opacity: 0.85,
     },
   },
-};
+});

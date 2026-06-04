@@ -3,6 +3,7 @@
 import { Box, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { Popover } from '@/components/common/Popover';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 type MonthPickerPopoverProps = {
   open: boolean;
@@ -42,18 +43,27 @@ export function MonthPickerPopover({
             component="button"
             type="button"
             onClick={() => onSelect(index)}
-            sx={{
-              'py': 1,
-              'px': 2,
-              'border': 'none',
-              'borderRadius': 0,
-              'bgcolor': 'transparent',
-              'cursor': 'pointer',
-              'textAlign': 'left',
-              'width': '100%',
-              '&:hover': { bgcolor: 'action.hover' },
-              ...(index === currentMonth ? { 'bgcolor': 'primary.main', 'color': 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } } : {}),
-            }}
+            sx={theme => ({
+              py: 1,
+              px: 2,
+              border: 'none',
+              borderRadius: 0,
+              bgcolor: 'transparent',
+              cursor: 'pointer',
+              textAlign: 'left',
+              width: '100%',
+              ...(index === currentMonth
+                ? {
+                    ...primaryGradientFillSx(theme),
+                    '&:hover': {
+                      ...primaryGradientFillSx(theme),
+                      filter: 'brightness(1.05)',
+                    },
+                  }
+                : {
+                    '&:hover': { bgcolor: 'action.hover' },
+                  }),
+            })}
             aria-label={`Select ${label}`}
             aria-current={index === currentMonth ? 'true' : undefined}
           >

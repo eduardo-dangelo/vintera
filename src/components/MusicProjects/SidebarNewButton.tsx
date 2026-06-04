@@ -19,7 +19,6 @@ import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverSty
 import { CreateProjectPopover } from './CreateProjectPopover';
 import { CreateSongPopover } from './CreateSongPopover';
 import { GradientIcon } from './GradientIcon';
-import { primaryGradientSx } from './musicListToolbarStyles';
 
 const menuItemSx = {
   display: 'flex',
@@ -110,7 +109,6 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         endIcon={<ArrowDropDownIcon sx={{ fontSize: 16 }} />}
         startIcon={<AddIcon sx={{ fontSize: 16 }} />}
         sx={{
-          ...primaryGradientSx,
           'justifyContent': 'space-between',
           'textTransform': 'none',
           'fontWeight': 500,

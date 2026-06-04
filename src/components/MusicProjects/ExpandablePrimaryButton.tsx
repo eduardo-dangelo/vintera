@@ -2,7 +2,6 @@
 
 import { Add as AddIcon } from '@mui/icons-material';
 import { Button } from '@mui/material';
-import { primaryGradientSx } from './musicListToolbarStyles';
 
 type ExpandablePrimaryButtonProps = {
   label: string;
@@ -14,11 +13,11 @@ export function ExpandablePrimaryButton({ label, onClick, ariaLabel }: Expandabl
   return (
     <Button
       variant="contained"
+      color="primary"
       startIcon={<AddIcon sx={{ fontSize: 18 }} />}
       onClick={e => onClick(e)}
       aria-label={ariaLabel ?? label}
       sx={{
-        ...primaryGradientSx,
         'textTransform': 'none',
         'fontWeight': 600,
         'fontSize': '0.875rem',

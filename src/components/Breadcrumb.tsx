@@ -3,6 +3,7 @@
 import { Home as HomeIcon, NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import { Breadcrumbs, Link as MuiLink, Typography, useTheme } from '@mui/material';
 import Link from 'next/link';
+import { primaryGradientTextSx } from '@/utils/primaryGradientStyles';
 
 type BreadcrumbItem = {
   label: string;
@@ -57,9 +58,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
               'textDecoration': 'none',
               'display': 'flex',
               'alignItems': 'center',
-              '&:hover': {
-                color: theme.palette.primary.main,
-              },
+              '&:hover': primaryGradientTextSx(theme),
             }}
           >
             {isFirst ? <HomeIcon fontSize="small" /> : item.label}

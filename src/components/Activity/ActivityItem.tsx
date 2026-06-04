@@ -33,6 +33,7 @@ import LinkNext from 'next/link';
 import { useState } from 'react';
 import { CalendarEvent } from '@/components/Calendar/CalendarEvent';
 import { areAssetFieldValuesEqual, stableJsonForActivityKey } from '@/lib/assetUpdateDiff';
+import { primaryGradientBorderBottomSx } from '@/utils/primaryGradientStyles';
 
 const EVENT_CHANGE_DATETIME_FORMAT = 'd MMM HH:mm';
 
@@ -820,17 +821,16 @@ export function ActivityItem({
                 const TabIconInline = meta?.tabName ? getTabIcon(meta.tabName) : OverviewIcon;
                 return <TabIconInline sx={{ fontSize: 16 }} />;
               })()}
-              sx={{
+              sx={theme => ({
                 textTransform: 'none',
                 fontWeight: 500,
                 py: 0,
                 px: 0.5,
                 color: 'text.secondary',
                 border: 'none',
-                borderBottom: '2px solid',
                 borderRadius: 0,
-                borderColor: 'primary.main',
-              }}
+                ...primaryGradientBorderBottomSx(theme),
+              })}
             >
               {entityName}
             </Button>
@@ -847,17 +847,16 @@ export function ActivityItem({
                   const TabIconInline = meta?.tabName ? getTabIcon(meta.tabName) : OverviewIcon;
                   return <TabIconInline sx={{ fontSize: 16 }} />;
                 })()}
-                sx={{
+                sx={theme => ({
                   textTransform: 'none',
                   fontWeight: 500,
                   py: 0,
                   px: 0.5,
                   color: 'text.secondary',
                   border: 'none',
-                  borderBottom: '2px solid',
                   borderRadius: 0,
-                  borderColor: 'primary.main',
-                }}
+                  ...primaryGradientBorderBottomSx(theme),
+                })}
               >
                 {entityName}
               </Button>

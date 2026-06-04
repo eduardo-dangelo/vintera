@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { primaryGradientTextSx } from '@/utils/primaryGradientStyles';
 
 type Asset = {
   id: number;
@@ -86,7 +87,7 @@ export function GenericOverviewSection({
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+        <Typography variant="h6" sx={theme => ({ fontWeight: 600, ...primaryGradientTextSx(theme) })}>
           {t('overview_info_title')}
         </Typography>
         {!isEditing

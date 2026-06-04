@@ -29,6 +29,7 @@ import { useSetBreadcrumb } from '@/components/BreadcrumbContext';
 import { CollapsibleSearch } from '@/components/common/CollapsibleSearch';
 import { useGlobalTopbarContent } from '@/components/GlobalTopbarContentContext';
 import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 import { NewAssetButton } from './NewAssetButton';
 
 type ViewMode = 'folder' | 'list';
@@ -197,11 +198,10 @@ export function AssetsTopBar({
             horizontal: 'right',
           }}
           onClick={handleSortClick}
-          sx={{
+          sx={theme => ({
             'cursor': 'pointer',
             '& .MuiBadge-badge': {
-              bgcolor: 'primary.main',
-              color: 'white',
+              ...primaryGradientFillSx(theme),
               fontSize: '0.625rem',
               fontWeight: 600,
               width: 14,
@@ -209,7 +209,7 @@ export function AssetsTopBar({
               minWidth: 16,
               cursor: 'pointer',
             },
-          }}
+          })}
         >
           <IconButton
             size="small"

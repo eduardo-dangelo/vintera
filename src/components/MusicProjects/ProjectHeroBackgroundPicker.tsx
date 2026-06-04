@@ -25,7 +25,9 @@ import {
 } from '@/components/MusicProjects/heroBackgroundPresets';
 import { HeroPresetTilePicker } from '@/components/MusicProjects/HeroPatternShapePicker';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { getHexLuminance, readableTextOnLuminance } from '@/utils/heroChromeTextColor';
 import { hasPatternOverlay } from '@/utils/musicProjectMetadata';
+import { primaryGradientBorderSx } from '@/utils/primaryGradientStyles';
 
 const DEFAULT_CUSTOM_SOLID = '#8b5cf6';
 const SWATCH_SIZE = 28;
@@ -47,6 +49,13 @@ function getSwatchBorderSx(hex: string) {
   return isLightSwatchHex(hex)
     ? { boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.18)' }
     : { boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.12)' };
+}
+
+function getCustomSwatchIconColor(hex: string | null, selected: boolean): string {
+  if (!selected || !hex) {
+    return 'grey.600';
+  }
+  return readableTextOnLuminance(getHexLuminance(hex));
 }
 
 const sectionTitleSx = {
@@ -111,17 +120,18 @@ export function ProjectHeroBackgroundPicker({
         type="button"
         onClick={() => onSelectPreset(preset)}
         aria-label={t(preset.labelKey as Parameters<typeof t>[0])}
-        sx={{
+        sx={theme => ({
           width: SWATCH_SIZE,
           height: SWATCH_SIZE,
           borderRadius: 1,
           bgcolor: hex,
-          border: '2px solid',
-          borderColor: selected ? 'primary.main' : 'transparent',
           cursor: 'pointer',
           p: 0,
+          ...(selected
+            ? primaryGradientBorderSx(theme, 2, hex)
+            : { border: '2px solid transparent' }),
           ...getSwatchBorderSx(hex),
-        }}
+        })}
       />
     );
   };
@@ -132,25 +142,36 @@ export function ProjectHeroBackgroundPicker({
       type="button"
       onClick={() => colorInputRef.current?.click()}
       aria-label={t('hero_bg_custom_color')}
-      sx={{
+      sx={theme => ({
         width: SWATCH_SIZE,
         height: SWATCH_SIZE,
         borderRadius: 1,
         bgcolor: isCustomSolidSelected && customSolidHex ? customSolidHex : 'grey.300',
-        border: '2px solid',
-        borderColor: isCustomSolidSelected ? 'primary.main' : 'transparent',
         cursor: 'pointer',
         p: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.12)',
+        ...(isCustomSolidSelected
+          ? primaryGradientBorderSx(
+              theme,
+              2,
+              customSolidHex ?? 'grey.300',
+            )
+          : { border: '2px solid transparent' }),
         ...(isCustomSolidSelected && customSolidHex ? getSwatchBorderSx(customSolidHex) : {}),
-      }}
+      })}
     >
-      {!isCustomSolidSelected && (
-        <PaletteIcon sx={{ fontSize: 16, color: 'grey.600' }} />
-      )}
+      <PaletteIcon
+        sx={{
+          fontSize: 16,
+          color: getCustomSwatchIconColor(
+            isCustomSolidSelected ? (customSolidHex ?? null) : null,
+            isCustomSolidSelected,
+          ),
+        }}
+      />
     </Box>
   );
 

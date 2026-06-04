@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useGetUserPreferences, useUpdateUserPreferences } from '@/queries/hooks/users';
 import { getMuiSliderStyleOverrides } from '@/utils/gradientSliderStyles';
+import { getMuiPrimaryGradientOverrides } from '@/utils/primaryGradientStyles';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -121,9 +122,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                   selected: 'rgba(0, 0, 0, 0.08)',
                 },
                 primary: {
-                  main: '#60a5fa',
-                  light: '#93c5fd',
-                  dark: '#3b82f6',
+                  main: '#8b5cf6',
+                  light: '#a78bfa',
+                  dark: '#7c3aed',
                   contrastText: '#ffffff',
                 },
               }
@@ -141,9 +142,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
                   selected: 'rgba(255, 255, 255, 0.12)',
                 },
                 primary: {
-                  main: '#60a5fa',
-                  light: '#93c5fd',
-                  dark: '#3b82f6',
+                  main: '#8b5cf6',
+                  light: '#a78bfa',
+                  dark: '#7c3aed',
                   contrastText: '#ffffff',
                 },
               }),
@@ -157,6 +158,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           },
         },
         components: {
+          ...getMuiPrimaryGradientOverrides(),
           MuiSlider: getMuiSliderStyleOverrides(),
         },
       }),

@@ -5,6 +5,7 @@ import { Box, Popover } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef } from 'react';
 import { EVENT_COLORS } from '@/components/Calendar/constants';
+import { primaryGradientBorderSx } from '@/utils/primaryGradientStyles';
 
 export type ColorPickerPreset = {
   value: string;
@@ -122,17 +123,18 @@ export function EventColorPickerPopover({
       type="button"
       onClick={() => handlePresetClick(c.hex, c.value)}
       aria-label={c.label}
-      sx={{
+      sx={theme => ({
         width: size,
         height: size,
         borderRadius: swatchRadius,
         bgcolor: c.hex,
-        border: '2px solid',
-        borderColor: isPresetSelected(c.hex, c.value) ? 'primary.main' : 'transparent',
         cursor: 'pointer',
         p: 0,
+        ...(isPresetSelected(c.hex, c.value)
+          ? primaryGradientBorderSx(theme, 2, c.hex)
+          : { border: '2px solid transparent' }),
         ...getSwatchBorderSx(c.hex),
-      }}
+      })}
     />
   );
 
@@ -142,21 +144,26 @@ export function EventColorPickerPopover({
       type="button"
       onClick={() => colorInputRef.current?.click()}
       aria-label={customColorAriaLabel ?? t('event_color_custom')}
-      sx={{
+      sx={theme => ({
         width: size,
         height: size,
         borderRadius: swatchRadius,
         bgcolor: showCustomColor && isHexMode ? value : 'grey.300',
-        border: '2px solid',
-        borderColor: showCustomColor ? 'primary.main' : 'transparent',
         cursor: 'pointer',
         p: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.12)',
+        ...(showCustomColor
+          ? primaryGradientBorderSx(
+              theme,
+              2,
+              isHexMode ? value : 'grey.300',
+            )
+          : { border: '2px solid transparent' }),
         ...(showCustomColor && isHexMode ? getSwatchBorderSx(value) : {}),
-      }}
+      })}
     >
       {!showCustomColor && (
         <PaletteIcon sx={{ fontSize: isSquare ? 16 : 14, color: 'grey.600' }} />

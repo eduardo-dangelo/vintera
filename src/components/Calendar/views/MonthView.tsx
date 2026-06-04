@@ -15,6 +15,7 @@ import {
 } from 'date-fns';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
+import { primaryGradientBorderSx, primaryGradientTextSx } from '@/utils/primaryGradientStyles';
 import { COLOR_MAP } from '../constants';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -236,31 +237,34 @@ function MonthGrid({ monthDate, events, onDayClick, onEventClick }: MonthGridPro
               type="button"
               onClick={e => onDayClick(day, e.currentTarget as HTMLElement)}
               onMouseEnter={playHoverSound}
-              sx={{
+              sx={theme => ({
                 'minHeight': 140,
                 'p': 1,
                 'cursor': 'pointer',
                 'textAlign': 'left',
                 'display': 'flex',
                 'flexDirection': 'column',
-                'border': '1px solid',
-                'borderColor': isTodayDate ? 'primary.main' : 'divider',
                 'bgcolor': 'transparent',
+                ...(isTodayDate
+                  ? primaryGradientBorderSx(theme, 1)
+                  : { border: '1px solid', borderColor: 'divider' }),
                 '&:hover': inMonth
                   ? { bgcolor: 'action.hover' }
                   : {},
                 'transition': 'background-color 0.15s',
-              }}
+              })}
               elevation={0}
             >
               <Typography
                 variant="body2"
-                sx={{
+                sx={theme => ({
                   fontWeight: isTodayDate ? 700 : 500,
                   fontSize: '0.875rem',
-                  color: inMonth ? (isTodayDate ? 'primary.main' : 'grey.700') : 'grey.500',
                   mb: 0.5,
-                }}
+                  ...(isTodayDate && inMonth
+                    ? primaryGradientTextSx(theme)
+                    : { color: inMonth ? 'grey.700' : 'grey.500' }),
+                })}
               >
                 {format(day, 'd')}
               </Typography>

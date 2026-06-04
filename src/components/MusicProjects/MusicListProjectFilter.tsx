@@ -12,14 +12,15 @@ import {
   IconButton,
   TextField,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 import { Popover } from '@/components/common/Popover';
-import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 const POPOVER_WIDTH = 280;
 
@@ -40,11 +41,10 @@ const projectFilterInputSx = {
   },
 } as const;
 
-const filterBadgeSx = {
+const filterBadgeSx = (theme: Theme) => ({
   'cursor': 'pointer',
   '& .MuiBadge-badge': {
-    background: PRIMARY_GRADIENT,
-    color: 'white',
+    ...primaryGradientFillSx(theme),
     fontSize: '0.625rem',
     fontWeight: 600,
     width: 14,
@@ -52,7 +52,7 @@ const filterBadgeSx = {
     minWidth: 16,
     cursor: 'pointer',
   },
-} as const;
+});
 
 type MusicListProjectFilterProps = {
   locale: string;
@@ -68,6 +68,7 @@ export function MusicListProjectFilter({
   iconButtonSx,
 }: MusicListProjectFilterProps) {
   const t = useTranslations('MusicProjects');
+  const theme = useTheme();
   const { data: projects } = useMusicProjects(locale);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -106,7 +107,7 @@ export function MusicListProjectFilter({
             horizontal: 'right',
           }}
           onClick={handleOpen}
-          sx={filterBadgeSx}
+          sx={filterBadgeSx(theme)}
         >
           <IconButton
             ref={buttonRef}

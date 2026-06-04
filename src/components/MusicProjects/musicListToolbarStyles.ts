@@ -1,13 +1,14 @@
 import type { SxProps, Theme } from '@mui/material/styles';
+import {
+  PRIMARY_GRADIENT,
+  PRIMARY_GRADIENT_END,
+  PRIMARY_GRADIENT_START,
+  primaryGradientFillSx,
+} from '@/utils/primaryGradientStyles';
 
-export const PRIMARY_GRADIENT = 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)';
-export const PRIMARY_GRADIENT_START = '#8b5cf6';
-export const PRIMARY_GRADIENT_END = '#3b82f6';
+export { PRIMARY_GRADIENT, PRIMARY_GRADIENT_END, PRIMARY_GRADIENT_START };
 
-export const primaryGradientSx: SxProps<Theme> = {
-  background: PRIMARY_GRADIENT,
-  color: '#ffffff',
-};
+export const primaryGradientSx: SxProps<Theme> = theme => primaryGradientFillSx(theme);
 
 export function getToolbarIconButtonSx(theme: Theme): SxProps<Theme> {
   return {

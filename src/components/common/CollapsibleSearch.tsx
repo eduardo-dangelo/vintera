@@ -1,9 +1,9 @@
 'use client';
 
 import { Search as SearchIcon } from '@mui/icons-material';
-import { Badge, Box, IconButton, TextField, Tooltip } from '@mui/material';
+import { Badge, Box, IconButton, TextField, Tooltip, useTheme } from '@mui/material';
 import { useRef, useState } from 'react';
-import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
+import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 type CollapsibleSearchProps = {
   value: string;
@@ -18,6 +18,7 @@ export function CollapsibleSearch({
   placeholder = 'Search',
   iconButtonSx,
 }: CollapsibleSearchProps) {
+  const theme = useTheme();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchFieldRef = useRef<HTMLInputElement>(null);
   const safeValue = value ?? '';
@@ -77,8 +78,7 @@ export function CollapsibleSearch({
                 sx={{
                   'cursor': 'pointer',
                   '& .MuiBadge-badge': {
-                    background: PRIMARY_GRADIENT,
-                    color: 'white',
+                    ...primaryGradientFillSx(theme),
                     fontSize: '0.625rem',
                     fontWeight: 600,
                     width: 14,

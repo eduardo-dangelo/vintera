@@ -5,7 +5,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MusicFolderGrid } from '@/components/MusicProjects/MusicFolderGrid';
 import { MusicListContentSkeleton } from '@/components/MusicProjects/MusicListContentSkeleton';
 import { MusicListEmptyState } from '@/components/MusicProjects/MusicListEmptyState';
@@ -13,10 +13,12 @@ import { MusicListPageHeader } from '@/components/MusicProjects/MusicListPageHea
 import { MusicListToolbar } from '@/components/MusicProjects/MusicListToolbar';
 import { NewMusicProjectButton } from '@/components/MusicProjects/NewMusicProjectButton';
 import { ProjectCard } from '@/components/MusicProjects/ProjectCard';
+import { ensureTitleFontLoaded } from '@/components/MusicProjects/projectTitleFonts';
 import { ProjectListView } from '@/components/MusicProjects/Views/ProjectListView';
 import { useListViewPrefs } from '@/hooks/useListViewPrefs';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
 import { filterBySearchQuery } from '@/utils/filterMusicListItems';
+import { resolveProjectTitleFontFamily } from '@/utils/musicProjectMetadata';
 
 type ProjectsClientProps = {
   locale: string;
@@ -36,6 +38,15 @@ export function ProjectsClient({ locale }: ProjectsClientProps) {
     ),
     [projects, searchQuery],
   );
+
+  useEffect(() => {
+    const fonts = new Set(
+      filteredProjects.map(project => resolveProjectTitleFontFamily(project.metadata)),
+    );
+    for (const font of fonts) {
+      ensureTitleFontLoaded(font);
+    }
+  }, [filteredProjects]);
 
   if (error) {
     return (

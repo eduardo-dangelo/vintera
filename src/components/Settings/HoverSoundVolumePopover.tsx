@@ -7,7 +7,6 @@ import {
   Slider,
   SvgIcon,
   Tooltip,
-  useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
@@ -23,45 +22,6 @@ const muteButtonSx = (muted: boolean) => ({
   'transition': 'all 0.2s ease',
   '&:hover': {
     bgcolor: muted ? 'action.selected' : 'action.hover',
-  },
-});
-
-const sliderSx = (primaryGradient: string) => ({
-  'flex': 1,
-  'mx': 0.5,
-  'py': 0.5,
-  'color': 'primary.main',
-  '& .MuiSlider-rail': {
-    height: 6,
-    borderRadius: 3,
-    opacity: 1,
-    bgcolor: 'action.hover',
-  },
-  '& .MuiSlider-track': {
-    height: 6,
-    borderRadius: 3,
-    border: 'none',
-    background: primaryGradient,
-  },
-  '& .MuiSlider-thumb': {
-    width: 14,
-    height: 14,
-    background: primaryGradient,
-    border: 'none',
-  },
-  '&.Mui-disabled': {
-    'color': 'action.disabled',
-    '& .MuiSlider-rail': {
-      bgcolor: 'grey.200',
-    },
-    '& .MuiSlider-track': {
-      background: 'grey.300',
-      bgcolor: 'grey.300',
-    },
-    '& .MuiSlider-thumb': {
-      background: 'grey.300',
-      bgcolor: 'grey.300',
-    },
   },
 });
 
@@ -107,12 +67,8 @@ export function HoverSoundVolumePopover({
   onMuteToggle,
 }: HoverSoundVolumePopoverProps) {
   const t = useTranslations('Settings');
-  const theme = useTheme();
   const [localVolume, setLocalVolume] = useState(volume);
   const [isUpdatingMute, setIsUpdatingMute] = useState(false);
-  const primaryGradient = (theme.palette as typeof theme.palette & { gradients: { primary: string } })
-    .gradients
-    .primary;
 
   useEffect(() => {
     setLocalVolume(volume);
@@ -173,7 +129,6 @@ export function HoverSoundVolumePopover({
           max={100}
           disabled={isLoading || muted}
           aria-label={t('hover_sound_volume_label')}
-          sx={sliderSx(primaryGradient)}
           onChange={(_, value) => {
             const nextVolume = value as number;
             setLocalVolume(nextVolume);

@@ -36,6 +36,7 @@ export type MusicListTableRow = {
   coverImageUrl?: string | null;
   coverType: MusicCoverType;
   title: string;
+  titleFontFamily?: string;
   subtitle: string | ReactNode;
   statPrimary?: ReactNode;
   statSecondary?: ReactNode;
@@ -186,7 +187,11 @@ function MusicListTableRowItem({
         size={MUSIC_LIST_COVER_SIZE}
       />
       <Box sx={getMusicListTableMainSx()}>
-        <MusicListItemCell title={row.title} subtitle={row.subtitle} />
+        <MusicListItemCell
+          title={row.title}
+          titleFontFamily={row.titleFontFamily}
+          subtitle={row.subtitle}
+        />
       </Box>
       <Box sx={getMusicListTableStatSx()}>
         {row.statPrimary}
@@ -218,10 +223,11 @@ function MusicListTableRowItem({
 
 type MusicListItemCellProps = {
   title: string;
+  titleFontFamily?: string;
   subtitle: string | ReactNode;
 };
 
-export function MusicListItemCell({ title, subtitle }: MusicListItemCellProps) {
+export function MusicListItemCell({ title, titleFontFamily, subtitle }: MusicListItemCellProps) {
   const subtitleIsString = typeof subtitle === 'string';
 
   return (
@@ -229,7 +235,10 @@ export function MusicListItemCell({ title, subtitle }: MusicListItemCellProps) {
       <Typography
         variant="body2"
         className="music-list-table-title"
-        sx={getMusicListTableTitleSx()}
+        sx={{
+          ...getMusicListTableTitleSx(),
+          ...(titleFontFamily ? { fontFamily: titleFontFamily } : {}),
+        }}
       >
         {title}
       </Typography>

@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { MusicPeopleAvatarGroup } from '@/components/MusicProjects/MusicPeopleAvatarGroup';
 import { MusicStatBadge } from '@/components/MusicProjects/MusicStatBadge';
+import { resolveProjectTitleFontFamily } from '@/utils/musicProjectMetadata';
 import { MusicListTable } from './MusicListTable';
 
 type ProjectListViewProps = {
@@ -32,6 +33,7 @@ export function ProjectListView({ projects, locale }: ProjectListViewProps) {
         coverImageUrl: project.coverImageUrl,
         coverType: 'project' as const,
         title: project.name,
+        titleFontFamily: resolveProjectTitleFontFamily(project.metadata),
         subtitle: buildProjectSubtitle(project),
         menuTarget: {
           kind: 'project',

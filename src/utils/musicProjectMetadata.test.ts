@@ -5,6 +5,7 @@ import {
   buildComposedHeroBackgroundSx,
   buildGradientBackground,
   buildMultiStopGradient,
+  findHeroBackgroundPreset,
   getPresetDefaultsById,
   resolveHeroBackground,
 } from '@/components/MusicProjects/heroBackgroundPresets';
@@ -76,34 +77,33 @@ describe('mergeHeroBackgroundOverrides', () => {
     const merged = mergeHeroBackgroundOverrides(
       {
         heroBackgroundKind: 'composed',
-        heroBackgroundPreset: 'pattern-grid',
+        heroBackgroundPreset: 'pattern-recipe-charcoal-grid',
         heroBackgroundOverrides: {
           gradientStops: ['#252526'],
-          patternPresetId: 'pattern-grid',
+          patternShapeId: 'grid',
         },
       },
       { patternAccentColor: '#8b5cf6' },
     );
 
     expect(merged.heroBackgroundKind).toBe('composed');
-    expect(merged.heroBackgroundPreset).toBe('pattern-grid');
+    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-charcoal-grid');
     expect(merged.heroBackgroundOverrides?.patternAccentColor).toBe('#8b5cf6');
   });
 });
 
 describe('applyHeroPresetRecipe', () => {
-  it('keeps pattern overlay when applying a gradient preset', () => {
+  it('clears pattern overlay when applying a gradient preset', () => {
     const base = parseMusicProjectMetadata({
       heroBackgroundKind: 'composed',
       heroBackgroundOverrides: {
         gradientStops: ['#111111'],
-        patternPresetId: 'pattern-grid',
+        patternShapeId: 'grid',
         patternAccentColor: '#ffffff',
       },
     });
-    const preset = getPresetDefaultsById('gradient-ocean');
 
-    expect(preset).toBeDefined();
+    expect(getPresetDefaultsById('gradient-ocean')).toBeDefined();
 
     const merged = applyHeroPresetRecipe(base, {
       id: 'gradient-ocean',
@@ -114,11 +114,11 @@ describe('applyHeroPresetRecipe', () => {
       gradientEnd: '#6366f1',
     });
 
-    expect(merged.heroBackgroundOverrides?.patternPresetId).toBe('pattern-grid');
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBeNull();
     expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#0ea5e9', '#6366f1']);
   });
 
-  it('keeps gradient stops when applying a pattern preset', () => {
+  it('clears gradient stops when applying a pattern preset', () => {
     const base = parseMusicProjectMetadata({
       heroBackgroundKind: 'composed',
       heroBackgroundOverrides: {
@@ -127,42 +127,71 @@ describe('applyHeroPresetRecipe', () => {
       },
     });
     const merged = applyHeroPresetRecipe(base, {
-      id: 'pattern-dots-dark',
-      labelKey: 'hero_bg_pattern_dots',
+      id: 'pattern-recipe-slate-dots',
+      labelKey: 'hero_bg_pattern_recipe_slate_dots',
       kind: 'pattern',
       background: '#1e1e22',
       backgroundColor: '#1e1e22',
+      gradientStops: ['#1e1e22'],
+      patternShapeId: 'dots',
+      patternAccentColor: '#ffffff',
       defaultAccentColor: '#ffffff',
+      patternSize: 16,
+      patternOpacity: 1,
     });
 
-    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#8b5cf6', '#3b82f6']);
-    expect(merged.heroBackgroundOverrides?.patternPresetId).toBe('pattern-dots-dark');
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('dots');
     expect(merged.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
+    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-slate-dots');
   });
 
-  it('uses default builder gradient when applying pattern on empty project', () => {
+  it('applies solid base from pattern recipe on empty project', () => {
     const merged = applyHeroPresetRecipe({}, {
-      id: 'pattern-dots-dark',
-      labelKey: 'hero_bg_pattern_dots',
+      id: 'pattern-recipe-slate-dots',
+      labelKey: 'hero_bg_pattern_recipe_slate_dots',
       kind: 'pattern',
       background: '#1e1e22',
       backgroundColor: '#1e1e22',
+      gradientStops: ['#1e1e22'],
+      patternShapeId: 'dots',
+      patternAccentColor: '#ffffff',
       defaultAccentColor: '#ffffff',
+      patternSize: 16,
+      patternOpacity: 1,
     });
 
-    expect(merged.heroBackgroundOverrides?.patternPresetId).toBe('pattern-dots-dark');
-    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual([
-      ...DEFAULT_BUILDER_GRADIENT_STOPS,
-    ]);
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('dots');
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
     expect(merged.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
   });
 
-  it('pattern preset defaults omit background fill', () => {
-    const defaults = getPresetDefaultsById('pattern-dots-dark');
+  it('clears pattern when applying a solid preset', () => {
+    const base = parseMusicProjectMetadata({
+      heroBackgroundKind: 'composed',
+      heroBackgroundOverrides: {
+        gradientStops: ['#1e1e22'],
+        patternShapeId: 'dots',
+        patternAccentColor: '#ffffff',
+      },
+    });
+    const preset = findHeroBackgroundPreset('solid-blue');
 
-    expect(defaults?.patternPresetId).toBe('pattern-dots-dark');
+    expect(preset).toBeDefined();
+
+    const merged = applyHeroPresetRecipe(base, preset!);
+
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBeNull();
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#3b82f6']);
+  });
+
+  it('pattern preset defaults include full recipe', () => {
+    const defaults = getPresetDefaultsById('pattern-recipe-slate-dots');
+
+    expect(defaults?.patternShapeId).toBe('dots');
+    expect(defaults?.gradientStops).toEqual(['#1e1e22']);
+    expect(defaults?.patternPresetId).toBeNull();
     expect(defaults?.backgroundColor).toBeUndefined();
-    expect(defaults?.gradientStops).toBeUndefined();
   });
 });
 
@@ -185,13 +214,26 @@ describe('buildComposedHeroBackgroundSx', () => {
     const sx = buildComposedHeroBackgroundSx({
       gradientStops: ['#8b5cf6', '#3b82f6'],
       gradientAngle: 135,
-      patternPresetId: 'pattern-grid',
+      patternShapeId: 'grid',
       patternAccentColor: '#ffffff',
     }) as { background?: string; backgroundImage?: string };
 
     expect(sx.background).toBeUndefined();
     expect(sx.backgroundImage).toMatch(/^linear-gradient.*, linear-gradient\(135deg, #8b5cf6/);
     expect(sx.backgroundImage).toContain('#3b82f6');
+  });
+
+  it('respects patternSize and patternOpacity', () => {
+    const sx = buildComposedHeroBackgroundSx({
+      gradientStops: ['#1e1e22'],
+      patternShapeId: 'dots',
+      patternAccentColor: '#ffffff',
+      patternSize: 32,
+      patternOpacity: 0.5,
+    }) as { backgroundSize?: string; backgroundImage?: string };
+
+    expect(sx.backgroundSize).toContain('32px 32px');
+    expect(sx.backgroundImage).toContain('rgba(255, 255, 255');
   });
 });
 
@@ -255,13 +297,27 @@ describe('resolveGradientStops', () => {
   it('ignores orphan backgroundColor when pattern overlay is active', () => {
     expect(resolveGradientStops({
       backgroundColor: '#1e1e22',
-      patternPresetId: 'pattern-grid',
+      patternShapeId: 'grid',
     })).toEqual([...DEFAULT_BUILDER_GRADIENT_STOPS]);
+  });
+
+  it('migrates legacy patternPresetId to patternShapeId', () => {
+    const parsed = parseMusicProjectMetadata({
+      heroBackgroundKind: 'composed',
+      heroBackgroundOverrides: {
+        patternPresetId: 'pattern-grid',
+        patternAccentColor: '#ffffff',
+      },
+    });
+
+    expect(parsed.heroBackgroundOverrides?.patternShapeId).toBe('grid');
+    expect(parsed.heroBackgroundOverrides?.patternPresetId).toBeNull();
+    expect(parsed.heroBackgroundOverrides?.gradientStops).toEqual(['#252526']);
   });
 });
 
 describe('normalizeHeroMetadata legacy pattern', () => {
-  it('migrates pattern-only legacy to default gradient base', () => {
+  it('migrates pattern-only legacy to recipe base color', () => {
     const normalized = normalizeHeroMetadata({
       heroBackgroundKind: 'pattern',
       heroBackgroundPreset: 'pattern-dots-dark',
@@ -272,9 +328,8 @@ describe('normalizeHeroMetadata legacy pattern', () => {
     });
 
     expect(normalized.heroBackgroundKind).toBe('composed');
-    expect(normalized.heroBackgroundOverrides?.gradientStops).toEqual([
-      ...DEFAULT_BUILDER_GRADIENT_STOPS,
-    ]);
+    expect(normalized.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
+    expect(normalized.heroBackgroundOverrides?.patternShapeId).toBe('dots');
     expect(normalized.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
   });
 });

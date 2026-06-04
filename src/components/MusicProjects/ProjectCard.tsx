@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { resolveProjectTitleFontFamily } from '@/utils/musicProjectMetadata';
 import {
   getMusicCardActionAreaSx,
   getMusicCardContentPadding,
@@ -37,6 +38,7 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
   const compact = cardSize === 'small';
   const hideStatLabels = cardSize !== 'large';
   const showGenre = cardSize === 'large' && Boolean(project.genre);
+  const titleFontFamily = resolveProjectTitleFontFamily(project.metadata);
 
   const menuTarget = {
     kind: 'project' as const,
@@ -94,6 +96,7 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
                 variant={getMusicCardTitleVariant(cardSize)}
                 sx={{
                   fontWeight: 700,
+                  fontFamily: titleFontFamily,
                   mb: 0.5,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',

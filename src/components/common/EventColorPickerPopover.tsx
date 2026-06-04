@@ -54,6 +54,8 @@ type EventColorPickerPopoverProps = {
   swatchVariant?: SwatchVariant;
   swatchSize?: number;
   customColorAriaLabel?: string;
+  /** Raise z-index and relax focus for use inside another popover. */
+  nested?: boolean;
   anchorOrigin?: { vertical: 'top' | 'bottom' | 'center'; horizontal: 'left' | 'right' | 'center' };
   transformOrigin?: { vertical: 'top' | 'bottom' | 'center'; horizontal: 'left' | 'right' | 'center' };
 };
@@ -72,6 +74,7 @@ export function EventColorPickerPopover({
   swatchVariant = 'circle',
   swatchSize,
   customColorAriaLabel,
+  nested = false,
   anchorOrigin = { vertical: 'bottom', horizontal: 'right' },
   transformOrigin = { vertical: 'top', horizontal: 'right' },
 }: EventColorPickerPopoverProps) {
@@ -172,8 +175,14 @@ export function EventColorPickerPopover({
       open={open}
       anchorEl={anchorEl}
       onClose={onClose}
+      disableEnforceFocus={nested}
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
+      slotProps={{
+        paper: nested
+          ? { sx: theme => ({ zIndex: theme.zIndex.modal + 2 }) }
+          : undefined,
+      }}
     >
       <Box sx={{ position: 'relative', p: 2 }}>
         {colorRows

@@ -23,7 +23,9 @@ import {
   isHeroBackgroundSelection,
 
 } from '@/components/MusicProjects/heroBackgroundPresets';
+import { HeroPresetTilePicker } from '@/components/MusicProjects/HeroPatternShapePicker';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { hasPatternOverlay } from '@/utils/musicProjectMetadata';
 
 const DEFAULT_CUSTOM_SOLID = '#8b5cf6';
 const SWATCH_SIZE = 28;
@@ -64,6 +66,7 @@ type ProjectHeroBackgroundPickerProps = {
   onSelectPreset: (preset: HeroBackgroundPreset) => void;
   onSelectCustomSolid: (hex: string) => void;
   onApplyCustom: (overrides: Partial<HeroBackgroundOverrides>) => void;
+  onPreviewCustom: (overrides: Partial<HeroBackgroundOverrides>) => void;
   onUploadClick: () => void;
   uploading: boolean;
 };
@@ -78,6 +81,7 @@ export function ProjectHeroBackgroundPicker({
   onSelectPreset,
   onSelectCustomSolid,
   onApplyCustom,
+  onPreviewCustom,
   onUploadClick,
   uploading,
 }: ProjectHeroBackgroundPickerProps) {
@@ -89,7 +93,7 @@ export function ProjectHeroBackgroundPicker({
   const isCustomSolidSelected = Boolean(
     resolved.kind === 'composed'
     && customSolidHex
-    && !resolved.builderOverrides.patternPresetId
+    && !hasPatternOverlay(resolved.builderOverrides)
     && (!resolved.presetId || !HERO_SOLID_PRESET_HEXES.has(customSolidHex)),
   );
 
@@ -150,30 +154,51 @@ export function ProjectHeroBackgroundPicker({
     </Box>
   );
 
-  const renderPresetTile = (preset: HeroBackgroundPreset) => {
-    const selected = isHeroBackgroundSelection(resolved, preset.kind, preset.id);
-    return (
-      <Box
-        key={preset.id}
-        component="button"
-        type="button"
-        onClick={() => onSelectPreset(preset)}
-        aria-label={t(preset.labelKey as Parameters<typeof t>[0])}
-        title={t(preset.labelKey as Parameters<typeof t>[0])}
-        sx={{
-          width: '100%',
-          aspectRatio: '16 / 10',
-          borderRadius: 1,
-          border: '2px solid',
-          borderColor: selected ? 'primary.main' : 'divider',
-          cursor: 'pointer',
-          p: 0,
-          overflow: 'hidden',
-          ...(getPresetPreviewSx(preset) as Record<string, unknown>),
-        }}
-      />
-    );
-  };
+  const renderPresetSection = (section: typeof HERO_PRESET_SECTIONS[number]) => (
+    <Box key={section.key}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={sectionTitleSx}
+      >
+        {t(section.labelKey as Parameters<typeof t>[0])}
+      </Typography>
+      {section.key === 'colors'
+        ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {HERO_SOLID_COLOR_ROWS.map((row, rowIndex) => (
+                <Box
+                  key={row[0]?.id ?? rowIndex}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${SWATCH_COLUMNS}, ${SWATCH_SIZE}px)`,
+                    gap: 1,
+                  }}
+                >
+                  {row.map(renderSolidSwatch)}
+                  {rowIndex === HERO_SOLID_COLOR_ROWS.length - 1 && customSolidSwatch}
+                </Box>
+              ))}
+            </Box>
+          )
+        : (
+            <HeroPresetTilePicker
+              presets={section.presets.map(preset => ({
+                id: preset.id,
+                labelKey: preset.labelKey,
+                previewSx: getPresetPreviewSx(preset),
+              }))}
+              selectedId={section.presets.find(p => isHeroBackgroundSelection(resolved, p.kind, p.id))?.id}
+              onSelect={(id) => {
+                const preset = section.presets.find(p => p.id === id);
+                if (preset) {
+                  onSelectPreset(preset);
+                }
+              }}
+            />
+          )}
+    </Box>
+  );
 
   return (
     <Popover
@@ -224,52 +249,14 @@ export function ProjectHeroBackgroundPicker({
               overflowY: 'auto',
             }}
           >
-            {HERO_PRESET_SECTIONS.map(section => (
-              <Box key={section.key}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={sectionTitleSx}
-                >
-                  {t(section.labelKey as Parameters<typeof t>[0])}
-                </Typography>
-                {section.key === 'colors'
-                  ? (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {HERO_SOLID_COLOR_ROWS.map((row, rowIndex) => (
-                          <Box
-                            key={row[0]?.id ?? rowIndex}
-                            sx={{
-                              display: 'grid',
-                              gridTemplateColumns: `repeat(${SWATCH_COLUMNS}, ${SWATCH_SIZE}px)`,
-                              gap: 1,
-                            }}
-                          >
-                            {row.map(renderSolidSwatch)}
-                            {rowIndex === HERO_SOLID_COLOR_ROWS.length - 1 && customSolidSwatch}
-                          </Box>
-                        ))}
-                      </Box>
-                    )
-                  : (
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(2, 1fr)',
-                          gap: 1,
-                        }}
-                      >
-                        {section.presets.map(renderPresetTile)}
-                      </Box>
-                    )}
-              </Box>
-            ))}
+            {HERO_PRESET_SECTIONS.map(renderPresetSection)}
           </Box>
         )}
 
         {tab === 'custom' && (
           <HeroBackgroundCustomPanel
             resolved={resolved}
+            onPreviewCustom={onPreviewCustom}
             onApplyCustom={onApplyCustom}
           />
         )}

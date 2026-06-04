@@ -369,13 +369,23 @@ export function ProjectDetailPageHeader({
     void persistHeroBackground(
       buildHeroBackgroundMetadataPatch('solid', {
         color: hex,
-        overrides: { backgroundColor: hex, gradientStops: [hex] },
+        overrides: {
+          backgroundColor: hex,
+          gradientStops: [hex],
+          patternShapeId: null,
+          patternPresetId: null,
+        },
       }),
     );
   };
 
+  const handlePreviewCustom = (partial: Partial<HeroBackgroundOverrides>) => {
+    const merged = mergeHeroBackgroundOverrides(effectiveMetadata, partial);
+    setOptimisticHeroMetadata(merged);
+  };
+
   const handleApplyCustom = (partial: Partial<HeroBackgroundOverrides>) => {
-    const merged = mergeHeroBackgroundOverrides(metadataRaw, partial);
+    const merged = mergeHeroBackgroundOverrides(effectiveMetadata, partial);
     const overridesOnly: MusicProjectMetadata = {
       heroBackgroundOverrides: merged.heroBackgroundOverrides,
     };
@@ -451,9 +461,15 @@ export function ProjectDetailPageHeader({
 
   const statsRow = (
     <MusicStatBadgeRow compact={useCompactHeader} nowrap>
-      <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={resolvedChromeColor} />
-      <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={resolvedChromeColor} />
-      <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={resolvedChromeColor} />
+      {songCount >= 1 && (
+        <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={resolvedChromeColor} />
+      )}
+      {albumCount >= 1 && (
+        <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={resolvedChromeColor} />
+      )}
+      {memberCount >= 1 && (
+        <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={resolvedChromeColor} />
+      )}
     </MusicStatBadgeRow>
   );
 
@@ -661,6 +677,7 @@ export function ProjectDetailPageHeader({
         resolved={resolvedHero}
         onSelectPreset={handleSelectPreset}
         onSelectCustomSolid={handleSelectCustomSolid}
+        onPreviewCustom={handlePreviewCustom}
         onApplyCustom={handleApplyCustom}
         onUploadClick={() => heroInputRef.current?.click()}
         uploading={uploadingHero}

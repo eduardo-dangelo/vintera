@@ -4,6 +4,7 @@ import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from '@mu
 import { usePathname } from 'next/navigation';
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useGetUserPreferences, useUpdateUserPreferences } from '@/queries/hooks/users';
+import { getMuiSliderStyleOverrides } from '@/utils/gradientSliderStyles';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -154,6 +155,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           gradients: {
             primary: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
           },
+        },
+        components: {
+          MuiSlider: getMuiSliderStyleOverrides(),
         },
       }),
     [mode],

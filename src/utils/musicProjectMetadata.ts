@@ -1,3 +1,9 @@
+import {
+  hasPatternOverlay,
+  migrateLegacyPatternOverrides,
+} from '@/components/MusicProjects/heroPatternShapes';
+import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
+
 export type HeroBackgroundKind = 'solid' | 'pattern' | 'gradient' | 'composed' | 'image';
 
 export const MAX_GRADIENT_STOPS = 4;
@@ -14,7 +20,10 @@ export type HeroBackgroundOverrides = {
   gradientEnd?: string;
   gradientStops?: string[];
   gradientAngle?: number;
+  /** @deprecated Legacy shape id; use patternShapeId */
   patternPresetId?: string | null;
+  patternShapeId?: string | null;
+  patternSize?: number;
   patternOpacity?: number;
 };
 
@@ -86,8 +95,16 @@ function parseHeroBackgroundOverrides(raw: unknown): HeroBackgroundOverrides | u
   } else if (typeof raw.patternPresetId === 'string' && raw.patternPresetId.length > 0) {
     overrides.patternPresetId = raw.patternPresetId;
   }
+  if (raw.patternShapeId === null) {
+    overrides.patternShapeId = null;
+  } else if (typeof raw.patternShapeId === 'string' && raw.patternShapeId.length > 0) {
+    overrides.patternShapeId = raw.patternShapeId;
+  }
+  if (typeof raw.patternSize === 'number' && !Number.isNaN(raw.patternSize)) {
+    overrides.patternSize = Math.min(48, Math.max(8, raw.patternSize));
+  }
   if (typeof raw.patternOpacity === 'number' && !Number.isNaN(raw.patternOpacity)) {
-    overrides.patternOpacity = Math.min(1, Math.max(0, raw.patternOpacity));
+    overrides.patternOpacity = Math.min(1, Math.max(0.1, raw.patternOpacity));
   }
   return Object.keys(overrides).length > 0 ? overrides : undefined;
 }
@@ -96,9 +113,7 @@ export function getPatternAccentColor(overrides: HeroBackgroundOverrides): strin
   return overrides.patternAccentColor ?? overrides.accentColor ?? '#ffffff';
 }
 
-function hasPatternOverlay(overrides: HeroBackgroundOverrides): boolean {
-  return typeof overrides.patternPresetId === 'string' && overrides.patternPresetId.length > 0;
-}
+export { hasPatternOverlay } from '@/components/MusicProjects/heroPatternShapes';
 
 /** Resolve gradient stops from overrides (legacy fields included). */
 export function resolveGradientStops(overrides: HeroBackgroundOverrides): string[] {
@@ -133,13 +148,17 @@ export function normalizeHeroMetadata(metadata: MusicProjectMetadata): MusicProj
     if (!kind) {
       return metadata;
     }
+    const migrated = migrateLegacyPatternOverrides(overrides);
     const normalizedOverrides: HeroBackgroundOverrides = {
-      ...overrides,
-      gradientStops: resolveGradientStops(overrides),
-      gradientAngle: overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+      ...migrated,
+      gradientStops: resolveGradientStops(migrated),
+      gradientAngle: migrated.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
     };
-    if (overrides.patternPresetId !== undefined) {
-      normalizedOverrides.patternPresetId = overrides.patternPresetId;
+    if (migrated.patternPresetId !== undefined) {
+      normalizedOverrides.patternPresetId = migrated.patternPresetId;
+    }
+    if (migrated.patternShapeId !== undefined) {
+      normalizedOverrides.patternShapeId = migrated.patternShapeId;
     }
     if (hasPatternOverlay(normalizedOverrides)) {
       delete normalizedOverrides.backgroundColor;
@@ -182,26 +201,28 @@ export function normalizeHeroMetadata(metadata: MusicProjectMetadata): MusicProj
   }
 
   if (kind === 'pattern') {
-    const patternId = metadata.heroBackgroundPreset ?? overrides.patternPresetId ?? undefined;
-    const hasCustomBase = overrides.gradientStops?.length
-      || overrides.gradientStart
-      || overrides.gradientEnd;
-    const stops = hasCustomBase
-      ? resolveGradientStops(overrides)
-      : [...DEFAULT_BUILDER_GRADIENT_STOPS];
-    const migrated: HeroBackgroundOverrides = {
+    const migrated = migrateLegacyPatternOverrides({
       ...overrides,
+      patternPresetId: metadata.heroBackgroundPreset ?? overrides.patternPresetId ?? null,
+    });
+    const hasCustomBase = migrated.gradientStops?.length
+      || migrated.gradientStart
+      || migrated.gradientEnd;
+    const stops = hasCustomBase
+      ? resolveGradientStops(migrated)
+      : (migrated.gradientStops ?? [...DEFAULT_BUILDER_GRADIENT_STOPS]);
+    const nextOverrides: HeroBackgroundOverrides = {
+      ...migrated,
       gradientStops: stops,
-      gradientAngle: overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
-      patternPresetId: patternId ?? null,
-      patternAccentColor: getPatternAccentColor(overrides),
+      gradientAngle: migrated.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+      patternAccentColor: getPatternAccentColor(migrated),
     };
-    delete migrated.backgroundColor;
+    delete nextOverrides.backgroundColor;
 
     return {
       ...metadata,
       heroBackgroundKind: 'composed',
-      heroBackgroundOverrides: migrated,
+      heroBackgroundOverrides: nextOverrides,
     };
   }
 
@@ -245,6 +266,10 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
   }
 
   return normalizeHeroMetadata(metadata);
+}
+
+export function resolveProjectTitleFontFamily(metadata: unknown): string {
+  return parseMusicProjectMetadata(metadata).titleFontFamily ?? DEFAULT_TITLE_FONT_FAMILY;
 }
 
 const HERO_METADATA_KEYS = [
@@ -381,5 +406,6 @@ export function getBuilderDefaultOverrides(): HeroBackgroundOverrides {
     gradientStops: [...DEFAULT_BUILDER_GRADIENT_STOPS],
     gradientAngle: DEFAULT_BUILDER_GRADIENT_ANGLE,
     patternPresetId: null,
+    patternShapeId: null,
   };
 }

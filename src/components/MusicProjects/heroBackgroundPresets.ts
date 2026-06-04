@@ -1,16 +1,24 @@
 import type { SxProps, Theme } from '@mui/material/styles';
+import type { ColorPickerPreset } from '@/components/common/EventColorPickerPopover';
 import type {
   HeroBackgroundKind,
   HeroBackgroundOverrides,
   MusicProjectMetadata,
 } from '@/utils/musicProjectMetadata';
+import {
+  buildPatternBackgroundImage,
+  getPatternBackgroundSize,
+  resolvePatternOpacity,
+  resolvePatternShapeId,
+  resolvePatternSize,
+} from '@/components/MusicProjects/heroPatternShapes';
 import { getHeroBackgroundSx } from '@/components/MusicProjects/musicListPageHeaderStyles';
 import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
 import {
   DEFAULT_BUILDER_GRADIENT_ANGLE,
-  DEFAULT_BUILDER_GRADIENT_STOPS,
   DEFAULT_BUILDER_SOLID,
   getPatternAccentColor,
+  hasPatternOverlay,
   normalizeHeroMetadata,
   parseMusicProjectMetadata,
   resolveGradientStops,
@@ -25,7 +33,13 @@ export type HeroBackgroundPreset = {
   backgroundImage?: string;
   gradientStart?: string;
   gradientEnd?: string;
+  /** Pattern recipe fields */
+  gradientStops?: string[];
+  patternShapeId?: string;
+  patternAccentColor?: string;
   defaultAccentColor?: string;
+  patternSize?: number;
+  patternOpacity?: number;
 };
 
 export const HERO_SOLID_PRESETS: HeroBackgroundPreset[] = [
@@ -55,68 +69,160 @@ export const HERO_SOLID_PRESET_HEXES = new Set(
 
 export const HERO_PATTERN_PRESETS: HeroBackgroundPreset[] = [
   {
-    id: 'pattern-dots-dark',
-    labelKey: 'hero_bg_pattern_dots',
+    id: 'pattern-recipe-slate-dots',
+    labelKey: 'hero_bg_pattern_recipe_slate_dots',
     kind: 'pattern',
     background: '#1e1e22',
     backgroundColor: '#1e1e22',
+    gradientStops: ['#1e1e22'],
+    patternShapeId: 'dots',
+    patternAccentColor: '#ffffff',
     defaultAccentColor: '#ffffff',
+    patternSize: 16,
+    patternOpacity: 1,
   },
   {
-    id: 'pattern-dots-light',
-    labelKey: 'hero_bg_pattern_dots_light',
+    id: 'pattern-recipe-mist-dots',
+    labelKey: 'hero_bg_pattern_recipe_mist_dots',
     kind: 'pattern',
     background: '#f0f4f8',
     backgroundColor: '#f0f4f8',
+    gradientStops: ['#f0f4f8'],
+    patternShapeId: 'dots',
+    patternAccentColor: '#0f172a',
     defaultAccentColor: '#0f172a',
+    patternSize: 16,
+    patternOpacity: 1,
   },
   {
-    id: 'pattern-grid',
-    labelKey: 'hero_bg_pattern_grid',
+    id: 'pattern-recipe-charcoal-grid',
+    labelKey: 'hero_bg_pattern_recipe_charcoal_grid',
     kind: 'pattern',
     background: '#252526',
     backgroundColor: '#252526',
+    gradientStops: ['#252526'],
+    patternShapeId: 'grid',
+    patternAccentColor: '#ffffff',
     defaultAccentColor: '#ffffff',
+    patternSize: 24,
+    patternOpacity: 1,
   },
   {
-    id: 'pattern-diagonal',
-    labelKey: 'hero_bg_pattern_diagonal',
-    kind: 'pattern',
-    background: '#2a2a30',
-    backgroundColor: '#2a2a30',
-    defaultAccentColor: '#ffffff',
-  },
-  {
-    id: 'pattern-waves',
-    labelKey: 'hero_bg_pattern_waves',
-    kind: 'pattern',
-    background: '#1e293b',
-    backgroundColor: '#1e293b',
-    defaultAccentColor: '#8b5cf6',
-  },
-  {
-    id: 'pattern-cross',
-    labelKey: 'hero_bg_pattern_cross',
+    id: 'pattern-recipe-stone-plus',
+    labelKey: 'hero_bg_pattern_recipe_stone_plus',
     kind: 'pattern',
     background: '#e8ecf1',
     backgroundColor: '#e8ecf1',
+    gradientStops: ['#e8ecf1'],
+    patternShapeId: 'plus',
+    patternAccentColor: '#0f172a',
     defaultAccentColor: '#0f172a',
+    patternSize: 24,
+    patternOpacity: 1,
   },
   {
-    id: 'pattern-noise',
-    labelKey: 'hero_bg_pattern_noise',
+    id: 'pattern-recipe-slate-diagonal',
+    labelKey: 'hero_bg_pattern_recipe_slate_diagonal',
+    kind: 'pattern',
+    background: '#2a2a30',
+    backgroundColor: '#2a2a30',
+    gradientStops: ['#2a2a30'],
+    patternShapeId: 'diagonal',
+    patternAccentColor: '#ffffff',
+    defaultAccentColor: '#ffffff',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-navy-waves',
+    labelKey: 'hero_bg_pattern_recipe_navy_waves',
+    kind: 'pattern',
+    background: '#1e293b',
+    backgroundColor: '#1e293b',
+    gradientStops: ['#1e293b'],
+    patternShapeId: 'waves',
+    patternAccentColor: '#8b5cf6',
+    defaultAccentColor: '#8b5cf6',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-ink-speckle',
+    labelKey: 'hero_bg_pattern_recipe_ink_speckle',
     kind: 'pattern',
     background: '#18181b',
     backgroundColor: '#18181b',
+    gradientStops: ['#18181b'],
+    patternShapeId: 'speckle',
+    patternAccentColor: '#60a5fa',
     defaultAccentColor: '#60a5fa',
+    patternSize: 24,
+    patternOpacity: 1,
   },
   {
-    id: 'pattern-brand',
-    labelKey: 'hero_bg_pattern_brand',
+    id: 'pattern-recipe-brand-offset',
+    labelKey: 'hero_bg_pattern_recipe_brand_offset',
     kind: 'pattern',
     background: '#120e1c',
     backgroundColor: '#120e1c',
+    gradientStops: ['#120e1c'],
+    patternShapeId: 'offset-dots',
+    patternAccentColor: '#8b5cf6',
     defaultAccentColor: '#8b5cf6',
+    patternSize: 16,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-emerald-checker',
+    labelKey: 'hero_bg_pattern_recipe_emerald_checker',
+    kind: 'pattern',
+    background: '#0f766e',
+    backgroundColor: '#0f766e',
+    gradientStops: ['#0f766e'],
+    patternShapeId: 'checkerboard',
+    patternAccentColor: '#99f6e4',
+    defaultAccentColor: '#99f6e4',
+    patternSize: 20,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-indigo-rings',
+    labelKey: 'hero_bg_pattern_recipe_indigo_rings',
+    kind: 'pattern',
+    background: '#1e1b4b',
+    backgroundColor: '#1e1b4b',
+    gradientStops: ['#1e1b4b'],
+    patternShapeId: 'rings',
+    patternAccentColor: '#a5b4fc',
+    defaultAccentColor: '#a5b4fc',
+    patternSize: 28,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-amber-zigzag',
+    labelKey: 'hero_bg_pattern_recipe_amber_zigzag',
+    kind: 'pattern',
+    background: '#451a03',
+    backgroundColor: '#451a03',
+    gradientStops: ['#451a03'],
+    patternShapeId: 'zigzag',
+    patternAccentColor: '#fbbf24',
+    defaultAccentColor: '#fbbf24',
+    patternSize: 20,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-rose-waves',
+    labelKey: 'hero_bg_pattern_recipe_rose_waves',
+    kind: 'pattern',
+    background: '#4c0519',
+    backgroundColor: '#4c0519',
+    gradientStops: ['#4c0519'],
+    patternShapeId: 'waves',
+    patternAccentColor: '#fda4af',
+    defaultAccentColor: '#fda4af',
+    patternSize: 24,
+    patternOpacity: 1,
   },
 ];
 
@@ -145,57 +251,35 @@ export const HERO_SOLID_COLOR_ROWS: HeroBackgroundPreset[][] = [
   HERO_SOLID_PRESETS.slice(12, 18),
 ];
 
+export const HERO_SOLID_COLOR_PICKER_COLUMNS = 6;
+
+export function getHeroSolidColorPickerRows(
+  translateLabel: (labelKey: string) => string,
+): ColorPickerPreset[][] {
+  return HERO_SOLID_COLOR_ROWS.map(row =>
+    row.map(preset => ({
+      value: preset.id,
+      label: translateLabel(preset.labelKey),
+      hex: preset.backgroundColor ?? preset.background,
+    })),
+  );
+}
+
 const ALL_PRESETS = [...HERO_SOLID_PRESETS, ...HERO_PATTERN_PRESETS, ...HERO_GRADIENT_PRESETS];
 
 const DEFAULT_GRADIENT_ANGLE = 135;
 
+const CLEAR_PATTERN_FIELDS = {
+  patternPresetId: null,
+  patternShapeId: null,
+  patternAccentColor: undefined,
+  accentColor: undefined,
+  patternSize: undefined,
+  patternOpacity: undefined,
+} as const;
+
 export function findHeroBackgroundPreset(id: string): HeroBackgroundPreset | undefined {
   return ALL_PRESETS.find(p => p.id === id);
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) {
-    return `rgba(255, 255, 255, ${alpha})`;
-  }
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-export function buildPatternBackgroundImage(presetId: string, _baseColor: string, accentColor: string): string {
-  const accentSoft = hexToRgba(accentColor, 0.35);
-  const accentMid = hexToRgba(accentColor, 0.2);
-  const accentLine = hexToRgba(accentColor, 0.06);
-  const accentLine45 = hexToRgba(accentColor, 0.04);
-
-  switch (presetId) {
-    case 'pattern-dots-dark':
-    case 'pattern-dots-light':
-      return `radial-gradient(${hexToRgba(accentColor, presetId === 'pattern-dots-dark' ? 0.14 : 0.12)} 1px, transparent 1px)`;
-    case 'pattern-grid':
-      return `linear-gradient(${accentLine} 1px, transparent 1px), linear-gradient(90deg, ${accentLine} 1px, transparent 1px)`;
-    case 'pattern-diagonal':
-      return `repeating-linear-gradient(45deg, ${accentLine45} 0, ${accentLine45} 1px, transparent 0, transparent 50%)`;
-    case 'pattern-waves':
-      return `radial-gradient(ellipse at 20% 80%, ${accentSoft} 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, ${hexToRgba(accentColor, 0.3)} 0%, transparent 50%)`;
-    case 'pattern-cross':
-      return `linear-gradient(${hexToRgba(accentColor, 0.05)} 1px, transparent 1px), linear-gradient(90deg, ${hexToRgba(accentColor, 0.05)} 1px, transparent 1px)`;
-    case 'pattern-noise':
-      return `radial-gradient(circle at 25% 25%, ${hexToRgba(accentColor, 0.08)} 0%, transparent 40%), radial-gradient(circle at 75% 75%, ${hexToRgba(accentColor, 0.12)} 0%, transparent 45%)`;
-    case 'pattern-brand':
-      return `radial-gradient(${hexToRgba(accentColor, 0.25)} 1px, transparent 1px), radial-gradient(${hexToRgba(accentColor, 0.2)} 1px, transparent 1px)`;
-    default:
-      return `radial-gradient(${accentMid} 1px, transparent 1px)`;
-  }
-}
-
-export function getPatternBackgroundSize(presetId: string): string {
-  if (presetId.includes('dots') || presetId === 'pattern-brand') {
-    return '16px 16px';
-  }
-  return '24px 24px';
 }
 
 export function getPresetDefaults(preset: HeroBackgroundPreset): HeroBackgroundOverrides {
@@ -204,11 +288,16 @@ export function getPresetDefaults(preset: HeroBackgroundPreset): HeroBackgroundO
     return { backgroundColor: color, gradientStops: [color] };
   }
   if (preset.kind === 'pattern') {
-    const accent = preset.defaultAccentColor ?? '#ffffff';
+    const accent = preset.patternAccentColor ?? preset.defaultAccentColor ?? '#ffffff';
+    const base = preset.gradientStops?.[0] ?? preset.backgroundColor ?? preset.background;
     return {
-      accentColor: accent,
+      gradientStops: [base],
+      patternShapeId: preset.patternShapeId ?? 'dots',
       patternAccentColor: accent,
-      patternPresetId: preset.id,
+      accentColor: accent,
+      patternSize: preset.patternSize,
+      patternOpacity: preset.patternOpacity ?? 1,
+      patternPresetId: null,
     };
   }
   const start = preset.gradientStart ?? '#8b5cf6';
@@ -278,8 +367,8 @@ export function buildComposedHeroBackgroundSx(
 ): SxProps<Theme> {
   const stops = resolveGradientStops(overrides);
   const angle = overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE;
-  const patternId = overrides.patternPresetId;
-  const hasPattern = typeof patternId === 'string' && patternId.length > 0;
+  const shapeId = resolvePatternShapeId(overrides);
+  const hasPattern = shapeId !== null;
 
   if (stops.length === 1 && !hasPattern) {
     return {
@@ -299,12 +388,11 @@ export function buildComposedHeroBackgroundSx(
   }
 
   const accent = getPatternAccentColor(overrides);
-  const patternImage = buildPatternBackgroundImage(patternId, stops[0] ?? DEFAULT_BUILDER_SOLID, accent);
-  const patternSize = getPatternBackgroundSize(patternId);
+  const opacity = resolvePatternOpacity(overrides);
+  const patternImage = buildPatternBackgroundImage(shapeId, accent, opacity);
+  const patternSize = getPatternBackgroundSize(shapeId, resolvePatternSize(overrides));
   const baseLayer = buildBaseBackgroundLayer(stops, angle);
 
-  // Pattern first in the list = painted on top; base layer last = shows through transparent pattern areas.
-  // Do not mix `background` shorthand with `backgroundImage` — the shorthand resets other layers.
   return {
     ...HERO_LAYER_BASE_SX,
     backgroundImage: `${patternImage}, ${baseLayer}`,
@@ -331,6 +419,7 @@ export function applyHeroPresetRecipe(
       heroBackgroundColor: hex,
       heroBackgroundOverrides: {
         ...prev,
+        ...CLEAR_PATTERN_FIELDS,
         gradientStops: [hex],
         backgroundColor: hex,
       },
@@ -348,6 +437,7 @@ export function applyHeroPresetRecipe(
       heroBackgroundPreset: preset.id,
       heroBackgroundOverrides: {
         ...prev,
+        ...CLEAR_PATTERN_FIELDS,
         gradientStops: stops,
         gradientStart: defaults.gradientStart,
         gradientEnd: defaults.gradientEnd,
@@ -356,23 +446,14 @@ export function applyHeroPresetRecipe(
     });
   }
 
-  const accent = defaults.patternAccentColor ?? getPatternAccentColor(prev);
-  const existingStops = prev.gradientStops?.length
-    ? prev.gradientStops
-    : (prev.gradientStart || prev.gradientEnd
-        ? resolveGradientStops(prev)
-        : undefined);
-
   return normalizeHeroMetadata({
     ...current,
     heroBackgroundKind: 'composed',
     heroBackgroundPreset: preset.id,
     heroBackgroundOverrides: {
-      ...prev,
-      patternPresetId: preset.id,
-      patternAccentColor: accent,
-      accentColor: accent,
-      gradientStops: existingStops ?? [...DEFAULT_BUILDER_GRADIENT_STOPS],
+      ...defaults,
+      gradientAngle: prev.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+      patternPresetId: null,
     },
   });
 }
@@ -381,44 +462,8 @@ export function buildHeroBackgroundSxFromPreset(
   preset: HeroBackgroundPreset,
   overrides?: HeroBackgroundOverrides,
 ): SxProps<Theme> {
-  const base: SxProps<Theme> = {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 0,
-    overflow: 'hidden',
-  };
-
-  if (preset.kind === 'solid') {
-    const hex = overrides?.backgroundColor
-      ?? preset.backgroundColor
-      ?? preset.background;
-    return { ...base, backgroundColor: hex };
-  }
-
-  if (preset.kind === 'gradient') {
-    const defaults = getPresetDefaults(preset);
-    const merged = mergeOverrides(defaults, overrides);
-    const start = merged.gradientStart ?? '#8b5cf6';
-    const end = merged.gradientEnd ?? '#3b82f6';
-    const angle = merged.gradientAngle ?? DEFAULT_GRADIENT_ANGLE;
-    return {
-      ...base,
-      background: buildGradientBackground(start, end, angle),
-    };
-  }
-
   const defaults = getPresetDefaults(preset);
-  const merged = mergeOverrides(defaults, overrides);
-  const baseColor = merged.backgroundColor ?? preset.backgroundColor ?? preset.background;
-  const accentColor = merged.accentColor ?? preset.defaultAccentColor ?? '#ffffff';
-  const backgroundImage = buildPatternBackgroundImage(preset.id, baseColor, accentColor);
-
-  return {
-    ...base,
-    backgroundColor: baseColor,
-    backgroundImage,
-    backgroundSize: getPatternBackgroundSize(preset.id),
-  };
+  return buildComposedHeroBackgroundSx(mergeOverrides(defaults, overrides));
 }
 
 export type ResolvedHeroBackgroundKind = HeroBackgroundKind | 'theme_default';
@@ -440,31 +485,23 @@ export function getPresetPreviewSx(
   preset: HeroBackgroundPreset,
   overrides?: HeroBackgroundOverrides,
 ): SxProps<Theme> {
-  if (preset.kind === 'pattern') {
-    const accent = preset.defaultAccentColor ?? '#ffffff';
-    const full = buildComposedHeroBackgroundSx({
-      gradientStops: [...DEFAULT_BUILDER_GRADIENT_STOPS],
-      gradientAngle: DEFAULT_GRADIENT_ANGLE,
-      patternPresetId: preset.id,
-      patternAccentColor: accent,
-      ...overrides,
-    });
-    const size = preset.id.includes('dots') || preset.id === 'pattern-brand'
-      ? '8px 8px'
-      : '12px 12px';
-    return {
-      background: (full as { background?: string }).background,
-      backgroundColor: (full as { backgroundColor?: string }).backgroundColor,
-      backgroundImage: (full as { backgroundImage?: string }).backgroundImage,
-      backgroundSize: (full as { backgroundSize?: string }).backgroundSize ?? size,
-    };
-  }
+  const defaults = getPresetDefaults(preset);
+  const full = buildComposedHeroBackgroundSx(mergeOverrides(defaults, overrides));
+  const shapeId = preset.kind === 'pattern' ? preset.patternShapeId : null;
+  const previewScale = 0.5;
+  const size = shapeId
+    ? getPatternBackgroundSize(
+        shapeId,
+        Math.round((preset.patternSize ?? resolvePatternSize(defaults)) * previewScale),
+      )
+    : undefined;
 
-  const full = buildHeroBackgroundSxFromPreset(preset, overrides);
   return {
     background: (full as { background?: string }).background,
     backgroundColor: (full as { backgroundColor?: string }).backgroundColor,
     backgroundImage: (full as { backgroundImage?: string }).backgroundImage,
+    backgroundSize: (full as { backgroundSize?: string }).backgroundSize ?? size,
+    backgroundRepeat: (full as { backgroundRepeat?: string }).backgroundRepeat,
   };
 }
 
@@ -518,9 +555,10 @@ export function resolveHeroBackground(
       ...overrides,
       gradientStops: stops,
       gradientAngle: overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+      patternShapeId: overrides.patternShapeId ?? resolvePatternShapeId(overrides),
       patternPresetId: overrides.patternPresetId,
     };
-    const isSolidOnly = stops.length === 1 && !builderOverrides.patternPresetId;
+    const isSolidOnly = stops.length === 1 && !hasPatternOverlay(builderOverrides);
 
     return {
       kind: 'composed',
@@ -574,17 +612,40 @@ export function isHeroBackgroundSelection(
     return resolved.presetId === presetId;
   }
 
+  if (preset.kind === 'pattern') {
+    return resolved.presetId === preset.id;
+  }
+
   const overrides = resolved.builderOverrides;
   const stops = resolveGradientStops(overrides);
 
   if (preset.kind === 'solid') {
     const hex = preset.backgroundColor ?? preset.background;
-    return stops.length === 1 && stops[0]?.toLowerCase() === hex.toLowerCase();
+    return stops.length === 1
+      && stops[0]?.toLowerCase() === hex.toLowerCase()
+      && !hasPatternOverlay(overrides);
   }
 
   if (preset.kind === 'gradient') {
-    return stopsMatchPreset(stops, preset);
+    return stopsMatchPreset(stops, preset) && !hasPatternOverlay(overrides);
   }
 
-  return overrides.patternPresetId === preset.id;
+  return false;
+}
+
+export function buildShapePreviewOverrides(
+  shapeId: string,
+  baseOverrides: HeroBackgroundOverrides,
+): HeroBackgroundOverrides {
+  return {
+    ...baseOverrides,
+    patternShapeId: shapeId,
+    patternPresetId: null,
+    patternAccentColor: getPatternAccentColor(baseOverrides),
+    patternOpacity: resolvePatternOpacity(baseOverrides),
+    patternSize: baseOverrides.patternSize ?? resolvePatternSize({
+      ...baseOverrides,
+      patternShapeId: shapeId,
+    }),
+  };
 }

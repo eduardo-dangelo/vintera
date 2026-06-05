@@ -145,6 +145,7 @@
     "hero_bg_upload_hint": "Recommended: 1920 × 400 px or wider (banner aspect ~5:1). Max 4.5 MB. PNG, JPG, GIF, or WebP.",
     "hero_bg_upload_current": "A custom image is set.",
     "hero_bg_custom_color": "Custom color",
+    "hero_bg_text_color": "Text color",
     "hero_bg_solid_slate": "Slate",
     "hero_bg_solid_charcoal": "Charcoal",
     "hero_bg_solid_mist": "Mist",

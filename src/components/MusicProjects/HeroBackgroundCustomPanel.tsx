@@ -32,7 +32,13 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { ColorPickerSwatchPanel } from '@/components/common/ColorPickerSwatchPanel';
 import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
+import {
+  DEFAULT_HEADER_TEXT_COLOR,
+  HEADER_TEXT_COLOR_COLUMNS,
+  HEADER_TEXT_COLOR_ROWS,
+} from '@/components/MusicProjects/headerTextColors';
 import {
   getHeroSolidColorPickerRows,
   HERO_SOLID_COLOR_PICKER_COLUMNS,
@@ -105,6 +111,8 @@ type HeroBackgroundCustomPanelProps = {
   resolved: ResolvedHeroBackground;
   onPreviewCustom: (overrides: Partial<HeroBackgroundOverrides>) => void;
   onApplyCustom: (overrides: Partial<HeroBackgroundOverrides>) => void;
+  textColor: string;
+  onTextColorChange: (hex: string) => void;
 };
 
 function ColorSwatch({
@@ -493,6 +501,8 @@ export function HeroBackgroundCustomPanel({
   resolved,
   onPreviewCustom,
   onApplyCustom,
+  textColor,
+  onTextColorChange,
 }: HeroBackgroundCustomPanelProps) {
   const t = useTranslations('MusicProjects');
 
@@ -653,6 +663,22 @@ export function HeroBackgroundCustomPanel({
             </Box>
           </>
         )}
+      </Box>
+
+      <Box>
+        <Typography component="span" sx={sectionTitleSx}>
+          {t('hero_bg_text_color')}
+        </Typography>
+        <ColorPickerSwatchPanel
+          value={textColor}
+          onChange={onTextColorChange}
+          valueMode="hex"
+          colorRows={HEADER_TEXT_COLOR_ROWS}
+          columns={HEADER_TEXT_COLOR_COLUMNS}
+          defaultCustomHex={DEFAULT_HEADER_TEXT_COLOR}
+          swatchVariant="square"
+          customColorAriaLabel={t('hero_bg_custom_color')}
+        />
       </Box>
 
       <Box>

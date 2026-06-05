@@ -158,6 +158,9 @@ export function getHeroTitleSx(
     'minWidth': 0,
     'lineHeight': 1.25,
     'color': 'text.primary',
+    'fontVariantLigatures': 'none',
+    'fontFeatureSettings': '"liga" 0, "calt" 0',
+    'fontSynthesis': 'none',
     ...(onHeroImage ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.6)' } : {}),
     ...(isCompact
       ? {

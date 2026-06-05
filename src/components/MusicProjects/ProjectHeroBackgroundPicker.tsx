@@ -19,9 +19,7 @@ import {
   HERO_PRESET_SECTIONS,
   HERO_SOLID_COLOR_ROWS,
   HERO_SOLID_PRESET_HEXES,
-
   isHeroBackgroundSelection,
-
 } from '@/components/MusicProjects/heroBackgroundPresets';
 import { HeroPresetTilePicker } from '@/components/MusicProjects/HeroPatternShapePicker';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
@@ -78,6 +76,8 @@ type ProjectHeroBackgroundPickerProps = {
   onPreviewCustom: (overrides: Partial<HeroBackgroundOverrides>) => void;
   onUploadClick: () => void;
   uploading: boolean;
+  textColor: string;
+  onTextColorChange: (hex: string) => void;
 };
 
 type TabKey = 'presets' | 'custom' | 'upload';
@@ -93,6 +93,8 @@ export function ProjectHeroBackgroundPicker({
   onPreviewCustom,
   onUploadClick,
   uploading,
+  textColor,
+  onTextColorChange,
 }: ProjectHeroBackgroundPickerProps) {
   const t = useTranslations('MusicProjects');
   const [tab, setTab] = useState<TabKey>('presets');
@@ -279,6 +281,8 @@ export function ProjectHeroBackgroundPicker({
             resolved={resolved}
             onPreviewCustom={onPreviewCustom}
             onApplyCustom={onApplyCustom}
+            textColor={textColor}
+            onTextColorChange={onTextColorChange}
           />
         )}
 

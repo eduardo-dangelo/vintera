@@ -4,9 +4,13 @@ import { resolveGradientStops } from '@/utils/musicProjectMetadata';
 
 const LIGHT_TEXT = '#ffffff';
 const DARK_TEXT = '#1a1a1a';
-const LIGHT_THEME_CHROME = '#1a1a1a';
-const DARK_THEME_CHROME = '#f4f4f5';
 const LUMINANCE_THRESHOLD = 0.55;
+
+/** Chrome text on the light sticky bar (after scrolling past the hero). */
+export const LIGHT_STICKY_BAR_CHROME = '#1a1a1a';
+
+/** Chrome text on the dark sticky bar (after scrolling past the hero). */
+export const DARK_STICKY_BAR_CHROME = '#f4f4f5';
 
 export function getHexLuminance(hex: string): number {
   const normalized = hex.replace('#', '');
@@ -21,6 +25,19 @@ export function getHexLuminance(hex: string): number {
 
 export function readableTextOnLuminance(luminance: number): string {
   return luminance > LUMINANCE_THRESHOLD ? DARK_TEXT : LIGHT_TEXT;
+}
+
+/** Pick contrast against the darkest gradient stop so chrome stays readable on every band. */
+export function resolveComposedChromeLuminance(stops: string[]): number {
+  if (stops.length === 0) {
+    return 0;
+  }
+  return Math.min(...stops.map(hex => getHexLuminance(hex)));
+}
+
+/** Chrome text for stats/actions on the sticky bar when it is no longer over the hero. */
+export function resolveStickyBarChromeTextColor(theme: Theme): string {
+  return theme.palette.mode === 'light' ? LIGHT_STICKY_BAR_CHROME : DARK_STICKY_BAR_CHROME;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -63,13 +80,12 @@ export function resolveHeroChromeTextColor(
   }
 
   if (resolved.kind === 'theme_default') {
-    return theme.palette.mode === 'light' ? LIGHT_THEME_CHROME : DARK_THEME_CHROME;
+    return resolveStickyBarChromeTextColor(theme);
   }
 
   if (resolved.kind === 'composed') {
     const stops = resolveGradientStops(resolved.builderOverrides);
-    const avg = stops.reduce((sum, hex) => sum + getHexLuminance(hex), 0) / stops.length;
-    return readableTextOnLuminance(avg);
+    return readableTextOnLuminance(resolveComposedChromeLuminance(stops));
   }
 
   return LIGHT_TEXT;

@@ -145,6 +145,7 @@
     "hero_bg_upload_hint": "Recommandé : 1920 × 400 px ou plus large (format bannière ~5:1). Max. 4,5 Mo. PNG, JPG, GIF ou WebP.",
     "hero_bg_upload_current": "Une image personnalisée est définie.",
     "hero_bg_custom_color": "Couleur personnalisée",
+    "hero_bg_text_color": "Couleur du texte",
     "hero_bg_solid_slate": "Ardoise",
     "hero_bg_solid_charcoal": "Charbon",
     "hero_bg_solid_mist": "Brume",

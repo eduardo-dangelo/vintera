@@ -113,23 +113,30 @@ export function getProjectDetailActionsSx(): SxProps<Theme> {
   };
 }
 
-/** Frosted pill behind hero breadcrumbs — matches hero camera button / logo corner radius. */
-export function getProjectDetailBreadcrumbWrapperSx(): SxProps<Theme> {
+/** Shared frosted glass panel — breadcrumbs, stats counters, etc. */
+export function getProjectDetailGlassPanelSx(): SxProps<Theme> {
   return {
-    position: 'absolute',
-    top: { xs: 12, md: 16 },
-    left: { xs: 16, sm: 24 },
-    zIndex: 2,
     display: 'inline-flex',
     alignItems: 'center',
     minWidth: 0,
-    maxWidth: { xs: 'calc(100% - 72px)', sm: 'calc(100% - 96px)' },
     borderRadius: 1,
     px: 1.25,
     py: 0.625,
     bgcolor: 'rgba(0, 0, 0, 0.05)',
     backdropFilter: 'blur(6px)',
     WebkitBackdropFilter: 'blur(6px)',
+  };
+}
+
+/** Frosted pill behind hero breadcrumbs — matches hero camera button / logo corner radius. */
+export function getProjectDetailBreadcrumbWrapperSx(): SxProps<Theme> {
+  return {
+    ...getProjectDetailGlassPanelSx(),
+    position: 'absolute',
+    top: { xs: 12, md: 16 },
+    left: { xs: 16, sm: 24 },
+    zIndex: 2,
+    maxWidth: { xs: 'calc(100% - 72px)', sm: 'calc(100% - 96px)' },
   };
 }
 

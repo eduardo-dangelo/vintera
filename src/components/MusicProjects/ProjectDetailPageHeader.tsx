@@ -51,6 +51,7 @@ import {
   getProjectDetailActionsSx,
   getProjectDetailBreadcrumbSx,
   getProjectDetailBreadcrumbWrapperSx,
+  getProjectDetailGlassPanelSx,
   getProjectDetailLeftGroupSx,
   getProjectDetailLogoAbsoluteSx,
   getProjectDetailLogoButtonSx,
@@ -68,7 +69,10 @@ import {
   ensureTitleFontLoaded,
 } from '@/components/MusicProjects/projectTitleFonts';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
-import { resolveHeroChromeTextColor } from '@/utils/heroChromeTextColor';
+import {
+  resolveHeroChromeTextColor,
+  resolveStickyBarChromeTextColor,
+} from '@/utils/heroChromeTextColor';
 import {
   buildHeroBackgroundMetadataPatch,
   mergeHeroBackgroundOverrides,
@@ -191,10 +195,17 @@ export function ProjectDetailPageHeader({
   const resolvedTitleColor
     = pendingTitleColor ?? resolveProjectHeaderTextColor(titleColor);
 
-  const resolvedChromeColor = useMemo(
-    () => resolveHeroChromeTextColor(resolvedHero, theme),
-    [resolvedHero, theme],
-  );
+  const heroChromeColor = useMemo(() => {
+    const saved = parseMusicProjectMetadata(effectiveMetadata).heroChromeTextColor;
+    if (saved) {
+      return saved;
+    }
+    return resolveHeroChromeTextColor(resolvedHero, theme);
+  }, [effectiveMetadata, resolvedHero, theme]);
+
+  const statsChromeColor = onHeroImage
+    ? heroChromeColor
+    : resolveStickyBarChromeTextColor(theme);
 
   const titleFontFamily
     = optimisticTitleFontFamily
@@ -259,8 +270,8 @@ export function ProjectDetailPageHeader({
   } as Record<string, unknown>;
 
   const breadcrumbSx = useMemo(
-    () => getProjectDetailBreadcrumbSx(resolvedChromeColor),
-    [resolvedChromeColor],
+    () => getProjectDetailBreadcrumbSx(heroChromeColor),
+    [heroChromeColor],
   );
 
   const persistHeroBackground = async (patch: MusicProjectMetadata) => {
@@ -328,13 +339,19 @@ export function ProjectDetailPageHeader({
   const handleColorSelect = (hex: string) => {
     setOptimisticHeaderColor(hex);
     setColorPickerAnchor(null);
+    const merged = mergeMusicProjectMetadata(metadataRaw, { heroChromeTextColor: hex });
+    setOptimisticHeroMetadata(merged);
     void updateProject
       .mutateAsync({
         projectId,
-        data: { color: hex },
+        data: {
+          color: hex,
+          metadata: merged,
+        },
       })
       .catch(() => {
         setOptimisticHeaderColor(null);
+        setOptimisticHeroMetadata(null);
       });
   };
 
@@ -413,10 +430,12 @@ export function ProjectDetailPageHeader({
     }
   };
 
-  const iconButtonSx = {
-    flexShrink: 0,
-    width: iconButtonSize,
-    height: iconButtonSize,
+  const titleAdornmentButtonSx = {
+    'flexShrink': 0,
+    'width': iconButtonSize,
+    'height': iconButtonSize,
+    'bgcolor': 'transparent',
+    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
   };
 
   const titleAdornments = (
@@ -424,10 +443,11 @@ export function ProjectDetailPageHeader({
       <Tooltip title={t('title_font')}>
         <IconButton
           size="small"
+          disableRipple
           aria-label={t('title_font')}
           onClick={e => setFontPickerAnchor(e.currentTarget)}
           sx={{
-            ...iconButtonSx,
+            ...titleAdornmentButtonSx,
             'color': `${resolvedTitleColor} !important`,
             '& .MuiSvgIcon-root': {
               color: 'inherit !important',
@@ -440,9 +460,10 @@ export function ProjectDetailPageHeader({
       <Tooltip title={t('title_color')}>
         <IconButton
           size="small"
+          disableRipple
           aria-label={t('title_color')}
           onClick={e => setColorPickerAnchor(e.currentTarget)}
-          sx={iconButtonSx}
+          sx={titleAdornmentButtonSx}
         >
           <Box
             component="span"
@@ -460,19 +481,27 @@ export function ProjectDetailPageHeader({
     </>
   );
 
-  const statsRow = (
+  const hasStats = songCount >= 1 || albumCount >= 1 || memberCount >= 1;
+
+  const statsBadges = (
     <MusicStatBadgeRow compact={useCompactHeader} nowrap>
       {songCount >= 1 && (
-        <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={resolvedChromeColor} />
+        <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={statsChromeColor} />
       )}
       {albumCount >= 1 && (
-        <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={resolvedChromeColor} />
+        <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={statsChromeColor} />
       )}
       {memberCount >= 1 && (
-        <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={resolvedChromeColor} />
+        <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={statsChromeColor} />
       )}
     </MusicStatBadgeRow>
   );
+
+  const statsRow = hasStats
+    ? onHeroImage
+      ? <Box sx={getProjectDetailGlassPanelSx()}>{statsBadges}</Box>
+      : statsBadges
+    : null;
 
   return (
     <Fragment>
@@ -636,11 +665,13 @@ export function ProjectDetailPageHeader({
                 >
                   <Box sx={getHeroActionsToolbarSx()}>
                     {statsRow}
-                    <Box
-                      component="span"
-                      sx={getHeroActionsDividerSx(theme, onHeroImage)}
-                      aria-hidden
-                    />
+                    {hasStats && (
+                      <Box
+                        component="span"
+                        sx={getHeroActionsDividerSx(theme, onHeroImage)}
+                        aria-hidden
+                      />
+                    )}
                     <ProjectDetailNewButton locale={locale} projectId={projectId} />
                   </Box>
                 </Box>
@@ -686,6 +717,8 @@ export function ProjectDetailPageHeader({
         onApplyCustom={handleApplyCustom}
         onUploadClick={() => heroInputRef.current?.click()}
         uploading={uploadingHero}
+        textColor={resolvedTitleColor}
+        onTextColorChange={handleColorSelect}
       />
     </Fragment>
   );

@@ -15,6 +15,7 @@ import {
   TITLE_FONT_OPTIONS,
 } from '@/components/MusicProjects/projectTitleFonts';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { sanitizeDisplayText } from '@/utils/sanitizeDisplayText';
 
 type ProjectTitleFontPickerProps = {
   anchorEl: HTMLElement | null;
@@ -38,7 +39,7 @@ export function ProjectTitleFontPicker({
   const [search, setSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const displayLabel = previewLabel.trim() || t('project_name');
+  const displayLabel = sanitizeDisplayText(previewLabel) || t('project_name');
 
   useEffect(() => {
     if (!open) {
@@ -121,6 +122,9 @@ export function ProjectTitleFontPicker({
                 fontWeight: 700,
                 lineHeight: 1.2,
                 width: '100%',
+                fontVariantLigatures: 'none',
+                fontFeatureSettings: '"liga" 0, "calt" 0',
+                fontSynthesis: 'none',
               }}
             >
               {displayLabel}

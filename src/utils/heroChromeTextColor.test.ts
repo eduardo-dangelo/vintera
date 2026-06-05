@@ -9,6 +9,7 @@ import {
   getHeroStatBadgeSx,
   getHexLuminance,
   readableTextOnLuminance,
+  resolveComposedChromeLuminance,
   resolveHeroChromeTextColor,
 } from '@/utils/heroChromeTextColor';
 import { parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
@@ -46,6 +47,32 @@ describe('resolveHeroChromeTextColor', () => {
     );
 
     expect(resolveHeroChromeTextColor(resolved, lightTheme)).toBe('#ffffff');
+  });
+
+  it('returns light text when any composed gradient stop is dark', () => {
+    const resolved = resolveHeroBackground(
+      {
+        heroBackgroundKind: 'composed',
+        heroBackgroundOverrides: {
+          gradientStops: ['#fb923c', '#bef264', '#1e3a5f'],
+        },
+      },
+      lightTheme,
+    );
+
+    expect(resolveHeroChromeTextColor(resolved, lightTheme)).toBe('#ffffff');
+  });
+});
+
+describe('resolveComposedChromeLuminance', () => {
+  it('uses the darkest stop, not the average', () => {
+    const stops = ['#fb923c', '#bef264', '#1e3a5f'];
+    const min = resolveComposedChromeLuminance(stops);
+    const avg = stops.reduce((sum, hex) => sum + getHexLuminance(hex), 0) / stops.length;
+
+    expect(min).toBeLessThan(avg);
+    expect(readableTextOnLuminance(min)).toBe('#ffffff');
+    expect(readableTextOnLuminance(avg)).toBe('#1a1a1a');
   });
 });
 

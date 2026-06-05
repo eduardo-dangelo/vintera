@@ -4,9 +4,13 @@ import type { ReactNode } from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { sanitizeDisplayText, stripInvisibleFormatChars } from '@/utils/sanitizeDisplayText';
 import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 
 const IDLE_SAVE_MS = 2500;
+
+/** Room inside overflow:hidden so display-font ink overhang is not clipped to a vertical bar. */
+const GLYPH_INK_OVERFLOW_EM = 0.3;
 
 type ProjectEditableTitleProps = {
   name: string;
@@ -72,13 +76,13 @@ export function ProjectEditableTitle({
   };
 
   const handleSave = async (value: string) => {
-    const trimmed = value.trim();
-    if (trimmed === '') {
+    const sanitized = sanitizeDisplayText(value);
+    if (sanitized === '') {
       setLocalName(name);
       latestNameRef.current = name;
       return;
     }
-    const normalized = toTitleCase(trimmed);
+    const normalized = toTitleCase(sanitized);
     if (normalized === name) {
       if (normalized !== localName) {
         setLocalName(normalized);
@@ -106,7 +110,7 @@ export function ProjectEditableTitle({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = toTitleCaseInput(e.target.value);
+    const value = toTitleCaseInput(stripInvisibleFormatChars(e.target.value));
     setLocalName(value);
     latestNameRef.current = value;
 
@@ -157,29 +161,50 @@ export function ProjectEditableTitle({
 
   const truncateSx = truncate
     ? {
-        overflowX: 'hidden',
+        display: 'block',
+        overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+        paddingRight: `${GLYPH_INK_OVERFLOW_EM}em`,
+        marginRight: `-${GLYPH_INK_OVERFLOW_EM}em`,
+        boxSizing: 'content-box',
       }
     : {};
 
   const inputSx = {
     '& .MuiInput-root': {
       fontSize,
-      'fontWeight': 700,
-      'lineHeight': titleLineHeight,
-      'color': 'text.primary',
-      'fontFamily': fontFamily ?? 'inherit',
-      '&:before': { borderBottom: 'none' },
-      '&:after': { borderBottom: 'none' },
-      '&:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
+      fontWeight: 700,
+      lineHeight: titleLineHeight,
+      color: 'text.primary',
+      fontFamily: fontFamily ?? 'inherit',
+      fontSynthesis: 'none',
       ...heroTitleStyle,
     },
     '& input': {
       padding: 0,
       fontFamily: fontFamily ?? 'inherit',
+      fontSynthesis: 'none',
       ...truncateSx,
     },
+  };
+
+  const displayText = sanitizeDisplayText(localName)
+    || sanitizeDisplayText(placeholder ?? '')
+    || t('project_name');
+
+  const titleSx = {
+    fontSize,
+    fontWeight: 700,
+    lineHeight: titleLineHeight,
+    color: 'text.primary',
+    fontFamily: fontFamily ?? 'inherit',
+    fontSynthesis: 'none',
+    cursor: 'pointer',
+    maxWidth: '100%',
+    ...truncateSx,
+    ...(!truncate ? { width: 'fit-content' } : {}),
+    ...heroTitleStyle,
   };
 
   return (
@@ -199,19 +224,20 @@ export function ProjectEditableTitle({
         sx={{
           display: 'inline-flex',
           alignItems: 'flex-start',
-          gap: 0.5,
           minWidth: 0,
           maxWidth: '100%',
           flexWrap: 'nowrap',
+          minHeight: titleMinHeight,
         }}
       >
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            minHeight: titleMinHeight,
+            position: 'relative',
+            display: 'inline-block',
             minWidth: 0,
+            maxWidth: truncate ? '100%' : 'fit-content',
             flex: truncate ? '1 1 0' : undefined,
+            verticalAlign: 'top',
           }}
         >
           {isEditing
@@ -225,6 +251,7 @@ export function ProjectEditableTitle({
                   placeholder={placeholder ?? t('project_name')}
                   variant="standard"
                   fullWidth={truncate}
+                  InputProps={{ disableUnderline: true }}
                   sx={{
                     flex: truncate ? '1 1 0' : '0 1 auto',
                     minWidth: truncate ? 0 : { xs: 120, sm: 160 },
@@ -237,45 +264,37 @@ export function ProjectEditableTitle({
                 <Typography
                   component="h1"
                   onClick={handleDisplayClick}
-                  sx={{
-                    fontSize,
-                    fontWeight: 700,
-                    lineHeight: titleLineHeight,
-                    color: 'text.primary',
-                    fontFamily: fontFamily ?? 'inherit',
-                    cursor: 'pointer',
-                    width: 'fit-content',
-                    maxWidth: '100%',
-                    ...truncateSx,
-                    ...heroTitleStyle,
-                  }}
+                  sx={titleSx}
                 >
-                  {localName || placeholder || t('project_name')}
+                  {displayText}
                 </Typography>
               )}
+          {titleAdornments && (
+            <Box
+              onClick={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+              sx={{
+                'position': 'absolute',
+                'left': '100%',
+                'top': 0,
+                'bottom': 0,
+                'display': 'inline-flex',
+                'alignItems': 'center',
+                'gap': 0.25,
+                'ml': 0.5,
+                'whiteSpace': 'nowrap',
+                'opacity': showAdornments ? 1 : 0,
+                'visibility': showAdornments ? 'visible' : 'hidden',
+                'pointerEvents': showAdornments ? 'auto' : 'none',
+                '@media (prefers-reduced-motion: no-preference)': {
+                  transition: 'opacity 0.2s ease, visibility 0.2s ease',
+                },
+              }}
+            >
+              {titleAdornments}
+            </Box>
+          )}
         </Box>
-        {titleAdornments && (
-          <Box
-            onClick={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            sx={{
-              'display': 'flex',
-              'alignItems': 'center',
-              'gap': 0.25,
-              'minHeight': titleMinHeight,
-              'opacity': showAdornments ? 1 : 0,
-              'maxWidth': showAdornments ? 88 : 0,
-              'overflow': 'hidden',
-              'flexShrink': 0,
-              'pointerEvents': showAdornments ? 'auto' : 'none',
-              '@media (prefers-reduced-motion: no-preference)': {
-                transition: 'opacity 0.2s ease, max-width 0.2s ease',
-              },
-            }}
-          >
-            {titleAdornments}
-          </Box>
-        )}
       </Box>
       {saving && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25 }}>

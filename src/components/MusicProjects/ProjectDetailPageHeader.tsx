@@ -72,6 +72,7 @@ import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateM
 import {
   resolveHeroChromeTextColor,
   resolveStickyBarChromeTextColor,
+  resolveTitleChromeColor,
 } from '@/utils/heroChromeTextColor';
 import {
   buildHeroBackgroundMetadataPatch,
@@ -207,6 +208,8 @@ export function ProjectDetailPageHeader({
     ? heroChromeColor
     : resolveStickyBarChromeTextColor(theme);
 
+  const titleChromeColor = resolveTitleChromeColor(onHeroImage, resolvedTitleColor, theme);
+
   const titleFontFamily
     = optimisticTitleFontFamily
       && parsedMetadata.titleFontFamily !== optimisticTitleFontFamily
@@ -257,7 +260,12 @@ export function ProjectDetailPageHeader({
   const showStickyGlass = hasHeroBackdrop ? isHeroOutOfView : isStuck;
   const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
 
-  const titleTextSx = { color: resolvedTitleColor };
+  const titleTextSx = {
+    'color': titleChromeColor,
+    '@media (prefers-reduced-motion: no-preference)': {
+      transition: 'color 0.2s ease',
+    },
+  };
 
   const heroTitleStyle = {
     ...getHeroTitleSx(
@@ -448,7 +456,7 @@ export function ProjectDetailPageHeader({
           onClick={e => setFontPickerAnchor(e.currentTarget)}
           sx={{
             ...titleAdornmentButtonSx,
-            'color': `${resolvedTitleColor} !important`,
+            'color': `${titleChromeColor} !important`,
             '& .MuiSvgIcon-root': {
               color: 'inherit !important',
             },

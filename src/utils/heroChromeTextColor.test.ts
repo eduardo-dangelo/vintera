@@ -11,6 +11,7 @@ import {
   readableTextOnLuminance,
   resolveComposedChromeLuminance,
   resolveHeroChromeTextColor,
+  resolveTitleChromeColor,
 } from '@/utils/heroChromeTextColor';
 import { parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
 
@@ -103,5 +104,22 @@ describe('getHeroStatBadgeSx', () => {
 describe('getHexLuminance', () => {
   it('returns higher luminance for white than black', () => {
     expect(getHexLuminance('#ffffff')).toBeGreaterThan(getHexLuminance('#000000'));
+  });
+});
+
+describe('resolveTitleChromeColor', () => {
+  it('keeps saved color on hero', () => {
+    expect(resolveTitleChromeColor(true, '#f4f4f5', lightTheme)).toBe('#f4f4f5');
+    expect(resolveTitleChromeColor(true, '#1a1a1a', lightTheme)).toBe('#1a1a1a');
+  });
+
+  it('switches light saved color to dark on light sticky bar', () => {
+    expect(resolveTitleChromeColor(false, '#f4f4f5', lightTheme)).toBe('#1a1a1a');
+    expect(resolveTitleChromeColor(false, '#ffffff', lightTheme)).toBe('#1a1a1a');
+  });
+
+  it('keeps dark saved color on light sticky bar', () => {
+    expect(resolveTitleChromeColor(false, '#1a1a1a', lightTheme)).toBe('#1a1a1a');
+    expect(resolveTitleChromeColor(false, '#374151', lightTheme)).toBe('#374151');
   });
 });

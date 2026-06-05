@@ -40,6 +40,21 @@ export function resolveStickyBarChromeTextColor(theme: Theme): string {
   return theme.palette.mode === 'light' ? LIGHT_STICKY_BAR_CHROME : DARK_STICKY_BAR_CHROME;
 }
 
+/** Display color for project title — light saved colors switch to dark on the light sticky bar. */
+export function resolveTitleChromeColor(
+  onHeroImage: boolean,
+  savedTitleColor: string,
+  theme: Theme,
+): string {
+  if (onHeroImage) {
+    return savedTitleColor;
+  }
+  if (getHexLuminance(savedTitleColor) > LUMINANCE_THRESHOLD) {
+    return resolveStickyBarChromeTextColor(theme);
+  }
+  return savedTitleColor;
+}
+
 function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace('#', '');
   if (normalized.length !== 6) {

@@ -3,16 +3,28 @@ import type { SxProps, Theme } from '@mui/material/styles';
 /** Square band logo on project detail header (out of flow, vertically centered on title). */
 export const PROJECT_DETAIL_LOGO_SIZE = 104;
 
+/** Compact logo when the sticky bar is pinned (fits within topbar row height). */
+export const PROJECT_DETAIL_LOGO_SIZE_STUCK = 40;
+
 export const LOGO_GAP_PX = 12;
+
+export function getProjectDetailLogoSize(isStuck: boolean): number {
+  return isStuck ? PROJECT_DETAIL_LOGO_SIZE_STUCK : PROJECT_DETAIL_LOGO_SIZE;
+}
 
 /** Extra space below title/actions vs list header py:2 (16px). */
 export const PROJECT_DETAIL_BOTTOM_PADDING_PX = { xs: 20, md: 24 } as const;
 
 /** In-flow horizontal reservation for the logo; logo is painted in the left group. */
-export function getProjectDetailLogoSpacerSx(): SxProps<Theme> {
+export function getProjectDetailLogoSpacerSx(isStuck: boolean): SxProps<Theme> {
+  const logoSize = getProjectDetailLogoSize(isStuck);
+
   return {
-    width: PROJECT_DETAIL_LOGO_SIZE + LOGO_GAP_PX,
-    flexShrink: 0,
+    'width': logoSize + LOGO_GAP_PX,
+    'flexShrink': 0,
+    '@media (prefers-reduced-motion: no-preference)': {
+      transition: 'width 0.2s ease',
+    },
   };
 }
 
@@ -29,11 +41,16 @@ export function getProjectDetailLogoAbsoluteSx(): SxProps<Theme> {
 
 export function getProjectDetailLogoButtonSx(): SxProps<Theme> {
   return {
-    p: 0,
-    border: 'none',
-    background: 'none',
-    borderRadius: 1,
-    lineHeight: 0,
+    'p': 0,
+    'border': 'none',
+    'background': 'none',
+    'borderRadius': 1,
+    'lineHeight': 0,
+    '@media (prefers-reduced-motion: no-preference)': {
+      '& img, & > div': {
+        transition: 'width 0.2s ease, height 0.2s ease',
+      },
+    },
   };
 }
 

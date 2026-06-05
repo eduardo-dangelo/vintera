@@ -54,11 +54,11 @@ import {
   getProjectDetailLeftGroupSx,
   getProjectDetailLogoAbsoluteSx,
   getProjectDetailLogoButtonSx,
+  getProjectDetailLogoSize,
   getProjectDetailLogoSpacerSx,
   getProjectDetailMainRowSx,
   getProjectDetailStickyBarContentSx,
   getProjectDetailTitleGroupSx,
-  PROJECT_DETAIL_LOGO_SIZE,
 } from '@/components/MusicProjects/projectDetailPageHeaderStyles';
 import { ProjectEditableTitle } from '@/components/MusicProjects/ProjectEditableTitle';
 import { ProjectHeroBackgroundPicker } from '@/components/MusicProjects/ProjectHeroBackgroundPicker';
@@ -177,6 +177,7 @@ export function ProjectDetailPageHeader({
   const heroInputRef = useRef<HTMLInputElement>(null);
 
   const useCompactHeader = isMobile || isStuck;
+  const logoSize = getProjectDetailLogoSize(isStuck);
   const hasHeroBackdrop = resolvedHero.hasHeroBackdrop;
   const topOffset = isMobile ? 56 : 0;
   const onHeroImage = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
@@ -559,7 +560,7 @@ export function ProjectDetailPageHeader({
           <ThemeProvider theme={barTheme}>
             <Box sx={getProjectDetailMainRowSx(isStuck)}>
               <Box sx={getProjectDetailLeftGroupSx()}>
-                <Box sx={getProjectDetailLogoSpacerSx()} aria-hidden />
+                <Box sx={getProjectDetailLogoSpacerSx(isStuck)} aria-hidden />
                 <Box sx={getProjectDetailLogoAbsoluteSx()}>
                   <Tooltip title={t('upload_logo')}>
                     <Box
@@ -580,14 +581,14 @@ export function ProjectDetailPageHeader({
                             <MusicCoverImage
                               imageUrl={coverImageUrl}
                               type="project"
-                              size={PROJECT_DETAIL_LOGO_SIZE}
+                              size={logoSize}
                             />
                           )
                         : (
                             <Box
                               sx={{
-                                width: PROJECT_DETAIL_LOGO_SIZE,
-                                height: PROJECT_DETAIL_LOGO_SIZE,
+                                width: logoSize,
+                                height: logoSize,
                                 borderRadius: 1,
                                 bgcolor: 'action.hover',
                                 display: 'flex',
@@ -595,7 +596,11 @@ export function ProjectDetailPageHeader({
                                 justifyContent: 'center',
                               }}
                             >
-                              <GradientIcon kind="project" fontSize={46} aria-hidden />
+                              <GradientIcon
+                                kind="project"
+                                fontSize={Math.round(logoSize * 0.44)}
+                                aria-hidden
+                              />
                             </Box>
                           )}
                     </Box>

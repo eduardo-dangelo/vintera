@@ -6,18 +6,24 @@ export const PROJECT_DETAIL_LOGO_SIZE = 104;
 /** Compact logo when the sticky bar is pinned (fits within topbar row height). */
 export const PROJECT_DETAIL_LOGO_SIZE_STUCK = 40;
 
+/** Smaller stuck logo on mobile — avoids clipping under the fixed app bar. */
+export const PROJECT_DETAIL_LOGO_SIZE_STUCK_MOBILE = 32;
+
 export const LOGO_GAP_PX = 12;
 
-export function getProjectDetailLogoSize(isStuck: boolean): number {
-  return isStuck ? PROJECT_DETAIL_LOGO_SIZE_STUCK : PROJECT_DETAIL_LOGO_SIZE;
+export function getProjectDetailLogoSize(isStuck: boolean, isMobile = false): number {
+  if (!isStuck) {
+    return PROJECT_DETAIL_LOGO_SIZE;
+  }
+  return isMobile ? PROJECT_DETAIL_LOGO_SIZE_STUCK_MOBILE : PROJECT_DETAIL_LOGO_SIZE_STUCK;
 }
 
 /** Extra space below title/actions vs list header py:2 (16px). */
 export const PROJECT_DETAIL_BOTTOM_PADDING_PX = { xs: 20, md: 24 } as const;
 
 /** In-flow horizontal reservation for the logo; logo is painted in the left group. */
-export function getProjectDetailLogoSpacerSx(isStuck: boolean): SxProps<Theme> {
-  const logoSize = getProjectDetailLogoSize(isStuck);
+export function getProjectDetailLogoSpacerSx(isStuck: boolean, isMobile = false): SxProps<Theme> {
+  const logoSize = getProjectDetailLogoSize(isStuck, isMobile);
 
   return {
     'width': logoSize + LOGO_GAP_PX,
@@ -158,7 +164,8 @@ export function getProjectDetailBreadcrumbSx(textColor: string = '#fff'): SxProp
     '& a': {
       'color': 'inherit',
       'textDecoration': 'none',
-      '&:hover': { textDecoration: 'underline' },
+      '&:hover': { textDecoration: 'none' },
+      '&:focus': { textDecoration: 'none' },
     },
   };
 }

@@ -182,7 +182,7 @@ export function ProjectDetailPageHeader({
   const heroInputRef = useRef<HTMLInputElement>(null);
 
   const useCompactHeader = isMobile || isStuck;
-  const logoSize = getProjectDetailLogoSize(isStuck);
+  const logoSize = getProjectDetailLogoSize(isStuck, isMobile);
   const hasHeroBackdrop = resolvedHero.hasHeroBackdrop;
   const topOffset = isMobile ? 56 : 0;
   const onHeroImage = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
@@ -597,7 +597,7 @@ export function ProjectDetailPageHeader({
           <ThemeProvider theme={barTheme}>
             <Box sx={getProjectDetailMainRowSx(isStuck)}>
               <Box sx={getProjectDetailLeftGroupSx()}>
-                <Box sx={getProjectDetailLogoSpacerSx(isStuck)} aria-hidden />
+                <Box sx={getProjectDetailLogoSpacerSx(isStuck, isMobile)} aria-hidden />
                 <Box sx={getProjectDetailLogoAbsoluteSx()}>
                   <Tooltip title={t('upload_logo')}>
                     <Box

@@ -266,7 +266,7 @@ export function ProjectHeroBackgroundPicker({
               display: 'flex',
               flexDirection: 'column',
               gap: 2,
-              maxHeight: 320,
+              maxHeight: 520,
               overflowY: 'auto',
             }}
           >

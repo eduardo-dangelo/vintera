@@ -7,7 +7,9 @@ import type {
 } from '@/utils/musicProjectMetadata';
 import {
   buildPatternBackgroundImage,
-  getPatternBackgroundSize,
+  getComposedBackgroundSize,
+  getPatternBackgroundPosition,
+  getPatternBackgroundRepeat,
   resolvePatternOpacity,
   resolvePatternShapeId,
   resolvePatternSize,
@@ -16,11 +18,13 @@ import { getHeroBackgroundSx } from '@/components/MusicProjects/musicListPageHea
 import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
 import {
   DEFAULT_BUILDER_GRADIENT_ANGLE,
+  DEFAULT_BUILDER_GRADIENT_SHARPNESS,
   DEFAULT_BUILDER_SOLID,
   getPatternAccentColor,
   hasPatternOverlay,
   normalizeHeroMetadata,
   parseMusicProjectMetadata,
+  resolveGradientSharpness,
   resolveGradientStops,
 } from '@/utils/musicProjectMetadata';
 
@@ -69,142 +73,90 @@ export const HERO_SOLID_PRESET_HEXES = new Set(
 
 export const HERO_PATTERN_PRESETS: HeroBackgroundPreset[] = [
   {
-    id: 'pattern-recipe-slate-dots',
-    labelKey: 'hero_bg_pattern_recipe_slate_dots',
+    id: 'pattern-recipe-vinyl-night',
+    labelKey: 'hero_bg_pattern_recipe_vinyl_night',
     kind: 'pattern',
-    background: '#1e1e22',
-    backgroundColor: '#1e1e22',
-    gradientStops: ['#1e1e22'],
-    patternShapeId: 'dots',
-    patternAccentColor: '#ffffff',
-    defaultAccentColor: '#ffffff',
-    patternSize: 16,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-mist-dots',
-    labelKey: 'hero_bg_pattern_recipe_mist_dots',
-    kind: 'pattern',
-    background: '#f0f4f8',
-    backgroundColor: '#f0f4f8',
-    gradientStops: ['#f0f4f8'],
-    patternShapeId: 'dots',
-    patternAccentColor: '#0f172a',
-    defaultAccentColor: '#0f172a',
-    patternSize: 16,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-charcoal-grid',
-    labelKey: 'hero_bg_pattern_recipe_charcoal_grid',
-    kind: 'pattern',
-    background: '#252526',
-    backgroundColor: '#252526',
-    gradientStops: ['#252526'],
-    patternShapeId: 'grid',
-    patternAccentColor: '#ffffff',
-    defaultAccentColor: '#ffffff',
-    patternSize: 24,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-stone-plus',
-    labelKey: 'hero_bg_pattern_recipe_stone_plus',
-    kind: 'pattern',
-    background: '#e8ecf1',
-    backgroundColor: '#e8ecf1',
-    gradientStops: ['#e8ecf1'],
-    patternShapeId: 'plus',
-    patternAccentColor: '#0f172a',
-    defaultAccentColor: '#0f172a',
-    patternSize: 24,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-slate-diagonal',
-    labelKey: 'hero_bg_pattern_recipe_slate_diagonal',
-    kind: 'pattern',
-    background: '#2a2a30',
-    backgroundColor: '#2a2a30',
-    gradientStops: ['#2a2a30'],
-    patternShapeId: 'diagonal',
-    patternAccentColor: '#ffffff',
-    defaultAccentColor: '#ffffff',
-    patternSize: 24,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-navy-waves',
-    labelKey: 'hero_bg_pattern_recipe_navy_waves',
-    kind: 'pattern',
-    background: '#1e293b',
-    backgroundColor: '#1e293b',
-    gradientStops: ['#1e293b'],
-    patternShapeId: 'waves',
-    patternAccentColor: '#8b5cf6',
-    defaultAccentColor: '#8b5cf6',
-    patternSize: 24,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-ink-speckle',
-    labelKey: 'hero_bg_pattern_recipe_ink_speckle',
-    kind: 'pattern',
-    background: '#18181b',
-    backgroundColor: '#18181b',
-    gradientStops: ['#18181b'],
-    patternShapeId: 'speckle',
-    patternAccentColor: '#60a5fa',
-    defaultAccentColor: '#60a5fa',
-    patternSize: 24,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-brand-offset',
-    labelKey: 'hero_bg_pattern_recipe_brand_offset',
-    kind: 'pattern',
-    background: '#120e1c',
-    backgroundColor: '#120e1c',
-    gradientStops: ['#120e1c'],
-    patternShapeId: 'offset-dots',
-    patternAccentColor: '#8b5cf6',
-    defaultAccentColor: '#8b5cf6',
-    patternSize: 16,
-    patternOpacity: 1,
-  },
-  {
-    id: 'pattern-recipe-emerald-checker',
-    labelKey: 'hero_bg_pattern_recipe_emerald_checker',
-    kind: 'pattern',
-    background: '#0f766e',
-    backgroundColor: '#0f766e',
-    gradientStops: ['#0f766e'],
-    patternShapeId: 'checkerboard',
-    patternAccentColor: '#99f6e4',
-    defaultAccentColor: '#99f6e4',
+    background: '#0d0d0f',
+    backgroundColor: '#0d0d0f',
+    gradientStops: ['#0d0d0f'],
+    patternShapeId: 'vinyl',
+    patternAccentColor: '#b87333',
+    defaultAccentColor: '#b87333',
     patternSize: 20,
     patternOpacity: 1,
   },
   {
-    id: 'pattern-recipe-indigo-rings',
-    labelKey: 'hero_bg_pattern_recipe_indigo_rings',
+    id: 'pattern-recipe-studio-eq',
+    labelKey: 'hero_bg_pattern_recipe_studio_eq',
+    kind: 'pattern',
+    background: '#1a1028',
+    backgroundColor: '#1a1028',
+    gradientStops: ['#1a1028'],
+    patternShapeId: 'eq-bars',
+    patternAccentColor: '#22d3ee',
+    defaultAccentColor: '#22d3ee',
+    patternSize: 20,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-parchment-staff',
+    labelKey: 'hero_bg_pattern_recipe_parchment_staff',
+    kind: 'pattern',
+    background: '#f5f0e6',
+    backgroundColor: '#f5f0e6',
+    gradientStops: ['#f5f0e6'],
+    patternShapeId: 'staff',
+    patternAccentColor: '#5c4a3d',
+    defaultAccentColor: '#5c4a3d',
+    patternSize: 32,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-midnight-waves',
+    labelKey: 'hero_bg_pattern_recipe_midnight_waves',
+    kind: 'pattern',
+    background: '#0f172a',
+    backgroundColor: '#0f172a',
+    gradientStops: ['#0f172a'],
+    patternShapeId: 'waves',
+    patternAccentColor: '#a78bfa',
+    defaultAccentColor: '#a78bfa',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-stage-checker',
+    labelKey: 'hero_bg_pattern_recipe_stage_checker',
+    kind: 'pattern',
+    background: '#1c0a14',
+    backgroundColor: '#1c0a14',
+    gradientStops: ['#1c0a14'],
+    patternShapeId: 'checkerboard',
+    patternAccentColor: '#f43f5e',
+    defaultAccentColor: '#f43f5e',
+    patternSize: 20,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-amp-rings',
+    labelKey: 'hero_bg_pattern_recipe_amp_rings',
     kind: 'pattern',
     background: '#1e1b4b',
     backgroundColor: '#1e1b4b',
     gradientStops: ['#1e1b4b'],
     patternShapeId: 'rings',
-    patternAccentColor: '#a5b4fc',
-    defaultAccentColor: '#a5b4fc',
+    patternAccentColor: '#c4b5fd',
+    defaultAccentColor: '#c4b5fd',
     patternSize: 28,
     patternOpacity: 1,
   },
   {
-    id: 'pattern-recipe-amber-zigzag',
-    labelKey: 'hero_bg_pattern_recipe_amber_zigzag',
+    id: 'pattern-recipe-amp-zigzag',
+    labelKey: 'hero_bg_pattern_recipe_amp_zigzag',
     kind: 'pattern',
-    background: '#451a03',
-    backgroundColor: '#451a03',
-    gradientStops: ['#451a03'],
+    background: '#292524',
+    backgroundColor: '#292524',
+    gradientStops: ['#292524'],
     patternShapeId: 'zigzag',
     patternAccentColor: '#fbbf24',
     defaultAccentColor: '#fbbf24',
@@ -212,15 +164,67 @@ export const HERO_PATTERN_PRESETS: HeroBackgroundPreset[] = [
     patternOpacity: 1,
   },
   {
-    id: 'pattern-recipe-rose-waves',
-    labelKey: 'hero_bg_pattern_recipe_rose_waves',
+    id: 'pattern-recipe-fx-speckle',
+    labelKey: 'hero_bg_pattern_recipe_fx_speckle',
     kind: 'pattern',
-    background: '#4c0519',
-    backgroundColor: '#4c0519',
-    gradientStops: ['#4c0519'],
-    patternShapeId: 'waves',
+    background: '#09090b',
+    backgroundColor: '#09090b',
+    gradientStops: ['#09090b'],
+    patternShapeId: 'speckle',
+    patternAccentColor: '#38bdf8',
+    defaultAccentColor: '#38bdf8',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-velvet-diagonal',
+    labelKey: 'hero_bg_pattern_recipe_velvet_diagonal',
+    kind: 'pattern',
+    background: '#3b0a1e',
+    backgroundColor: '#3b0a1e',
+    gradientStops: ['#3b0a1e'],
+    patternShapeId: 'diagonal',
     patternAccentColor: '#fda4af',
     defaultAccentColor: '#fda4af',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-mixer-grid',
+    labelKey: 'hero_bg_pattern_recipe_mixer_grid',
+    kind: 'pattern',
+    background: '#1c1917',
+    backgroundColor: '#1c1917',
+    gradientStops: ['#1c1917'],
+    patternShapeId: 'grid',
+    patternAccentColor: '#fafaf9',
+    defaultAccentColor: '#fafaf9',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-synth-triangles',
+    labelKey: 'hero_bg_pattern_recipe_synth_triangles',
+    kind: 'pattern',
+    background: '#2e1065',
+    backgroundColor: '#2e1065',
+    gradientStops: ['#2e1065'],
+    patternShapeId: 'triangles',
+    patternAccentColor: '#f472b6',
+    defaultAccentColor: '#f472b6',
+    patternSize: 24,
+    patternOpacity: 1,
+  },
+  {
+    id: 'pattern-recipe-spotlight-diamonds',
+    labelKey: 'hero_bg_pattern_recipe_spotlight_diamonds',
+    kind: 'pattern',
+    background: '#0a0a0a',
+    backgroundColor: '#0a0a0a',
+    gradientStops: ['#0a0a0a'],
+    patternShapeId: 'diamonds',
+    patternAccentColor: '#fcd34d',
+    defaultAccentColor: '#fcd34d',
     patternSize: 24,
     patternOpacity: 1,
   },
@@ -228,15 +232,23 @@ export const HERO_PATTERN_PRESETS: HeroBackgroundPreset[] = [
 
 export const HERO_GRADIENT_PRESETS: HeroBackgroundPreset[] = [
   { id: 'gradient-brand', labelKey: 'hero_bg_gradient_brand', kind: 'gradient', background: PRIMARY_GRADIENT, gradientStart: '#8b5cf6', gradientEnd: '#3b82f6' },
-  { id: 'gradient-sunset', labelKey: 'hero_bg_gradient_sunset', kind: 'gradient', background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', gradientStart: '#f97316', gradientEnd: '#ec4899' },
-  { id: 'gradient-ocean', labelKey: 'hero_bg_gradient_ocean', kind: 'gradient', background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)', gradientStart: '#0ea5e9', gradientEnd: '#6366f1' },
-  { id: 'gradient-forest', labelKey: 'hero_bg_gradient_forest', kind: 'gradient', background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', gradientStart: '#059669', gradientEnd: '#0d9488' },
-  { id: 'gradient-midnight', labelKey: 'hero_bg_gradient_midnight', kind: 'gradient', background: 'linear-gradient(135deg, #1e1e22 0%, #4c1d95 100%)', gradientStart: '#1e1e22', gradientEnd: '#4c1d95' },
-  { id: 'gradient-dawn', labelKey: 'hero_bg_gradient_dawn', kind: 'gradient', background: 'linear-gradient(135deg, #fce7f3 0%, #e0e7ff 100%)', gradientStart: '#fce7f3', gradientEnd: '#e0e7ff' },
-  { id: 'gradient-slate', labelKey: 'hero_bg_gradient_slate', kind: 'gradient', background: 'linear-gradient(135deg, #e8ecf1 0%, #f0f4f8 100%)', gradientStart: '#e8ecf1', gradientEnd: '#f0f4f8' },
-  { id: 'gradient-charcoal', labelKey: 'hero_bg_gradient_charcoal', kind: 'gradient', background: 'linear-gradient(135deg, #1e1e22 0%, #2a2a30 100%)', gradientStart: '#1e1e22', gradientEnd: '#2a2a30' },
-  { id: 'gradient-aurora', labelKey: 'hero_bg_gradient_aurora', kind: 'gradient', background: 'linear-gradient(135deg, #22d3ee 0%, #8b5cf6 50%, #f472b6 100%)', gradientStart: '#22d3ee', gradientEnd: '#f472b6' },
-  { id: 'gradient-gold', labelKey: 'hero_bg_gradient_gold', kind: 'gradient', background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #b45309 100%)', gradientStart: '#fbbf24', gradientEnd: '#b45309' },
+  { id: 'gradient-synthwave', labelKey: 'hero_bg_gradient_synthwave', kind: 'gradient', background: 'linear-gradient(135deg, #2d1b4e 0%, #ff2a6d 100%)', gradientStart: '#2d1b4e', gradientEnd: '#ff2a6d' },
+  { id: 'gradient-jazz-club', labelKey: 'hero_bg_gradient_jazz_club', kind: 'gradient', background: 'linear-gradient(135deg, #1a0f0a 0%, #7f1d1d 100%)', gradientStart: '#1a0f0a', gradientEnd: '#7f1d1d' },
+  { id: 'gradient-studio-lamp', labelKey: 'hero_bg_gradient_studio_lamp', kind: 'gradient', background: 'linear-gradient(135deg, #1c1917 0%, #d97706 100%)', gradientStart: '#1c1917', gradientEnd: '#d97706' },
+  { id: 'gradient-electric', labelKey: 'hero_bg_gradient_electric', kind: 'gradient', background: 'linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%)', gradientStart: '#06b6d4', gradientEnd: '#7c3aed' },
+  { id: 'gradient-concert', labelKey: 'hero_bg_gradient_concert', kind: 'gradient', background: 'linear-gradient(135deg, #1e1b4b 0%, #ea580c 100%)', gradientStart: '#1e1b4b', gradientEnd: '#ea580c' },
+  { id: 'gradient-lofi', labelKey: 'hero_bg_gradient_lofi', kind: 'gradient', background: 'linear-gradient(135deg, #e8d5c4 0%, #c4a4a4 100%)', gradientStart: '#e8d5c4', gradientEnd: '#c4a4a4' },
+  { id: 'gradient-vinyl', labelKey: 'hero_bg_gradient_vinyl', kind: 'gradient', background: 'linear-gradient(135deg, #121218 0%, #3d3d50 100%)', gradientStart: '#121218', gradientEnd: '#3d3d50' },
+  { id: 'gradient-midnight', labelKey: 'hero_bg_gradient_midnight', kind: 'gradient', background: 'linear-gradient(135deg, #0f0a1a 0%, #5b21b6 100%)', gradientStart: '#0f0a1a', gradientEnd: '#5b21b6' },
+  {
+    id: 'gradient-gold-record',
+    labelKey: 'hero_bg_gradient_gold_record',
+    kind: 'gradient',
+    background: 'linear-gradient(135deg, #292524 0%, #fbbf24 50%, #92400e 100%)',
+    gradientStart: '#292524',
+    gradientEnd: '#92400e',
+    gradientStops: ['#292524', '#fbbf24', '#92400e'],
+  },
 ];
 
 export const HERO_PRESET_SECTIONS = [
@@ -302,11 +314,13 @@ export function getPresetDefaults(preset: HeroBackgroundPreset): HeroBackgroundO
   }
   const start = preset.gradientStart ?? '#8b5cf6';
   const end = preset.gradientEnd ?? '#3b82f6';
+  const stops = preset.gradientStops ?? [start, end];
   return {
     gradientStart: start,
     gradientEnd: end,
-    gradientStops: [start, end],
+    gradientStops: stops,
     gradientAngle: DEFAULT_GRADIENT_ANGLE,
+    gradientSharpness: DEFAULT_BUILDER_GRADIENT_SHARPNESS,
   };
 }
 
@@ -326,13 +340,20 @@ export function buildGradientBackground(
   start: string,
   end: string,
   angle: number = DEFAULT_GRADIENT_ANGLE,
+  sharpness: number = 0,
 ): string {
-  return buildMultiStopGradient([start, end], angle);
+  return buildMultiStopGradient([start, end], angle, sharpness);
+}
+
+function formatGradientStop(color: string, position: number): string {
+  const rounded = Math.round(position * 10) / 10;
+  return `${color} ${rounded}%`;
 }
 
 export function buildMultiStopGradient(
   stops: string[],
   angle: number = DEFAULT_GRADIENT_ANGLE,
+  sharpness: number = 0,
 ): string {
   if (stops.length === 0) {
     return DEFAULT_BUILDER_SOLID;
@@ -340,11 +361,28 @@ export function buildMultiStopGradient(
   if (stops.length === 1) {
     return stops[0]!;
   }
-  const positions = stops.map((_, i) => {
-    const pct = stops.length === 1 ? 0 : Math.round((i / (stops.length - 1)) * 100);
-    return `${stops[i]} ${pct}%`;
-  });
-  return `linear-gradient(${angle}deg, ${positions.join(', ')})`;
+
+  const normalizedSharpness = Math.min(100, Math.max(0, Math.round(sharpness))) / 100;
+  if (normalizedSharpness === 0) {
+    const positions = stops.map((color, i) => {
+      const pct = Math.round((i / (stops.length - 1)) * 100);
+      return formatGradientStop(color, pct);
+    });
+    return `linear-gradient(${angle}deg, ${positions.join(', ')})`;
+  }
+
+  const anchors = stops.map((_, i) => (i / (stops.length - 1)) * 100);
+  const entries: string[] = [];
+
+  for (let i = 0; i < stops.length; i++) {
+    const left = i === 0 ? 0 : (anchors[i - 1]! + anchors[i]!) / 2;
+    const right = i === stops.length - 1 ? 100 : (anchors[i]! + anchors[i + 1]!) / 2;
+    const blend = ((right - left) / 2) * (1 - normalizedSharpness);
+    entries.push(formatGradientStop(stops[i]!, left + blend));
+    entries.push(formatGradientStop(stops[i]!, right - blend));
+  }
+
+  return `linear-gradient(${angle}deg, ${entries.join(', ')})`;
 }
 
 const HERO_LAYER_BASE_SX = {
@@ -354,12 +392,12 @@ const HERO_LAYER_BASE_SX = {
   overflow: 'hidden',
 } as const;
 
-function buildBaseBackgroundLayer(stops: string[], angle: number): string {
+function buildBaseBackgroundLayer(stops: string[], angle: number, sharpness: number): string {
   if (stops.length === 1) {
     const hex = stops[0]!;
     return `linear-gradient(${hex}, ${hex})`;
   }
-  return buildMultiStopGradient(stops, angle);
+  return buildMultiStopGradient(stops, angle, sharpness);
 }
 
 export function buildComposedHeroBackgroundSx(
@@ -367,6 +405,7 @@ export function buildComposedHeroBackgroundSx(
 ): SxProps<Theme> {
   const stops = resolveGradientStops(overrides);
   const angle = overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE;
+  const sharpness = resolveGradientSharpness(overrides);
   const shapeId = resolvePatternShapeId(overrides);
   const hasPattern = shapeId !== null;
 
@@ -383,21 +422,25 @@ export function buildComposedHeroBackgroundSx(
     }
     return {
       ...HERO_LAYER_BASE_SX,
-      backgroundImage: buildMultiStopGradient(stops, angle),
+      backgroundImage: buildMultiStopGradient(stops, angle, sharpness),
     };
   }
 
   const accent = getPatternAccentColor(overrides);
   const opacity = resolvePatternOpacity(overrides);
+  const resolvedPatternSize = resolvePatternSize(overrides);
   const patternImage = buildPatternBackgroundImage(shapeId, accent, opacity);
-  const patternSize = getPatternBackgroundSize(shapeId, resolvePatternSize(overrides));
-  const baseLayer = buildBaseBackgroundLayer(stops, angle);
+  const patternPosition = getPatternBackgroundPosition(shapeId, resolvedPatternSize);
+  const baseLayer = buildBaseBackgroundLayer(stops, angle, sharpness);
+
+  const patternRepeat = getPatternBackgroundRepeat(shapeId);
 
   return {
     ...HERO_LAYER_BASE_SX,
     backgroundImage: `${patternImage}, ${baseLayer}`,
-    backgroundSize: `${patternSize}, auto`,
-    backgroundRepeat: 'repeat, no-repeat',
+    backgroundSize: getComposedBackgroundSize(shapeId, resolvedPatternSize),
+    backgroundRepeat: `${patternRepeat}, no-repeat`,
+    ...(patternPosition ? { backgroundPosition: `${patternPosition}, 0 0` } : {}),
   };
 }
 
@@ -442,6 +485,8 @@ export function applyHeroPresetRecipe(
         gradientStart: defaults.gradientStart,
         gradientEnd: defaults.gradientEnd,
         gradientAngle: defaults.gradientAngle ?? prev.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+        // Preset selection should not carry over prior custom sharpness.
+        gradientSharpness: defaults.gradientSharpness ?? DEFAULT_BUILDER_GRADIENT_SHARPNESS,
       },
     });
   }
@@ -452,6 +497,7 @@ export function applyHeroPresetRecipe(
     heroBackgroundPreset: preset.id,
     heroBackgroundOverrides: {
       ...defaults,
+      gradientSharpness: prev.gradientSharpness ?? defaults.gradientSharpness ?? DEFAULT_BUILDER_GRADIENT_SHARPNESS,
       gradientAngle: prev.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
       patternPresetId: null,
     },
@@ -490,7 +536,7 @@ export function getPresetPreviewSx(
   const shapeId = preset.kind === 'pattern' ? preset.patternShapeId : null;
   const previewScale = 0.5;
   const size = shapeId
-    ? getPatternBackgroundSize(
+    ? getComposedBackgroundSize(
         shapeId,
         Math.round((preset.patternSize ?? resolvePatternSize(defaults)) * previewScale),
       )
@@ -501,6 +547,7 @@ export function getPresetPreviewSx(
     backgroundColor: (full as { backgroundColor?: string }).backgroundColor,
     backgroundImage: (full as { backgroundImage?: string }).backgroundImage,
     backgroundSize: (full as { backgroundSize?: string }).backgroundSize ?? size,
+    backgroundPosition: (full as { backgroundPosition?: string }).backgroundPosition,
     backgroundRepeat: (full as { backgroundRepeat?: string }).backgroundRepeat,
   };
 }
@@ -555,6 +602,7 @@ export function resolveHeroBackground(
       ...overrides,
       gradientStops: stops,
       gradientAngle: overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE,
+      gradientSharpness: resolveGradientSharpness(overrides),
       patternShapeId: overrides.patternShapeId ?? resolvePatternShapeId(overrides),
       patternPresetId: overrides.patternPresetId,
     };

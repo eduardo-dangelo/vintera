@@ -1,6 +1,8 @@
 import {
   hasPatternOverlay,
+  MAX_PATTERN_SIZE,
   migrateLegacyPatternOverrides,
+  MIN_PATTERN_SIZE,
 } from '@/components/MusicProjects/heroPatternShapes';
 import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
 
@@ -10,6 +12,7 @@ export const MAX_GRADIENT_STOPS = 4;
 export const MIN_GRADIENT_STOPS = 1;
 export const DEFAULT_BUILDER_GRADIENT_STOPS = ['#8b5cf6', '#3b82f6'];
 export const DEFAULT_BUILDER_GRADIENT_ANGLE = 135;
+export const DEFAULT_BUILDER_GRADIENT_SHARPNESS = 0;
 export const DEFAULT_BUILDER_SOLID = '#8b5cf6';
 
 export type HeroBackgroundOverrides = {
@@ -20,6 +23,8 @@ export type HeroBackgroundOverrides = {
   gradientEnd?: string;
   gradientStops?: string[];
   gradientAngle?: number;
+  /** 0 = soft blend, 100 = hard bands between stops */
+  gradientSharpness?: number;
   /** @deprecated Legacy shape id; use patternShapeId */
   patternPresetId?: string | null;
   patternShapeId?: string | null;
@@ -90,6 +95,9 @@ function parseHeroBackgroundOverrides(raw: unknown): HeroBackgroundOverrides | u
   if (typeof raw.gradientAngle === 'number' && !Number.isNaN(raw.gradientAngle)) {
     overrides.gradientAngle = raw.gradientAngle;
   }
+  if (typeof raw.gradientSharpness === 'number' && !Number.isNaN(raw.gradientSharpness)) {
+    overrides.gradientSharpness = Math.min(100, Math.max(0, Math.round(raw.gradientSharpness)));
+  }
   if (raw.patternPresetId === null) {
     overrides.patternPresetId = null;
   } else if (typeof raw.patternPresetId === 'string' && raw.patternPresetId.length > 0) {
@@ -101,7 +109,7 @@ function parseHeroBackgroundOverrides(raw: unknown): HeroBackgroundOverrides | u
     overrides.patternShapeId = raw.patternShapeId;
   }
   if (typeof raw.patternSize === 'number' && !Number.isNaN(raw.patternSize)) {
-    overrides.patternSize = Math.min(48, Math.max(8, raw.patternSize));
+    overrides.patternSize = Math.min(MAX_PATTERN_SIZE, Math.max(MIN_PATTERN_SIZE, raw.patternSize));
   }
   if (typeof raw.patternOpacity === 'number' && !Number.isNaN(raw.patternOpacity)) {
     overrides.patternOpacity = Math.min(1, Math.max(0.1, raw.patternOpacity));
@@ -401,10 +409,18 @@ export function buildHeroBackgroundMetadataPatch(
   return normalizeHeroMetadata(patch);
 }
 
+export function resolveGradientSharpness(overrides: HeroBackgroundOverrides): number {
+  if (typeof overrides.gradientSharpness === 'number' && !Number.isNaN(overrides.gradientSharpness)) {
+    return Math.min(100, Math.max(0, Math.round(overrides.gradientSharpness)));
+  }
+  return DEFAULT_BUILDER_GRADIENT_SHARPNESS;
+}
+
 export function getBuilderDefaultOverrides(): HeroBackgroundOverrides {
   return {
     gradientStops: [...DEFAULT_BUILDER_GRADIENT_STOPS],
     gradientAngle: DEFAULT_BUILDER_GRADIENT_ANGLE,
+    gradientSharpness: DEFAULT_BUILDER_GRADIENT_SHARPNESS,
     patternPresetId: null,
     patternShapeId: null,
   };

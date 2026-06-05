@@ -77,7 +77,7 @@ describe('mergeHeroBackgroundOverrides', () => {
     const merged = mergeHeroBackgroundOverrides(
       {
         heroBackgroundKind: 'composed',
-        heroBackgroundPreset: 'pattern-recipe-charcoal-grid',
+        heroBackgroundPreset: 'pattern-recipe-mixer-grid',
         heroBackgroundOverrides: {
           gradientStops: ['#252526'],
           patternShapeId: 'grid',
@@ -87,7 +87,7 @@ describe('mergeHeroBackgroundOverrides', () => {
     );
 
     expect(merged.heroBackgroundKind).toBe('composed');
-    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-charcoal-grid');
+    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-mixer-grid');
     expect(merged.heroBackgroundOverrides?.patternAccentColor).toBe('#8b5cf6');
   });
 });
@@ -103,19 +103,19 @@ describe('applyHeroPresetRecipe', () => {
       },
     });
 
-    expect(getPresetDefaultsById('gradient-ocean')).toBeDefined();
+    expect(getPresetDefaultsById('gradient-studio-lamp')).toBeDefined();
 
     const merged = applyHeroPresetRecipe(base, {
-      id: 'gradient-ocean',
-      labelKey: 'hero_bg_gradient_ocean',
+      id: 'gradient-studio-lamp',
+      labelKey: 'hero_bg_gradient_studio_lamp',
       kind: 'gradient',
       background: '',
-      gradientStart: '#0ea5e9',
-      gradientEnd: '#6366f1',
+      gradientStart: '#1c1917',
+      gradientEnd: '#d97706',
     });
 
     expect(merged.heroBackgroundOverrides?.patternShapeId).toBeNull();
-    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#0ea5e9', '#6366f1']);
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1c1917', '#d97706']);
   });
 
   it('clears gradient stops when applying a pattern preset', () => {
@@ -127,42 +127,42 @@ describe('applyHeroPresetRecipe', () => {
       },
     });
     const merged = applyHeroPresetRecipe(base, {
-      id: 'pattern-recipe-slate-dots',
-      labelKey: 'hero_bg_pattern_recipe_slate_dots',
+      id: 'pattern-recipe-mixer-grid',
+      labelKey: 'hero_bg_pattern_recipe_mixer_grid',
       kind: 'pattern',
-      background: '#1e1e22',
-      backgroundColor: '#1e1e22',
-      gradientStops: ['#1e1e22'],
-      patternShapeId: 'dots',
-      patternAccentColor: '#ffffff',
-      defaultAccentColor: '#ffffff',
-      patternSize: 16,
+      background: '#1c1917',
+      backgroundColor: '#1c1917',
+      gradientStops: ['#1c1917'],
+      patternShapeId: 'grid',
+      patternAccentColor: '#fafaf9',
+      defaultAccentColor: '#fafaf9',
+      patternSize: 24,
       patternOpacity: 1,
     });
 
-    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
-    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('dots');
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1c1917']);
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('grid');
     expect(merged.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
-    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-slate-dots');
+    expect(merged.heroBackgroundPreset).toBe('pattern-recipe-mixer-grid');
   });
 
   it('applies solid base from pattern recipe on empty project', () => {
     const merged = applyHeroPresetRecipe({}, {
-      id: 'pattern-recipe-slate-dots',
-      labelKey: 'hero_bg_pattern_recipe_slate_dots',
+      id: 'pattern-recipe-mixer-grid',
+      labelKey: 'hero_bg_pattern_recipe_mixer_grid',
       kind: 'pattern',
-      background: '#1e1e22',
-      backgroundColor: '#1e1e22',
-      gradientStops: ['#1e1e22'],
-      patternShapeId: 'dots',
-      patternAccentColor: '#ffffff',
-      defaultAccentColor: '#ffffff',
-      patternSize: 16,
+      background: '#1c1917',
+      backgroundColor: '#1c1917',
+      gradientStops: ['#1c1917'],
+      patternShapeId: 'grid',
+      patternAccentColor: '#fafaf9',
+      defaultAccentColor: '#fafaf9',
+      patternSize: 24,
       patternOpacity: 1,
     });
 
-    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('dots');
-    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
+    expect(merged.heroBackgroundOverrides?.patternShapeId).toBe('grid');
+    expect(merged.heroBackgroundOverrides?.gradientStops).toEqual(['#1c1917']);
     expect(merged.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
   });
 
@@ -186,10 +186,10 @@ describe('applyHeroPresetRecipe', () => {
   });
 
   it('pattern preset defaults include full recipe', () => {
-    const defaults = getPresetDefaultsById('pattern-recipe-slate-dots');
+    const defaults = getPresetDefaultsById('pattern-recipe-mixer-grid');
 
-    expect(defaults?.patternShapeId).toBe('dots');
-    expect(defaults?.gradientStops).toEqual(['#1e1e22']);
+    expect(defaults?.patternShapeId).toBe('grid');
+    expect(defaults?.gradientStops).toEqual(['#1c1917']);
     expect(defaults?.patternPresetId).toBeNull();
     expect(defaults?.backgroundColor).toBeUndefined();
   });
@@ -205,6 +205,12 @@ describe('buildMultiStopGradient', () => {
   it('matches two-stop helper', () => {
     expect(buildGradientBackground('#ff0000', '#00ff00', 90)).toBe(
       buildMultiStopGradient(['#ff0000', '#00ff00'], 90),
+    );
+  });
+
+  it('builds hard-edged gradient at full sharpness', () => {
+    expect(buildMultiStopGradient(['#ff0000', '#00ff00'], 90, 100)).toBe(
+      'linear-gradient(90deg, #ff0000 0%, #ff0000 50%, #00ff00 50%, #00ff00 100%)',
     );
   });
 });
@@ -232,8 +238,33 @@ describe('buildComposedHeroBackgroundSx', () => {
       patternOpacity: 0.5,
     }) as { backgroundSize?: string; backgroundImage?: string };
 
-    expect(sx.backgroundSize).toContain('32px 32px');
+    expect(sx.backgroundSize).toBe('32px 32px, 100% 100%');
     expect(sx.backgroundImage).toContain('rgba(255, 255, 255');
+  });
+
+  it('gives each pattern layer its own tile size and full-bleeds the base gradient', () => {
+    const sx = buildComposedHeroBackgroundSx({
+      gradientStops: ['#8b5cf6', '#3b82f6'],
+      patternShapeId: 'checkerboard',
+      patternAccentColor: '#ffffff',
+      patternSize: 24,
+    }) as { backgroundSize?: string };
+
+    expect(sx.backgroundSize).toBe('24px 24px, 24px 24px, 100% 100%');
+  });
+
+  it('offsets zigzag layers so the chevron pattern stays visible', () => {
+    const sx = buildComposedHeroBackgroundSx({
+      gradientStops: ['#292524'],
+      patternShapeId: 'zigzag',
+      patternAccentColor: '#fbbf24',
+      patternSize: 20,
+    }) as { backgroundPosition?: string; backgroundRepeat?: string; backgroundSize?: string; backgroundImage?: string };
+
+    expect(sx.backgroundSize).toBe('20px 10px, 20px 10px, 20px 10px, 20px 10px, 100% 100%');
+    expect(sx.backgroundPosition).toBe('-10px 0, -10px 0, 0 0, 0 0, 0 0');
+    expect(sx.backgroundRepeat).toBe('repeat, repeat, repeat, repeat, no-repeat');
+    expect(sx.backgroundImage).not.toContain(') 0 0');
   });
 });
 

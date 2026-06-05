@@ -11,7 +11,7 @@ import {
   buildComposedHeroBackgroundSx,
   buildShapePreviewOverrides,
 } from '@/components/MusicProjects/heroBackgroundPresets';
-import { getPatternBackgroundSize, PATTERN_NONE_ID } from '@/components/MusicProjects/heroPatternShapes';
+import { getComposedBackgroundSize, PATTERN_NONE_ID } from '@/components/MusicProjects/heroPatternShapes';
 
 type HeroPatternShapePickerProps = {
   shapes: HeroPatternShape[];
@@ -51,7 +51,7 @@ function getShapePreviewSx(
     ? Math.round(overrides.patternSize * previewScale)
     : undefined;
   const size = scaledSize
-    ? getPatternBackgroundSize(shapeId, scaledSize)
+    ? getComposedBackgroundSize(shapeId, scaledSize)
     : undefined;
 
   return {
@@ -59,6 +59,7 @@ function getShapePreviewSx(
     backgroundColor: (full as { backgroundColor?: string }).backgroundColor,
     backgroundImage: (full as { backgroundImage?: string }).backgroundImage,
     backgroundSize: (full as { backgroundSize?: string }).backgroundSize ?? size,
+    backgroundPosition: (full as { backgroundPosition?: string }).backgroundPosition,
     backgroundRepeat: (full as { backgroundRepeat?: string }).backgroundRepeat,
   };
 }

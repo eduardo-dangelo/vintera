@@ -41,6 +41,7 @@ import { HeroPatternShapePicker } from '@/components/MusicProjects/HeroPatternSh
 import {
   findHeroPatternShape,
   HERO_PATTERN_SHAPES,
+  MAX_PATTERN_SIZE,
   PATTERN_NONE_ID,
   resolvePatternShapeId,
 } from '@/components/MusicProjects/heroPatternShapes';
@@ -52,6 +53,7 @@ import {
   getPatternAccentColor,
   MAX_GRADIENT_STOPS,
   MIN_GRADIENT_STOPS,
+  resolveGradientSharpness,
   resolveGradientStops,
 } from '@/utils/musicProjectMetadata';
 
@@ -516,6 +518,7 @@ export function HeroBackgroundCustomPanel({
   }
 
   const angle = overrides.gradientAngle ?? DEFAULT_BUILDER_GRADIENT_ANGLE;
+  const sharpness = resolveGradientSharpness(overrides);
   const activeShapeId = resolvePatternShapeId(overrides);
   const patternEnabled = activeShapeId !== null;
   const selectedPatternId = activeShapeId ?? PATTERN_NONE_ID;
@@ -531,6 +534,7 @@ export function HeroBackgroundCustomPanel({
   const patternPreviewOverrides: HeroBackgroundOverrides = {
     gradientStops: stops,
     gradientAngle: angle,
+    gradientSharpness: sharpness,
     patternAccentColor: accentColor,
     patternSize,
     patternOpacity,
@@ -540,6 +544,7 @@ export function HeroBackgroundCustomPanel({
     onPreviewCustom({
       gradientStops: nextStops,
       gradientAngle: angle,
+      gradientSharpness: sharpness,
       ...(nextStops.length === 1
         ? { backgroundColor: nextStops[0] }
         : {}),
@@ -550,6 +555,7 @@ export function HeroBackgroundCustomPanel({
     onApplyCustom({
       gradientStops: nextStops,
       gradientAngle: angle,
+      gradientSharpness: sharpness,
       ...(nextStops.length === 1
         ? { backgroundColor: nextStops[0] }
         : {}),
@@ -594,25 +600,58 @@ export function HeroBackgroundCustomPanel({
           onApplyStops={applyStops}
         />
         {stops.length >= 2 && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2" gutterBottom>
-              {t('hero_bg_custom_gradient_angle')}
-              {' '}
-              (
-              {angle}
-              °)
-            </Typography>
-            <Slider
-              value={angle}
-              min={0}
-              max={360}
-              step={15}
-              onChange={(_, value) => {
-                onApplyCustom({ gradientAngle: value as number, gradientStops: stops });
-              }}
-              size="small"
-            />
-          </Box>
+          <>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                {t('hero_bg_custom_gradient_angle')}
+                {' '}
+                (
+                {angle}
+                °)
+              </Typography>
+              <Slider
+                value={angle}
+                min={0}
+                max={360}
+                step={15}
+                onChange={(_, value) => {
+                  onApplyCustom({
+                    gradientAngle: value as number,
+                    gradientStops: stops,
+                    gradientSharpness: sharpness,
+                  });
+                }}
+                size="small"
+              />
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" gutterBottom>
+                {t('hero_bg_custom_gradient_sharpness')}
+                {' '}
+                (
+                {sharpness === 0
+                  ? t('hero_bg_custom_gradient_sharpness_soft')
+                  : sharpness === 100
+                    ? t('hero_bg_custom_gradient_sharpness_sharp')
+                    : `${sharpness}%`}
+                )
+              </Typography>
+              <Slider
+                value={sharpness}
+                min={0}
+                max={100}
+                step={5}
+                onChange={(_, value) => {
+                  onApplyCustom({
+                    gradientSharpness: value as number,
+                    gradientStops: stops,
+                    gradientAngle: angle,
+                  });
+                }}
+                size="small"
+              />
+            </Box>
+          </>
         )}
       </Box>
 
@@ -631,9 +670,17 @@ export function HeroBackgroundCustomPanel({
                 applyPattern({ patternShapeId: null });
                 return;
               }
+              const nextShape = findHeroPatternShape(shapeId);
+              const prevSize = patternSize;
+              const clampedPrevSize = Math.min(
+                MAX_PATTERN_SIZE,
+                Math.max(nextShape?.minSize ?? 8, prevSize),
+              );
               applyPattern({
                 patternShapeId: shapeId,
-                patternSize: findHeroPatternShape(shapeId)?.defaultSize,
+                patternSize: patternEnabled
+                  ? clampedPrevSize
+                  : (nextShape?.defaultSize ?? 24),
               });
             }}
           />
@@ -662,7 +709,7 @@ export function HeroBackgroundCustomPanel({
                 <Slider
                   value={patternSize}
                   min={sizeBounds.minSize}
-                  max={sizeBounds.maxSize}
+                  max={MAX_PATTERN_SIZE}
                   step={2}
                   onChange={(_, value) => {
                     applyPattern({ patternSize: value as number });

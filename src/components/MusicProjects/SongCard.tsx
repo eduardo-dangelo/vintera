@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import Link from 'next/link';
+import { getSongDetailHref } from '@/utils/musicRoutes';
 import {
   getMusicCardActionAreaSx,
   getMusicCardContentPadding,
@@ -26,15 +27,16 @@ type SongCardProps = {
   song: SongListItem;
   locale: string;
   cardSize?: ListFolderCardSize;
+  projectId?: number;
 };
 
-export function SongCard({ song, locale, cardSize = 'medium' }: SongCardProps) {
+export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongCardProps) {
   const compact = cardSize === 'small';
 
   const menuTarget = {
     kind: 'song' as const,
     id: song.id,
-    href: `/${locale}/songs/${song.id}`,
+    href: getSongDetailHref(locale, song.id, projectId),
   };
 
   const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);

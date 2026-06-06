@@ -1,11 +1,9 @@
 'use client';
 
-import { Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   CircularProgress,
   Grid,
-  IconButton,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -13,10 +11,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
-import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
 import { ProjectDetailPageHeader } from '@/components/MusicProjects/ProjectDetailPageHeader';
 import { ProjectDetailSidebar } from '@/components/MusicProjects/ProjectDetailSidebar';
-import { useDeleteSong } from '@/queries/hooks/music-projects/useDeleteSong';
+import { ProjectDetailSongsSection } from '@/components/MusicProjects/ProjectDetailSongsSection';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 
 type ProjectDetailClientProps = {
@@ -29,7 +26,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading, error } = useMusicProject(locale, projectId);
-  const deleteSong = useDeleteSong(locale);
 
   useEffect(() => {
     const songParam = searchParams.get('song');
@@ -140,73 +136,13 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
                 )}
           </Box>
 
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {t('songs')}
-              </Typography>
-              <NewSongButton locale={locale} projectId={projectId} />
-            </Box>
-            {songs.length === 0
-              ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    {t('no_songs')}
-                  </Typography>
-                )
-              : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {songs.map((song) => {
-                      const album = albums.find(a => a.id === song.albumId);
-                      return (
-                        <Box
-                          key={song.id}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            p: 2,
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                          }}
-                        >
-                          <Typography
-                            component={Link}
-                            href={`/${locale}/projects/${projectId}/songs/${song.id}`}
-                            sx={{
-                              'fontWeight': 600,
-                              'flex': 1,
-                              'textDecoration': 'none',
-                              'color': 'inherit',
-                              '&:hover': { color: accent },
-                            }}
-                          >
-                            {song.trackNumber ? `${song.trackNumber}. ` : ''}
-                            {song.title}
-                          </Typography>
-                          {album && (
-                            <Typography
-                              component={Link}
-                              href={`/${locale}/projects/${projectId}/albums/${album.id}`}
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ 'textDecoration': 'none', '&:hover': { color: accent } }}
-                            >
-                              {album.name}
-                            </Typography>
-                          )}
-                          <IconButton
-                            size="small"
-                            onClick={() => deleteSong.mutate({ projectId, songId: song.id })}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                )}
-          </Box>
+          <ProjectDetailSongsSection
+            locale={locale}
+            projectId={projectId}
+            project={project}
+            songs={songs}
+            albums={albums}
+          />
         </Grid>
       </Grid>
 

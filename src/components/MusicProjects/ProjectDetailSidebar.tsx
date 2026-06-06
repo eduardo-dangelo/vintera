@@ -1,20 +1,12 @@
 'use client';
 
 import {
-  Delete as DeleteIcon,
-  MoreVert,
-} from '@mui/icons-material';
-import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Menu,
-  MenuItem,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -22,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
 import { ProjectDetailCalendarSection } from './ProjectDetailCalendarSection';
+import { ProjectDetailGeneralInfoSection } from './ProjectDetailGeneralInfoSection';
 
 type ProjectDetailSidebarProps = {
   locale: string;
@@ -42,7 +35,6 @@ export function ProjectDetailSidebar({
   const router = useRouter();
   const deleteProject = useDeleteMusicProject(locale);
 
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleDeleteProject = async () => {
@@ -64,31 +56,14 @@ export function ProjectDetailSidebar({
           borderColor: 'divider',
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-          <IconButton size="small" onClick={e => setMenuAnchor(e.currentTarget)}>
-            <MoreVert />
-          </IconButton>
-          <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-            <MenuItem
-              onClick={() => {
-                setMenuAnchor(null);
-                setDeleteDialogOpen(true);
-              }}
-              sx={{ color: 'error.main' }}
-            >
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-              {t('delete')}
-            </MenuItem>
-          </Menu>
-        </Box>
-        {genre && (
-          <Chip label={genre} size="small" sx={{ mb: 2, bgcolor: `${accent}33`, color: accent }} />
-        )}
-        {description && (
-          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-            {description}
-          </Typography>
-        )}
+        <ProjectDetailGeneralInfoSection
+          locale={locale}
+          projectId={projectId}
+          genre={genre}
+          description={description}
+          accent={accent}
+          onDeleteRequest={() => setDeleteDialogOpen(true)}
+        />
 
         <ProjectDetailCalendarSection locale={locale} projectId={projectId} />
       </Box>

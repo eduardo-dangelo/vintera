@@ -64,6 +64,12 @@ function patchMusicProjectList(
     if (data.coverImageUrl !== undefined) {
       next.coverImageUrl = typeof data.coverImageUrl === 'string' ? data.coverImageUrl : null;
     }
+    if (data.description !== undefined) {
+      next.description = typeof data.description === 'string' ? data.description : null;
+    }
+    if (data.genre !== undefined) {
+      next.genre = typeof data.genre === 'string' ? data.genre : null;
+    }
     if (data.metadata !== undefined && isRecord(data.metadata)) {
       const existing = isRecord(item.metadata) ? item.metadata : {};
       next.metadata = { ...existing, ...data.metadata };

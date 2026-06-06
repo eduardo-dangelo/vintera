@@ -8,6 +8,7 @@ import {
 import {
   getHeroStatBadgeSx,
   getHexLuminance,
+  getSurfaceAccentChipSx,
   readableTextOnLuminance,
   resolveComposedChromeLuminance,
   resolveHeroChromeTextColor,
@@ -89,6 +90,15 @@ describe('parseMusicProjectMetadata heroChromeTextColor', () => {
     const parsed = parseMusicProjectMetadata({ heroChromeTextColor: '#f4f4f5' });
 
     expect(parsed.heroChromeTextColor).toBe('#f4f4f5');
+  });
+});
+
+describe('getSurfaceAccentChipSx', () => {
+  it('resolves light hero title colors for readable chips on light surfaces', () => {
+    const sx = getSurfaceAccentChipSx('#f4f4f5', lightTheme);
+
+    expect(sx.color).toBe('#1a1a1a');
+    expect(sx.bgcolor).toContain('rgba');
   });
 });
 

@@ -66,6 +66,19 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Accent chip on theme surfaces (sidebar, cards) — resolves hero title colors for contrast. */
+export function getSurfaceAccentChipSx(
+  accent: string,
+  theme: Theme,
+): Record<string, unknown> {
+  const resolved = resolveTitleChromeColor(false, accent, theme);
+  return {
+    color: resolved,
+    bgcolor: hexToRgba(resolved, 0.12),
+    fontWeight: 600,
+  };
+}
+
 /** Count chip + label styles for hero header stat badges. */
 export function getHeroStatBadgeSx(
   textColor: string,

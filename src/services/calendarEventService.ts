@@ -1,6 +1,6 @@
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { db } from '@/libs/DB';
-import { assetsSchema, calendarEventsSchema } from '@/models/Schema';
+import { assetsSchema, calendarEventsSchema, musicProjectsSchema } from '@/models/Schema';
 
 export type EventReminders = {
   useDefault: boolean;
@@ -8,7 +8,8 @@ export type EventReminders = {
 };
 
 export type CalendarEventData = {
-  assetId: number;
+  assetId?: number | null;
+  musicProjectId?: number | null;
   name: string;
   description?: string | null;
   location?: string | null;
@@ -34,16 +35,46 @@ export class CalendarEventService {
     return asset.length > 0;
   }
 
+  private static async verifyMusicProjectOwnership(projectId: number, userId: string) {
+    const project = await db
+      .select()
+      .from(musicProjectsSchema)
+      .where(
+        and(
+          eq(musicProjectsSchema.id, projectId),
+          eq(musicProjectsSchema.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    return project.length > 0;
+  }
+
   static async create(eventData: CalendarEventData, userId: string) {
-    const hasAccess = await this.verifyAssetOwnership(eventData.assetId, userId);
-    if (!hasAccess) {
-      throw new Error('Unauthorized: Asset not found or access denied');
+    const hasAsset = eventData.assetId != null;
+    const hasProject = eventData.musicProjectId != null;
+
+    if (hasAsset === hasProject) {
+      throw new Error('Either assetId or musicProjectId is required, but not both');
+    }
+
+    if (hasAsset) {
+      const hasAccess = await this.verifyAssetOwnership(eventData.assetId!, userId);
+      if (!hasAccess) {
+        throw new Error('Unauthorized: Asset not found or access denied');
+      }
+    } else {
+      const hasAccess = await this.verifyMusicProjectOwnership(eventData.musicProjectId!, userId);
+      if (!hasAccess) {
+        throw new Error('Unauthorized: Music project not found or access denied');
+      }
     }
 
     const [created] = await db
       .insert(calendarEventsSchema)
       .values({
-        assetId: eventData.assetId,
+        assetId: eventData.assetId ?? null,
+        musicProjectId: eventData.musicProjectId ?? null,
         userId,
         name: eventData.name,
         description: eventData.description ?? null,
@@ -88,6 +119,19 @@ export class CalendarEventService {
       .orderBy(calendarEventsSchema.start);
   }
 
+  static async getByMusicProjectId(projectId: number, userId: string) {
+    const hasAccess = await this.verifyMusicProjectOwnership(projectId, userId);
+    if (!hasAccess) {
+      throw new Error('Unauthorized: Music project not found or access denied');
+    }
+
+    return db
+      .select()
+      .from(calendarEventsSchema)
+      .where(eq(calendarEventsSchema.musicProjectId, projectId))
+      .orderBy(calendarEventsSchema.start);
+  }
+
   static async getByUserId(userId: string) {
     return db
       .select()
@@ -122,9 +166,20 @@ export class CalendarEventService {
     }
 
     if (updates.assetId !== undefined && updates.assetId !== existing.assetId) {
-      const hasAccess = await this.verifyAssetOwnership(updates.assetId, userId);
-      if (!hasAccess) {
-        throw new Error('Unauthorized: Asset not found or access denied');
+      if (updates.assetId != null) {
+        const hasAccess = await this.verifyAssetOwnership(updates.assetId, userId);
+        if (!hasAccess) {
+          throw new Error('Unauthorized: Asset not found or access denied');
+        }
+      }
+    }
+
+    if (updates.musicProjectId !== undefined && updates.musicProjectId !== existing.musicProjectId) {
+      if (updates.musicProjectId != null) {
+        const hasAccess = await this.verifyMusicProjectOwnership(updates.musicProjectId, userId);
+        if (!hasAccess) {
+          throw new Error('Unauthorized: Music project not found or access denied');
+        }
       }
     }
 
@@ -149,6 +204,9 @@ export class CalendarEventService {
     }
     if (updates.assetId !== undefined) {
       updateData.assetId = updates.assetId;
+    }
+    if (updates.musicProjectId !== undefined) {
+      updateData.musicProjectId = updates.musicProjectId;
     }
     if (updates.reminders !== undefined) {
       updateData.reminders = updates.reminders;

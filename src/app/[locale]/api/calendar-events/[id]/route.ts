@@ -85,6 +85,9 @@ export const PUT = async (
     if (parse.data.assetId !== undefined) {
       updates.assetId = parse.data.assetId;
     }
+    if (parse.data.musicProjectId !== undefined) {
+      updates.musicProjectId = parse.data.musicProjectId;
+    }
     if (parse.data.start !== undefined) {
       updates.start = new Date(parse.data.start);
     }
@@ -163,7 +166,7 @@ export const PUT = async (
       activityMetadata.newAssetName = newAssetName;
     }
 
-    if (eventChanges.length > 0) {
+    if (eventChanges.length > 0 && event.assetId != null) {
       const firstChange = eventChanges[0]!;
       const legacyTypeByField: Record<string, string> = {
         name: 'renamed',
@@ -216,7 +219,7 @@ export const PUT = async (
       const oldMinutes = [...oldOverrides].map(o => o.minutes).sort((a, b) => a - b).join(',');
       const newMinutes = [...newOverrides].map(o => o.minutes).sort((a, b) => a - b).join(',');
       const remindersChanged = oldMinutes !== newMinutes && newOverrides.length > 0;
-      if (remindersChanged) {
+      if (remindersChanged && event.assetId != null) {
         await ActivityService.create(
           {
             assetId: event.assetId,
@@ -267,7 +270,7 @@ export const DELETE = async (
     }
 
     const event = await CalendarEventService.getById(eventId, user.id);
-    if (event) {
+    if (event?.assetId != null) {
       await ActivityService.create(
         {
           assetId: event.assetId,

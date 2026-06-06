@@ -1,8 +1,8 @@
 'use client';
 
 import type { GradientMusicIconKind } from './GradientIcon';
-import { Add as AddIcon } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Box, Button, IconButton, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { Popover } from '@/components/common/Popover';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
@@ -81,15 +81,27 @@ export function MusicCreatePopoverLayout({
           sx={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 0.75,
             flexShrink: 0,
             mb: TITLE_ROW_MARGIN_BOTTOM,
           }}
         >
-          <GradientIcon kind={titleIconKind} fontSize={16} aria-hidden />
-          <Typography component="h2" sx={createPopoverTitleSx}>
-            {title}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+            <GradientIcon kind={titleIconKind} fontSize={16} aria-hidden />
+            <Typography component="h2" sx={createPopoverTitleSx}>
+              {title}
+            </Typography>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            disabled={submitLoading}
+            aria-label="Close"
+            sx={{ flexShrink: 0, mt: -0.25, mr: -0.5 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
 
         <Box

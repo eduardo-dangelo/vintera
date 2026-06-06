@@ -1,32 +1,21 @@
 'use client';
 
-import {
-  Delete as DeleteIcon,
-  MoreVert,
-} from '@mui/icons-material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
-  Button,
-  Chip,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Grid,
   IconButton,
-  Menu,
-  MenuItem,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
 import { NewSongButton } from '@/components/MusicProjects/NewSongButton';
 import { ProjectDetailPageHeader } from '@/components/MusicProjects/ProjectDetailPageHeader';
-import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
+import { ProjectDetailSidebar } from '@/components/MusicProjects/ProjectDetailSidebar';
 import { useDeleteSong } from '@/queries/hooks/music-projects/useDeleteSong';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 
@@ -40,11 +29,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading, error } = useMusicProject(locale, projectId);
-  const deleteProject = useDeleteMusicProject(locale);
   const deleteSong = useDeleteSong(locale);
-
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const songParam = searchParams.get('song');
@@ -85,12 +70,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
   const { project, albums, songs, members } = data;
   const accent = project.color || '#7c3aed';
 
-  const handleDeleteProject = async () => {
-    await deleteProject.mutateAsync(projectId);
-    setDeleteDialogOpen(false);
-    router.push(`/${locale}/projects`);
-  };
-
   return (
     <Box>
       <ProjectDetailPageHeader
@@ -107,43 +86,13 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <Box
-            sx={{
-              position: { md: 'sticky' },
-              top: 24,
-              p: 3,
-              borderRadius: 4,
-              background: `linear-gradient(160deg, ${accent}33 0%, transparent 60%)`,
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-              <IconButton size="small" onClick={e => setMenuAnchor(e.currentTarget)}>
-                <MoreVert />
-              </IconButton>
-              <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-                <MenuItem
-                  onClick={() => {
-                    setMenuAnchor(null);
-                    setDeleteDialogOpen(true);
-                  }}
-                  sx={{ color: 'error.main' }}
-                >
-                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t('delete')}
-                </MenuItem>
-              </Menu>
-            </Box>
-            {project.genre && (
-              <Chip label={project.genre} size="small" sx={{ mb: 2, bgcolor: `${accent}33`, color: accent }} />
-            )}
-            {project.description && (
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                {project.description}
-              </Typography>
-            )}
-          </Box>
+          <ProjectDetailSidebar
+            locale={locale}
+            projectId={projectId}
+            genre={project.genre}
+            description={project.description}
+            accent={accent}
+          />
         </Grid>
 
         <Grid size={{ xs: 12, md: 8 }}>
@@ -261,23 +210,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
         </Grid>
       </Grid>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('delete')}</DialogTitle>
-        <DialogContent>
-          <Typography>{t('delete_confirm')}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>{t('cancel')}</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => void handleDeleteProject()}
-            disabled={deleteProject.isPending}
-          >
-            {t('delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

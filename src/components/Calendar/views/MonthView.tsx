@@ -29,6 +29,7 @@ type MonthViewProps = {
   onDayClick: (date: Date, anchorEl?: HTMLElement) => void;
   onEventClick?: (event: CalendarEvent, anchorEl: HTMLElement) => void;
   locale: string;
+  variant?: 'default' | 'compact';
   /** When set from parent (e.g. toolbar), triggers the same slide animation as wheel */
   slideDirection?: 'prev' | 'next' | null;
   onSlideDirectionComplete?: () => void;
@@ -149,6 +150,140 @@ type MonthGridProps = {
   onDayClick: (date: Date, anchorEl?: HTMLElement) => void;
   onEventClick?: (event: CalendarEvent, anchorEl: HTMLElement) => void;
 };
+
+const COMPACT_DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const MAX_COMPACT_DOTS = 3;
+
+function CompactMonthGrid({ monthDate, events, onDayClick, onEventClick }: MonthGridProps) {
+  const { playHoverSound } = useHoverSound();
+  const monthStart = startOfMonth(monthDate);
+  const monthEnd = endOfMonth(monthDate);
+  const rangeStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const rangeEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
+  const today = new Date();
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 0.5,
+          mb: 0.5,
+        }}
+      >
+        {COMPACT_DAY_NAMES.map(day => (
+          <Box
+            key={day}
+            sx={{
+              textAlign: 'center',
+              fontSize: '0.625rem',
+              fontWeight: 600,
+              color: 'grey.500',
+            }}
+          >
+            {day}
+          </Box>
+        ))}
+      </Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 0.5,
+        }}
+      >
+        {days.map((day) => {
+          const inMonth = isSameMonth(day, monthDate);
+          if (!inMonth) {
+            return <Box key={day.toISOString()} sx={{ minHeight: 36 }} />;
+          }
+          const isTodayDate = isSameDay(day, today);
+          const dayEvents = getEventsForDate(events, day);
+          const dotsToShow = dayEvents.slice(0, MAX_COMPACT_DOTS);
+          const moreCount = dayEvents.length - MAX_COMPACT_DOTS;
+
+          return (
+            <Paper
+              key={day.toISOString()}
+              component="button"
+              type="button"
+              onClick={e => onDayClick(day, e.currentTarget as HTMLElement)}
+              onMouseEnter={playHoverSound}
+              aria-label={dayEvents.length > 0 ? `${format(day, 'd')}, ${dayEvents.length} events` : format(day, 'd')}
+              sx={theme => ({
+                'minHeight': 36,
+                'p': 0.25,
+                'cursor': 'pointer',
+                'display': 'flex',
+                'flexDirection': 'column',
+                'alignItems': 'center',
+                'justifyContent': 'flex-start',
+                'bgcolor': 'transparent',
+                ...(isTodayDate
+                  ? primaryGradientBorderSx(theme, 1)
+                  : { border: '1px solid', borderColor: 'divider' }),
+                '&:hover': { bgcolor: 'action.hover' },
+              })}
+              elevation={0}
+            >
+              <Typography
+                variant="caption"
+                sx={theme => ({
+                  fontWeight: isTodayDate ? 700 : 500,
+                  fontSize: '0.7rem',
+                  lineHeight: 1.2,
+                  ...(isTodayDate ? primaryGradientTextSx(theme) : { color: 'text.secondary' }),
+                })}
+              >
+                {format(day, 'd')}
+              </Typography>
+              {dayEvents.length > 0 && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.25,
+                    mt: 0.25,
+                    width: '100%',
+                  }}
+                >
+                  {dotsToShow.map(ev => (
+                    <Box
+                      key={ev.id}
+                      component="span"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick?.(ev, e.currentTarget as HTMLElement);
+                      }}
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        bgcolor: eventColor(ev.color),
+                        cursor: onEventClick ? 'pointer' : 'default',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ))}
+                  {moreCount > 0 && (
+                    <Typography variant="caption" sx={{ fontSize: '0.55rem', color: 'grey.600', lineHeight: 1 }}>
+                      +
+                      {moreCount}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Paper>
+          );
+        })}
+      </Box>
+    </>
+  );
+}
 
 function MonthGrid({ monthDate, events, onDayClick, onEventClick }: MonthGridProps) {
   const { playHoverSound } = useHoverSound();
@@ -420,11 +555,13 @@ export function MonthView({
   events,
   onDayClick,
   onEventClick,
+  variant = 'default',
   slideDirection: slideDirectionProp,
   onSlideDirectionComplete,
   slideToDate: slideToDateProp,
   onSlideToMonthComplete,
 }: MonthViewProps) {
+  const isCompact = variant === 'compact';
   const [direction, setDirection] = useState<Direction>(null);
   const [slideOffset, setSlideOffset] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -501,12 +638,22 @@ export function MonthView({
   }, [isAnimating, direction, currentDate, onCurrentDateChange, onSlideDirectionComplete, onSlideToMonthComplete, targetMonthForSlide]);
 
   useEffect(() => {
+    if (isCompact) {
+      if (slideDirectionProp === 'prev') {
+        onCurrentDateChange(addMonths(currentDate, -1));
+        onSlideDirectionComplete?.();
+      } else if (slideDirectionProp === 'next') {
+        onCurrentDateChange(addMonths(currentDate, 1));
+        onSlideDirectionComplete?.();
+      }
+      return;
+    }
     if (slideDirectionProp === 'prev') {
       prev();
     } else if (slideDirectionProp === 'next') {
       next();
     }
-  }, [slideDirectionProp, prev, next]);
+  }, [slideDirectionProp, prev, next, isCompact, currentDate, onCurrentDateChange, onSlideDirectionComplete]);
 
   useEffect(() => {
     if (slideToDateProp == null || isAnimating) {
@@ -516,6 +663,12 @@ export function MonthView({
     const currentMonthTime = currentMonthStart.getTime();
     const targetMonthTime = targetMonthStart.getTime();
     if (currentMonthTime === targetMonthTime) {
+      onSlideToMonthComplete?.();
+      return;
+    }
+    if (isCompact) {
+      onCurrentDateChange(targetMonthStart);
+      onSlideToMonthComplete?.();
       return;
     }
     setTargetMonthForSlide(targetMonthStart);
@@ -523,7 +676,20 @@ export function MonthView({
     setIsAnimating(true);
     setSlideOffset(targetMonthTime > currentMonthTime ? 0 : -SLOT_HEIGHT_PX);
     setEnableTransition(false);
-  }, [slideToDateProp, currentMonthStart.getTime(), isAnimating]);
+  }, [slideToDateProp, currentMonthStart.getTime(), isAnimating, isCompact, onCurrentDateChange, onSlideToMonthComplete]);
+
+  if (isCompact) {
+    return (
+      <Box>
+        <CompactMonthGrid
+          monthDate={currentDate}
+          events={events}
+          onDayClick={onDayClick}
+          onEventClick={onEventClick}
+        />
+      </Box>
+    );
+  }
 
   const showTwoSlots = isAnimating && direction !== null;
   const trackHeight = showTwoSlots ? SLOT_HEIGHT_PX * 2 : SLOT_HEIGHT_PX;

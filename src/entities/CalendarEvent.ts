@@ -5,7 +5,8 @@ export type EventReminders = {
 
 export type CalendarEventData = {
   id: number;
-  assetId: number;
+  assetId: number | null;
+  musicProjectId: number | null;
   userId: string;
   name: string;
   description: string | null;
@@ -44,8 +45,12 @@ export class CalendarEvent {
     return this.data.id;
   }
 
-  get assetId(): number {
+  get assetId(): number | null {
     return this.data.assetId;
+  }
+
+  get musicProjectId(): number | null {
+    return this.data.musicProjectId;
   }
 
   get userId(): string {

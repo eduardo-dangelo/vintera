@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
             eventName: event.name,
             eventStart: typeof event.start === 'string' ? event.start : new Date(event.start).toISOString(),
             reminderMinutes: override.minutes,
-            assetId: event.assetId,
+            assetId: event.assetId ?? undefined,
           },
         });
         created++;

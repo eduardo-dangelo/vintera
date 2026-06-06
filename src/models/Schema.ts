@@ -131,9 +131,31 @@ export const sprintsSchema = pgTable('sprints', {
   status: text('status').notNull().default('planned'),
 });
 
+export const musicProjectsSchema = pgTable('music_projects', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').references(() => usersSchema.id).notNull(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull(),
+  description: text('description'),
+  genre: text('genre'),
+  color: text('color'),
+  status: text('status').notNull().default('active'),
+  coverImageUrl: text('cover_image_url'),
+  metadata: jsonb('metadata'),
+  linkedAssetId: integer('linked_asset_id').references(() => assetsSchema.id),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, table => [
+  uniqueIndex('music_projects_user_slug_idx').on(table.userId, table.slug),
+]);
+
 export const calendarEventsSchema = pgTable('calendar_events', {
   id: serial('id').primaryKey(),
-  assetId: integer('asset_id').references(() => assetsSchema.id).notNull(),
+  assetId: integer('asset_id').references(() => assetsSchema.id),
+  musicProjectId: integer('music_project_id').references(() => musicProjectsSchema.id, { onDelete: 'cascade' }),
   userId: text('user_id').references(() => usersSchema.id).notNull(),
   name: text('name').notNull(),
   description: text('description'),
@@ -200,27 +222,6 @@ export const assetActivitiesSchema = pgTable('asset_activities', {
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
-
-export const musicProjectsSchema = pgTable('music_projects', {
-  id: serial('id').primaryKey(),
-  userId: text('user_id').references(() => usersSchema.id).notNull(),
-  name: text('name').notNull(),
-  slug: text('slug').notNull(),
-  description: text('description'),
-  genre: text('genre'),
-  color: text('color'),
-  status: text('status').notNull().default('active'),
-  coverImageUrl: text('cover_image_url'),
-  metadata: jsonb('metadata'),
-  linkedAssetId: integer('linked_asset_id').references(() => assetsSchema.id),
-  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'date' })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}, table => [
-  uniqueIndex('music_projects_user_slug_idx').on(table.userId, table.slug),
-]);
 
 export const albumsSchema = pgTable('albums', {
   id: serial('id').primaryKey(),
@@ -383,6 +384,10 @@ export const calendarEventsRelations = relations(calendarEventsSchema, ({ one })
     fields: [calendarEventsSchema.assetId],
     references: [assetsSchema.id],
   }),
+  musicProject: one(musicProjectsSchema, {
+    fields: [calendarEventsSchema.musicProjectId],
+    references: [musicProjectsSchema.id],
+  }),
   user: one(usersSchema, {
     fields: [calendarEventsSchema.userId],
     references: [usersSchema.id],
@@ -430,6 +435,7 @@ export const musicProjectsRelations = relations(musicProjectsSchema, ({ one, man
   albums: many(albumsSchema),
   songs: many(songsSchema),
   members: many(musicProjectMembersSchema),
+  calendarEvents: many(calendarEventsSchema),
 }));
 
 export const albumsRelations = relations(albumsSchema, ({ one, many }) => ({

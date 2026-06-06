@@ -873,6 +873,7 @@ export function ActivityItem({
         const calendarEvent: CalendarEventType = {
           id: activity.entityId ?? activity.id,
           assetId: activity.assetId,
+          musicProjectId: null,
           userId: activity.userId,
           name: meta.eventName,
           description: null,

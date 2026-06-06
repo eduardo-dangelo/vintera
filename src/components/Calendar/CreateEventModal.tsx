@@ -19,6 +19,7 @@ type CreateEventModalProps = {
   onClose: () => void;
   initialDate?: Date;
   assetId?: number;
+  musicProjectId?: number;
   assets?: AssetOption[];
   locale: string;
   onCreateSuccess?: (event: CalendarEvent) => void;
@@ -29,6 +30,7 @@ export function CreateEventModal({
   onClose,
   initialDate,
   assetId,
+  musicProjectId,
   assets,
   locale,
   onCreateSuccess,
@@ -67,6 +69,7 @@ export function CreateEventModal({
           open={open}
           initialDate={initialDate}
           assetId={assetId}
+          musicProjectId={musicProjectId}
           assets={assets}
           locale={locale}
           onSuccess={handleSuccess}

@@ -23,7 +23,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
-import { activityKeys, notificationKeys } from '@/queries/keys';
+import { activityKeys, calendarEventKeys, notificationKeys } from '@/queries/keys';
 import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from './constants';
 import { TimePickerPopover } from './TimePickerPopover';
 
@@ -93,6 +93,7 @@ type CreateEventFormProps = {
   open: boolean;
   initialDate?: Date;
   assetId?: number;
+  musicProjectId?: number;
   assets?: AssetOption[];
   locale: string;
   onSuccess: (event: CalendarEvent) => void;
@@ -105,6 +106,7 @@ export function CreateEventForm({
   open,
   initialDate,
   assetId: fixedAssetId,
+  musicProjectId: fixedMusicProjectId,
   assets,
   locale,
   onSuccess,
@@ -136,7 +138,7 @@ export function CreateEventForm({
   const [notificationPopoverAnchor, setNotificationPopoverAnchor] = useState<HTMLElement | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reminderRows, setReminderRows] = useState<ReminderRow[]>([]);
-  const isGlobal = !fixedAssetId && (assets?.length ?? 0) > 0;
+  const isGlobal = !fixedAssetId && !fixedMusicProjectId && (assets?.length ?? 0) > 0;
   const effectiveAssetId = fixedAssetId ?? (typeof selectedAssetId === 'number' ? selectedAssetId : null);
 
   /* eslint-disable react-hooks-extra/no-direct-set-state-in-use-effect -- reset form when opened */
@@ -177,7 +179,7 @@ export function CreateEventForm({
 
       if (isGlobal && assets?.length) {
         const assetIdFromEvent = event.assetId;
-        const hasAsset = assets.some(a => a.id === assetIdFromEvent);
+        const hasAsset = assetIdFromEvent != null && assets.some(a => a.id === assetIdFromEvent);
         setSelectedAssetId(hasAsset ? assetIdFromEvent : assets[0]!.id);
       } else {
         setSelectedAssetId('');
@@ -205,7 +207,7 @@ export function CreateEventForm({
     } else {
       setSelectedAssetId('');
     }
-  }, [open, initialDate, isGlobal, assets, mode, event]);
+  }, [open, initialDate, isGlobal, assets, mode, event, fixedMusicProjectId]);
   /* eslint-enable react-hooks-extra/no-direct-set-state-in-use-effect */
 
   useEffect(() => {
@@ -220,8 +222,8 @@ export function CreateEventForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!effectiveAssetId) {
-      setError(isGlobal ? t('select_asset') : 'Asset is required');
+    if (!effectiveAssetId && !fixedMusicProjectId) {
+      setError(isGlobal ? t('select_asset') : 'Asset or project is required');
       return;
     }
     if (!name.trim()) {
@@ -264,16 +266,27 @@ export function CreateEventForm({
           ? { useDefault: false, overrides }
           : null;
 
-      const payload = {
-        assetId: effectiveAssetId,
-        name: name.trim(),
-        description: description.trim() || null,
-        location: location.trim() || null,
-        color: color || null,
-        start: start.toISOString(),
-        end: end.toISOString(),
-        reminders,
-      };
+      const payload = fixedMusicProjectId
+        ? {
+            musicProjectId: fixedMusicProjectId,
+            name: name.trim(),
+            description: description.trim() || null,
+            location: location.trim() || null,
+            color: color || null,
+            start: start.toISOString(),
+            end: end.toISOString(),
+            reminders,
+          }
+        : {
+            assetId: effectiveAssetId!,
+            name: name.trim(),
+            description: description.trim() || null,
+            location: location.trim() || null,
+            color: color || null,
+            start: start.toISOString(),
+            end: end.toISOString(),
+            reminders,
+          };
 
       const url = mode === 'edit' && event
         ? `/${locale}/api/calendar-events/${event.id}`
@@ -294,6 +307,7 @@ export function CreateEventForm({
       }
       const { event: savedEvent } = (await res.json()) as { event: CalendarEvent };
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: calendarEventKeys.all });
       const assetIdForActivity = savedEvent.assetId ?? effectiveAssetId;
       if (assetIdForActivity) {
         queryClient.invalidateQueries({ queryKey: activityKeys.list({ assetId: assetIdForActivity }) });

@@ -5,7 +5,8 @@ export type EventReminders = {
 
 export type CalendarEvent = {
   id: number;
-  assetId: number;
+  assetId: number | null;
+  musicProjectId: number | null;
   userId: string;
   name: string;
   description: string | null;

@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { AssetCard } from '@/components/Assets/AssetCard';
 import { Popover } from '@/components/common/Popover';
 import { Asset } from '@/entities';
+import { glassPaperSx } from '@/utils/glassPaperStyles';
 import { COLOR_MAP } from './constants';
 
 const POPOVER_WIDTH = 320;
@@ -87,6 +88,7 @@ export function EventDetailsPopover({
       minWidth={POPOVER_WIDTH}
       maxWidth={POPOVER_WIDTH}
       showArrow={anchorPosition == null}
+      paperSx={glassPaperSx}
     >
       <Box sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 2 }}>

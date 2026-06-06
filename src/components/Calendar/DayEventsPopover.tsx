@@ -6,6 +6,7 @@ import { Box, Button, IconButton, Typography } from '@mui/material';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { Popover } from '@/components/common/Popover';
+import { glassPaperSx } from '@/utils/glassPaperStyles';
 import { CalendarEvent as CalendarEventItem } from './CalendarEvent';
 
 const POPOVER_WIDTH = 230;
@@ -41,6 +42,7 @@ export function DayEventsPopover({
       onClose={onClose}
       minWidth={POPOVER_WIDTH}
       maxWidth={POPOVER_WIDTH}
+      paperSx={glassPaperSx}
     >
       <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>

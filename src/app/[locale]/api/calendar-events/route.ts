@@ -16,6 +16,12 @@ export const GET = async (request: NextRequest) => {
 
     const { searchParams } = new URL(request.url);
     const assetIdParam = searchParams.get('assetId');
+    const musicProjectIdParam = searchParams.get('musicProjectId');
+
+    if (assetIdParam != null && assetIdParam !== '' && musicProjectIdParam != null && musicProjectIdParam !== '') {
+      return NextResponse.json({ error: 'Provide assetId or musicProjectId, not both' }, { status: 400 });
+    }
+
     let assetId: number | null = null;
     if (assetIdParam != null && assetIdParam !== '') {
       const parsed = Number.parseInt(assetIdParam, 10);
@@ -25,9 +31,20 @@ export const GET = async (request: NextRequest) => {
       assetId = parsed;
     }
 
+    let musicProjectId: number | null = null;
+    if (musicProjectIdParam != null && musicProjectIdParam !== '') {
+      const parsed = Number.parseInt(musicProjectIdParam, 10);
+      if (Number.isNaN(parsed) || parsed < 1) {
+        return NextResponse.json({ error: 'Invalid musicProjectId' }, { status: 400 });
+      }
+      musicProjectId = parsed;
+    }
+
     const events = assetId !== null
       ? await CalendarEventService.getByAssetId(assetId, user.id)
-      : await CalendarEventService.getByUserId(user.id);
+      : musicProjectId !== null
+        ? await CalendarEventService.getByMusicProjectId(musicProjectId, user.id)
+        : await CalendarEventService.getByUserId(user.id);
 
     return NextResponse.json({ events });
   } catch (error: unknown) {
@@ -57,7 +74,8 @@ export const POST = async (request: Request) => {
     }
 
     const eventData = {
-      assetId: parse.data.assetId,
+      assetId: parse.data.assetId ?? null,
+      musicProjectId: parse.data.musicProjectId ?? null,
       name: parse.data.name,
       description: parse.data.description ?? null,
       location: parse.data.location ?? null,
@@ -72,19 +90,21 @@ export const POST = async (request: Request) => {
       throw new Error('Failed to create calendar event');
     }
 
-    await ActivityService.create(
-      {
-        assetId: event.assetId,
-        action: 'event_created',
-        entityType: 'calendar_event',
-        entityId: event.id,
-        metadata: {
-          eventName: event.name,
-          eventColor: event.color ?? null,
+    if (event.assetId != null) {
+      await ActivityService.create(
+        {
+          assetId: event.assetId,
+          action: 'event_created',
+          entityType: 'calendar_event',
+          entityId: event.id,
+          metadata: {
+            eventName: event.name,
+            eventColor: event.color ?? null,
+          },
         },
-      },
-      user.id,
-    );
+        user.id,
+      );
+    }
 
     logger.info('Calendar event created', { eventId: event.id });
 

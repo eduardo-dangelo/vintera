@@ -266,6 +266,8 @@ export const musicProjectMembersSchema = pgTable('music_project_members', {
   userId: text('user_id').references(() => usersSchema.id, { onDelete: 'set null' }),
   displayName: text('display_name'),
   imageUrl: text('image_url'),
+  permission: text('permission').notNull().default('admin'),
+  projectRoles: text('project_roles').array(),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' })

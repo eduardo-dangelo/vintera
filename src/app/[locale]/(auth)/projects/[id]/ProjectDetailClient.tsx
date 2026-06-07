@@ -88,6 +88,8 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
             genre={project.genre}
             description={project.description}
             accent={accent}
+            members={members}
+            metadata={project.metadata}
           />
         </Grid>
 

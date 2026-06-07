@@ -1,5 +1,6 @@
 'use client';
 
+import type { MusicProjectMember } from '@/types/musicPeople';
 import {
   Box,
   Button,
@@ -14,7 +15,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
 import { ProjectDetailCalendarSection } from './ProjectDetailCalendarSection';
+import { ProjectDetailExternalLinksSection } from './ProjectDetailExternalLinksSection';
 import { ProjectDetailGeneralInfoSection } from './ProjectDetailGeneralInfoSection';
+import { ProjectDetailMembersSection } from './ProjectDetailMembersSection';
 
 type ProjectDetailSidebarProps = {
   locale: string;
@@ -22,6 +25,8 @@ type ProjectDetailSidebarProps = {
   genre: string | null;
   description: string | null;
   accent: string;
+  members: MusicProjectMember[];
+  metadata: unknown;
 };
 
 export function ProjectDetailSidebar({
@@ -30,6 +35,8 @@ export function ProjectDetailSidebar({
   genre,
   description,
   accent,
+  members,
+  metadata,
 }: ProjectDetailSidebarProps) {
   const t = useTranslations('MusicProjects');
   const router = useRouter();
@@ -63,6 +70,19 @@ export function ProjectDetailSidebar({
           description={description}
           accent={accent}
           onDeleteRequest={() => setDeleteDialogOpen(true)}
+        />
+
+        <ProjectDetailMembersSection
+          locale={locale}
+          projectId={projectId}
+          members={members}
+        />
+
+        <ProjectDetailExternalLinksSection
+          locale={locale}
+          projectId={projectId}
+          metadata={metadata}
+          accent={accent}
         />
 
         <ProjectDetailCalendarSection locale={locale} projectId={projectId} />

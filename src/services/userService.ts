@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm';
+import type { PlatformUserSearchResult } from '@/types/musicPeople';
+import { and, eq, ilike, notInArray, or } from 'drizzle-orm';
 import { db } from '@/libs/DB';
 import { usersSchema } from '@/models/Schema';
 
@@ -109,6 +110,44 @@ export class UserService {
       console.error('Error deleting user:', error);
       throw error;
     }
+  }
+
+  /**
+   * Search users by email or name
+   */
+  static async searchUsers(
+    query: string,
+    excludeUserIds: string[] = [],
+  ): Promise<PlatformUserSearchResult[]> {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      return [];
+    }
+
+    const pattern = `%${trimmed}%`;
+    const matchCondition = or(
+      ilike(usersSchema.email, pattern),
+      ilike(usersSchema.firstName, pattern),
+      ilike(usersSchema.lastName, pattern),
+    );
+
+    const whereClause = excludeUserIds.length > 0
+      ? and(matchCondition, notInArray(usersSchema.id, excludeUserIds))
+      : matchCondition;
+
+    const rows = await db
+      .select({
+        id: usersSchema.id,
+        email: usersSchema.email,
+        firstName: usersSchema.firstName,
+        lastName: usersSchema.lastName,
+        imageUrl: usersSchema.imageUrl,
+      })
+      .from(usersSchema)
+      .where(whereClause)
+      .limit(10);
+
+    return rows;
   }
 
   /**

@@ -1,3 +1,4 @@
+import type { ExternalLink } from '@/utils/externalLinkEmbed';
 import {
   hasPatternOverlay,
   MAX_PATTERN_SIZE,
@@ -5,6 +6,7 @@ import {
   MIN_PATTERN_SIZE,
 } from '@/components/MusicProjects/heroPatternShapes';
 import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
+import { parseExternalLinks } from '@/utils/externalLinkEmbed';
 
 export type HeroBackgroundKind = 'solid' | 'pattern' | 'gradient' | 'composed' | 'image';
 
@@ -42,6 +44,7 @@ export type MusicProjectMetadata = {
   heroChromeTextColor?: string;
   heroImageUrl?: string;
   titleFontFamily?: string;
+  externalLinks?: ExternalLink[];
 };
 
 const HERO_BACKGROUND_KINDS: HeroBackgroundKind[] = [
@@ -273,7 +276,23 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
     metadata.titleFontFamily = raw.titleFontFamily;
   }
 
+  const externalLinks = parseExternalLinks(raw.externalLinks);
+  if (externalLinks.length > 0) {
+    metadata.externalLinks = externalLinks;
+  }
+
   return normalizeHeroMetadata(metadata);
+}
+
+export function mergeExternalLinks(
+  existing: unknown,
+  links: ExternalLink[],
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  return {
+    ...current,
+    externalLinks: links,
+  };
 }
 
 export function resolveProjectTitleFontFamily(metadata: unknown): string {

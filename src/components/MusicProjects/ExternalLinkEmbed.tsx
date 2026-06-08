@@ -8,13 +8,14 @@ import { getSpotifyEmbedUrl, getYouTubeEmbedUrl } from '@/utils/externalLinkEmbe
 type ExternalLinkEmbedProps = {
   link: ExternalLink;
   accent: string;
+  actions?: React.ReactNode;
 };
 
-export function ExternalLinkEmbed({ link, accent }: ExternalLinkEmbedProps) {
+export function ExternalLinkEmbed({ link, accent, actions }: ExternalLinkEmbedProps) {
   if (link.kind === 'youtube') {
     const embedUrl = getYouTubeEmbedUrl(link.url);
     if (!embedUrl) {
-      return <ExternalLinkCard link={link} accent={accent} />;
+      return <ExternalLinkCard link={link} accent={accent} actions={actions} />;
     }
 
     return (
@@ -52,7 +53,7 @@ export function ExternalLinkEmbed({ link, accent }: ExternalLinkEmbedProps) {
   if (link.kind === 'spotify') {
     const embedUrl = getSpotifyEmbedUrl(link.url);
     if (!embedUrl) {
-      return <ExternalLinkCard link={link} accent={accent} />;
+      return <ExternalLinkCard link={link} accent={accent} actions={actions} />;
     }
 
     return (
@@ -81,5 +82,5 @@ export function ExternalLinkEmbed({ link, accent }: ExternalLinkEmbedProps) {
     );
   }
 
-  return <ExternalLinkCard link={link} accent={accent} />;
+  return <ExternalLinkCard link={link} accent={accent} actions={actions} />;
 }

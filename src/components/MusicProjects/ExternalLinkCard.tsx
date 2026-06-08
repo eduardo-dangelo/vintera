@@ -9,9 +9,10 @@ import { getDomainFromUrl } from '@/utils/externalLinkEmbed';
 type ExternalLinkCardProps = {
   link: ExternalLink;
   accent: string;
+  actions?: React.ReactNode;
 };
 
-export function ExternalLinkCard({ link, accent }: ExternalLinkCardProps) {
+export function ExternalLinkCard({ link, accent, actions }: ExternalLinkCardProps) {
   const t = useTranslations('MusicProjects');
   const domain = getDomainFromUrl(link.url);
   const displayTitle = link.title || domain;
@@ -38,17 +39,19 @@ export function ExternalLinkCard({ link, accent }: ExternalLinkCardProps) {
           {domain}
         </Typography>
       </Box>
-      <IconButton
-        component={Link}
-        href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        size="small"
-        aria-label={t('open_link')}
-        sx={{ flexShrink: 0 }}
-      >
-        <OpenInNewIcon fontSize="small" />
-      </IconButton>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
+        {actions}
+        <IconButton
+          component={Link}
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          size="small"
+          aria-label={t('open_link')}
+        >
+          <OpenInNewIcon fontSize="small" />
+        </IconButton>
+      </Box>
     </Box>
   );
 }

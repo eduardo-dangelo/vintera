@@ -1,18 +1,19 @@
 'use client';
 
+import type { ExternalLinkDraft } from '@/components/MusicProjects/ExternalLinkFormPopover';
 import type { ExternalLink } from '@/utils/externalLinkEmbed';
-import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
+import { Add as AddIcon } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Divider,
   IconButton,
-  TextField,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
+import { ConfirmPopover } from '@/components/common/ConfirmPopover';
+import { ExternalLinkFormPopover } from '@/components/MusicProjects/ExternalLinkFormPopover';
+import { ExternalLinkRow } from '@/components/MusicProjects/ExternalLinkRow';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
 import { buildExternalLink } from '@/utils/externalLinkEmbed';
 import { mergeExternalLinks, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
@@ -25,11 +26,7 @@ type ProjectDetailExternalLinksSectionProps = {
   readOnly?: boolean;
 };
 
-type DraftLink = {
-  id?: string;
-  url: string;
-  title: string;
-};
+const EMPTY_DRAFT: ExternalLinkDraft = { url: '', title: '' };
 
 export function ProjectDetailExternalLinksSection({
   locale,
@@ -44,9 +41,14 @@ export function ProjectDetailExternalLinksSection({
   const parsedMetadata = parseMusicProjectMetadata(metadata);
   const links = parsedMetadata.externalLinks ?? [];
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftLinks, setDraftLinks] = useState<DraftLink[]>([]);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [popoverAnchorEl, setPopoverAnchorEl] = useState<HTMLElement | null>(null);
+  const [popoverMode, setPopoverMode] = useState<'create' | 'edit'>('create');
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<ExternalLinkDraft>(EMPTY_DRAFT);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [pendingDeleteLinkId, setPendingDeleteLinkId] = useState<string | null>(null);
+  const [deleteConfirmAnchor, setDeleteConfirmAnchor] = useState<HTMLElement | null>(null);
 
   const persistLinks = useCallback(async (nextLinks: ExternalLink[]) => {
     const merged = mergeExternalLinks(metadata, nextLinks);
@@ -56,56 +58,84 @@ export function ProjectDetailExternalLinksSection({
     });
   }, [metadata, projectId, updateProject]);
 
-  const handleEnterEdit = () => {
-    setDraftLinks(
-      links.map(link => ({
-        id: link.id,
-        url: link.url,
-        title: link.title ?? '',
-      })),
-    );
+  const handleClosePopover = () => {
+    setPopoverOpen(false);
+    setPopoverAnchorEl(null);
+    setEditingLinkId(null);
+    setDraft(EMPTY_DRAFT);
     setUrlError(null);
-    setIsEditing(true);
   };
 
-  const handleCancelEdit = () => {
-    setDraftLinks([]);
+  const handleAddLink = (anchorEl: HTMLElement) => {
+    setPopoverAnchorEl(anchorEl);
+    setPopoverMode('create');
+    setEditingLinkId(null);
+    setDraft(EMPTY_DRAFT);
     setUrlError(null);
-    setIsEditing(false);
+    setPopoverOpen(true);
+  };
+
+  const handleEditLink = (link: ExternalLink, anchorEl: HTMLElement) => {
+    setPopoverAnchorEl(anchorEl);
+    setPopoverMode('edit');
+    setEditingLinkId(link.id);
+    setDraft({
+      id: link.id,
+      url: link.url,
+      title: link.title ?? '',
+    });
+    setUrlError(null);
+    setPopoverOpen(true);
+  };
+
+  const handleDraftChange = (field: 'url' | 'title', value: string) => {
+    setUrlError(null);
+    setDraft(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    const built: ExternalLink[] = [];
-    for (const draft of draftLinks) {
-      const trimmedUrl = draft.url.trim();
-      if (!trimmedUrl) {
-        continue;
-      }
-      const link = buildExternalLink(trimmedUrl, draft.title, draft.id);
-      if (!link) {
-        setUrlError(t('invalid_url'));
-        return;
-      }
-      built.push(link);
+    const trimmedUrl = draft.url.trim();
+    if (!trimmedUrl) {
+      setUrlError(t('invalid_url'));
+      return;
     }
 
-    await persistLinks(built);
-    setIsEditing(false);
-    setDraftLinks([]);
-    setUrlError(null);
+    const built = buildExternalLink(trimmedUrl, draft.title, draft.id);
+    if (!built) {
+      setUrlError(t('invalid_url'));
+      return;
+    }
+
+    const nextLinks = popoverMode === 'edit' && editingLinkId
+      ? links.map(link => (link.id === editingLinkId ? built : link))
+      : [...links, built];
+
+    await persistLinks(nextLinks);
+    handleClosePopover();
   };
 
-  const handleAddLink = () => {
-    setDraftLinks(prev => [...prev, { url: '', title: '' }]);
+  const closeDeleteConfirm = () => {
+    setPendingDeleteLinkId(null);
+    setDeleteConfirmAnchor(null);
   };
 
-  const handleRemoveLink = (index: number) => {
-    setDraftLinks(prev => prev.filter((_, i) => i !== index));
+  const handleRequestDelete = (linkId: string, anchorEl: HTMLElement) => {
+    setPendingDeleteLinkId(linkId);
+    setDeleteConfirmAnchor(anchorEl);
   };
 
-  const handleDraftChange = (index: number, field: 'url' | 'title', value: string) => {
-    setUrlError(null);
-    setDraftLinks(prev => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteLinkId) {
+      return;
+    }
+
+    const linkId = pendingDeleteLinkId;
+    const nextLinks = links.filter(link => link.id !== linkId);
+    await persistLinks(nextLinks);
+    closeDeleteConfirm();
+    if (editingLinkId === linkId) {
+      handleClosePopover();
+    }
   };
 
   return (
@@ -116,108 +146,61 @@ export function ProjectDetailExternalLinksSection({
           {t('external_links')}
         </Typography>
         {!readOnly && (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {isEditing && (
-              <IconButton size="small" onClick={handleAddLink} aria-label={t('add_external_link')}>
-                <AddIcon fontSize="small" />
-              </IconButton>
-            )}
-            <IconButton
-              size="small"
-              onClick={() => {
-                if (isEditing) {
-                  void handleSave();
-                } else {
-                  handleEnterEdit();
-                }
-              }}
-              disabled={updateProject.isPending}
-              aria-label={isEditing ? t('save') : t('edit')}
-            >
-              {isEditing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />}
-            </IconButton>
-          </Box>
+          <IconButton
+            size="small"
+            onClick={e => handleAddLink(e.currentTarget)}
+            disabled={updateProject.isPending}
+            aria-label={t('add_external_link')}
+          >
+            <AddIcon fontSize="small" />
+          </IconButton>
         )}
       </Box>
 
-      {isEditing
+      {links.length === 0
         ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {draftLinks.length === 0 && (
-                <Typography variant="body2" color="text.secondary">
-                  {t('no_external_links')}
-                </Typography>
-              )}
-              {draftLinks.map((draft, index) => (
-                <Box
-                  key={draft.id ?? `draft-${index}`}
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t('link_url')}
-                    value={draft.url}
-                    onChange={e => handleDraftChange(index, 'url', e.target.value)}
-                    placeholder="https://"
-                    sx={{ mb: 1 }}
-                  />
-                  <TextField
-                    fullWidth
-                    size="small"
-                    label={t('link_title')}
-                    value={draft.title}
-                    onChange={e => handleDraftChange(index, 'title', e.target.value)}
-                    placeholder={t('link_title_optional')}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={() => handleRemoveLink(index)}
-                    sx={{ mt: 0.5, color: 'error.main' }}
-                    aria-label={t('remove_link')}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-              {urlError && (
-                <Typography variant="caption" color="error">
-                  {urlError}
-                </Typography>
-              )}
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" onClick={handleCancelEdit} disabled={updateProject.isPending}>
-                  {t('cancel')}
-                </Button>
-                <Button
-                  size="small"
-                  variant="contained"
-                  onClick={() => void handleSave()}
-                  disabled={updateProject.isPending}
-                >
-                  {t('save')}
-                </Button>
-              </Box>
-            </Box>
+            <Typography variant="body2" color="text.secondary">
+              {t('no_external_links')}
+            </Typography>
           )
-        : links.length === 0
-          ? (
-              <Typography variant="body2" color="text.secondary">
-                {t('no_external_links')}
-              </Typography>
-            )
-          : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {links.map(link => (
-                  <ExternalLinkEmbed key={link.id} link={link} accent={accent} />
-                ))}
-              </Box>
-            )}
+        : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {links.map(link => (
+                <ExternalLinkRow
+                  key={link.id}
+                  link={link}
+                  accent={accent}
+                  readOnly={readOnly}
+                  onEdit={handleEditLink}
+                  onDelete={handleRequestDelete}
+                />
+              ))}
+            </Box>
+          )}
+
+      <ExternalLinkFormPopover
+        open={popoverOpen}
+        anchorEl={popoverAnchorEl}
+        mode={popoverMode}
+        draft={draft}
+        urlError={urlError}
+        isPending={updateProject.isPending}
+        onDraftChange={handleDraftChange}
+        onSave={() => void handleSave()}
+        onClose={handleClosePopover}
+      />
+
+      <ConfirmPopover
+        open={Boolean(pendingDeleteLinkId && deleteConfirmAnchor)}
+        anchorEl={deleteConfirmAnchor}
+        onClose={closeDeleteConfirm}
+        onConfirm={() => void handleConfirmDelete()}
+        message={t('external_link_delete_confirm')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        confirmColor="error"
+        loading={updateProject.isPending}
+      />
     </Box>
   );
 }

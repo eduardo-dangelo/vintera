@@ -1,0 +1,11 @@
+# Git commit messages (Generate Commit Message sparkle button)
+
+When generating a git commit message:
+
+- Use Conventional Commits: `type(scope): subject` (types: feat, fix, refactor, chore, docs, test, ci, build, perf, style).
+- The subject line (full first line, including `type:` and optional scope) MUST be at most 100 characters. Never exceed 100.
+- Prefer 72 characters or fewer; shorten wording instead of listing every file or component name.
+- Use imperative mood (e.g. "add", "fix", "refine"), not past tense.
+- Output only the commit subject line unless a body is clearly needed; keep bodies brief.
+
+If the subject would exceed 100 characters, rewrite it shorter before responding.

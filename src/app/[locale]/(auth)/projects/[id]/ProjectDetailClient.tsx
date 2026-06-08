@@ -6,14 +6,11 @@ import {
   Grid,
   Typography,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
-import { NewAlbumButton } from '@/components/MusicProjects/NewAlbumButton';
 import { ProjectDetailPageHeader } from '@/components/MusicProjects/ProjectDetailPageHeader';
 import { ProjectDetailSidebar } from '@/components/MusicProjects/ProjectDetailSidebar';
-import { ProjectDetailSongsSection } from '@/components/MusicProjects/ProjectDetailSongsSection';
+import { ProjectDetailTabs } from '@/components/MusicProjects/ProjectDetailTabs';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 
 type ProjectDetailClientProps = {
@@ -22,7 +19,6 @@ type ProjectDetailClientProps = {
 };
 
 export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientProps) {
-  const t = useTranslations('MusicProjects');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading, error } = useMusicProject(locale, projectId);
@@ -102,56 +98,13 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
         </Grid>
 
         <Grid size={{ xs: 12, md: 8 }}>
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                {t('albums')}
-              </Typography>
-              {canEdit && <NewAlbumButton locale={locale} projectId={projectId} />}
-            </Box>
-            {albums.length === 0
-              ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    {t('no_albums')}
-                  </Typography>
-                )
-              : (
-                  <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
-                    {albums.map(album => (
-                      <Box
-                        key={album.id}
-                        component={Link}
-                        href={`/${locale}/projects/${projectId}/albums/${album.id}`}
-                        sx={{
-                          'minWidth': 160,
-                          'p': 2,
-                          'borderRadius': 2,
-                          'border': '1px solid',
-                          'borderColor': 'divider',
-                          'bgcolor': 'background.paper',
-                          'textDecoration': 'none',
-                          'color': 'inherit',
-                          'transition': 'border-color 0.2s ease',
-                          '&:hover': {
-                            borderColor: accent,
-                          },
-                        }}
-                      >
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          {album.name}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                )}
-          </Box>
-
-          <ProjectDetailSongsSection
+          <ProjectDetailTabs
             locale={locale}
             projectId={projectId}
             project={project}
-            songs={songs}
             albums={albums}
+            songs={songs}
+            canEdit={canEdit}
           />
         </Grid>
       </Grid>

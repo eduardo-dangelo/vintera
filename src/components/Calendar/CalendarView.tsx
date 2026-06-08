@@ -152,6 +152,10 @@ export function CalendarView({
     }
   }, [isMobile, viewMode]);
 
+  const activeViewMode = viewMode === 'schedule' && events.length === 0
+    ? (isMobile ? 'year' : 'month')
+    : viewMode;
+
   const handleEventClick = (event: CalendarEvent, anchorEl: HTMLElement, anchorPosition?: { x: number; y: number }) => {
     setEventDetailsAnchor(anchorEl);
     setEventDetailsAnchorPosition(anchorPosition ? { top: anchorPosition.y, left: anchorPosition.x } : null);
@@ -181,6 +185,9 @@ export function CalendarView({
     if (value === 'month' && isMobile) {
       return;
     }
+    if (value === 'schedule' && events.length === 0) {
+      return;
+    }
 
     setViewMode(value);
     setCurrentDate(getTodayDate(value));
@@ -192,26 +199,26 @@ export function CalendarView({
   };
 
   const handlePrev = () => {
-    if (viewMode === 'year') {
+    if (activeViewMode === 'year') {
       setYearSlideDirection('prev');
-    } else if (viewMode === 'month') {
+    } else if (activeViewMode === 'month') {
       setMonthSlideDirection('prev');
     } else {
-      setCurrentDate(getPrevDate(viewMode, currentDate));
+      setCurrentDate(getPrevDate(activeViewMode, currentDate));
     }
   };
   const handleNext = () => {
-    if (viewMode === 'year') {
+    if (activeViewMode === 'year') {
       setYearSlideDirection('next');
-    } else if (viewMode === 'month') {
+    } else if (activeViewMode === 'month') {
       setMonthSlideDirection('next');
     } else {
-      setCurrentDate(getNextDate(viewMode, currentDate));
+      setCurrentDate(getNextDate(activeViewMode, currentDate));
     }
   };
   const handleToday = () => {
-    const todayDate = getTodayDate(viewMode);
-    if (viewMode === 'year') {
+    const todayDate = getTodayDate(activeViewMode);
+    if (activeViewMode === 'year') {
       const currentYear = currentDate.getFullYear();
       const todayYear = todayDate.getFullYear();
       if (currentYear !== todayYear) {
@@ -225,7 +232,7 @@ export function CalendarView({
   };
 
   const tHeader = t as (key: string) => string;
-  const headerText = getHeaderText(viewMode, currentDate, tHeader);
+  const headerText = getHeaderText(activeViewMode, currentDate, tHeader);
 
   return (
     <Box>
@@ -256,8 +263,8 @@ export function CalendarView({
 
           }}
         >
-          {(viewMode === 'year' || viewMode === 'month')
-            ? viewMode === 'year'
+          {(activeViewMode === 'year' || activeViewMode === 'month')
+            ? activeViewMode === 'year'
               ? (
                   <ButtonBase
                     component="button"
@@ -356,7 +363,7 @@ export function CalendarView({
         </Box>
         <Box sx={{ justifyContent: 'center' }}>
           <ToggleButtonGroup
-            value={viewMode}
+            value={activeViewMode}
             exclusive
             onChange={handleViewChange}
             size="small"
@@ -374,7 +381,7 @@ export function CalendarView({
                 {t('view_year')}
               </Typography>
             </ToggleButton>
-            <ToggleButton value="schedule" aria-label={t('view_schedule')}>
+            <ToggleButton value="schedule" disabled={events.length === 0} aria-label={t('view_schedule')}>
               <Typography variant="caption">
                 {t('view_schedule')}
               </Typography>
@@ -411,7 +418,7 @@ export function CalendarView({
         </Box>
       </Box>
 
-      {viewMode === 'month' && (
+      {activeViewMode === 'month' && (
         <MonthView
           currentDate={currentDate}
           onCurrentDateChange={setCurrentDate}
@@ -425,7 +432,7 @@ export function CalendarView({
           onSlideToMonthComplete={() => setMonthSlideToDate(null)}
         />
       )}
-      {viewMode === 'year' && (
+      {activeViewMode === 'year' && (
         <YearView
           currentDate={currentDate}
           onCurrentDateChange={setCurrentDate}
@@ -444,7 +451,7 @@ export function CalendarView({
           onSlideToYearComplete={() => setYearSlideToYear(null)}
         />
       )}
-      {viewMode === 'schedule' && (
+      {activeViewMode === 'schedule' && (
         <ScheduleView
           currentDate={currentDate}
           onCurrentDateChange={setCurrentDate}

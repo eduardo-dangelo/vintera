@@ -178,6 +178,10 @@ export function ProjectDetailCalendarSection({
 
   const upcomingEvents = useMemo(() => getUpcomingEvents(events), [events]);
   const nextEvent = upcomingEvents[0] ?? null;
+  const canUseScheduleView = !isLoading && !error && events.length > 0;
+  const displaySectionView = sectionView === 'upcoming' && !canUseScheduleView
+    ? 'calendar'
+    : sectionView;
 
   const tHeader = tCal as (key: string) => string;
 
@@ -226,9 +230,12 @@ export function ProjectDetailCalendarSection({
         <ToggleButtonGroup
           exclusive
           size="small"
-          value={sectionView}
+          value={displaySectionView}
           onChange={(_, value: SectionViewMode | null) => {
             if (value != null) {
+              if (value === 'upcoming' && !canUseScheduleView) {
+                return;
+              }
               setSectionView(value);
             }
           }}
@@ -237,14 +244,18 @@ export function ProjectDetailCalendarSection({
           <ToggleButton value="calendar" aria-label={t('calendar_view_month')}>
             <CalendarMonth fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="upcoming" aria-label={t('calendar_view_upcoming')}>
+          <ToggleButton
+            value="upcoming"
+            disabled={!canUseScheduleView}
+            aria-label={t('calendar_view_upcoming')}
+          >
             <EventNote fontSize="small" />
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
 
       {isLoading && (
-        <ProjectDetailCalendarSkeleton viewMode={sectionView} />
+        <ProjectDetailCalendarSkeleton viewMode={displaySectionView} />
       )}
 
       {error && (
@@ -253,7 +264,7 @@ export function ProjectDetailCalendarSection({
         </Typography>
       )}
 
-      {!isLoading && !error && sectionView === 'calendar' && (
+      {!isLoading && !error && displaySectionView === 'calendar' && (
         <>
           {nextEvent && (
             <Box sx={{ mb: 2 }}>
@@ -349,7 +360,7 @@ export function ProjectDetailCalendarSection({
         </>
       )}
 
-      {!isLoading && !error && sectionView === 'upcoming' && (
+      {!isLoading && !error && displaySectionView === 'upcoming' && (
         <ScheduleView
           events={events}
           onEventClick={handleEventClick}

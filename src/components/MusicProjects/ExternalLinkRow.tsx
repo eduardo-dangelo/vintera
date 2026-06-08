@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
 import { getSpotifyEmbedUrl, getYouTubeEmbedUrl } from '@/utils/externalLinkEmbed';
+import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 
 type ExternalLinkRowProps = {
   link: ExternalLink;
@@ -121,6 +122,7 @@ export function ExternalLinkRow({
           setMenuAnchor(null);
           setIsHovered(false);
         }}
+        slotProps={getGlassMenuSlotProps()}
       >
         <MenuItem
           onClick={() => {
@@ -130,8 +132,9 @@ export function ExternalLinkRow({
             setMenuAnchor(null);
             setIsHovered(false);
           }}
+          sx={glassMenuItemSx}
         >
-          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          <EditIcon sx={{ fontSize: 16, mr: 0.75 }} />
           {t('edit')}
         </MenuItem>
         <MenuItem
@@ -142,9 +145,9 @@ export function ExternalLinkRow({
             setMenuAnchor(null);
             setIsHovered(false);
           }}
-          sx={{ color: 'error.main' }}
+          sx={{ ...glassMenuItemSx, color: 'error.main' }}
         >
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          <DeleteIcon sx={{ fontSize: 16, mr: 0.75 }} />
           {t('remove_link')}
         </MenuItem>
       </Menu>

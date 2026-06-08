@@ -1,4 +1,4 @@
-import { glassPopoverItemTextSx } from '@/utils/glassPaperStyles';
+import { glassMenuItemSx, glassPopoverItemTextSx } from '@/utils/glassPaperStyles';
 
 export const contextMenuItemTextSx = glassPopoverItemTextSx;
 
@@ -9,10 +9,10 @@ export const contextMenuIconSx = {
 export const contextMenuRowSx = {
   'display': 'flex',
   'alignItems': 'center',
-  'gap': 0.75,
-  'px': 1,
-  'py': 0.5,
-  'minHeight': 28,
+  'gap': glassMenuItemSx.gap,
+  'px': glassMenuItemSx.px,
+  'py': glassMenuItemSx.py,
+  'minHeight': glassMenuItemSx.minHeight,
   'borderRadius': 1,
   'cursor': 'pointer',
   'userSelect': 'none',

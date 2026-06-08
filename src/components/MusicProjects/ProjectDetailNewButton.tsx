@@ -17,21 +17,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { AddProjectMemberPopover } from '@/components/MusicProjects/AddProjectMemberPopover';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { CreateAlbumPopover } from './CreateAlbumPopover';
 import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
 import { CreateSongPopover } from './CreateSongPopover';
 import { GradientIcon } from './GradientIcon';
-
-const menuItemSx = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.75,
-  fontSize: '0.75rem',
-  px: 1,
-  py: 0.45,
-  minHeight: 28,
-} as const;
 
 type ProjectDetailNewButtonProps = {
   locale: string;
@@ -127,15 +117,7 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            sx: theme => ({
-              ...glassPaperSx(theme),
-              minWidth: 160,
-              mt: 0.5,
-            }),
-          },
-        }}
+        slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
       >
         {menuItems.map((item) => {
           if (item.kind === 'action') {
@@ -144,7 +126,7 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
                 key={item.type}
                 onClick={e => handleSelect(item.type, e)}
                 onMouseEnter={playHoverSound}
-                sx={menuItemSx}
+                sx={glassMenuItemSx}
               >
                 <GradientIcon kind={item.iconKind} fontSize={16} gradientOnHover aria-hidden />
                 {item.label}
@@ -155,7 +137,7 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
           return (
             <Tooltip key={item.id} title={tMusic('coming_soon')} placement="left">
               <Box component="span" sx={{ display: 'block' }}>
-                <MenuItem disabled sx={menuItemSx}>
+                <MenuItem disabled sx={glassMenuItemSx}>
                   <EventNoteIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />
                   {item.label}
                 </MenuItem>

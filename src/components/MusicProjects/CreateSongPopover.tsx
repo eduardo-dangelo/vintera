@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCreateSong } from '@/queries/hooks/music-projects/useCreateSong';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
+import { getGlassSelectMenuProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
   CREATE_SONG_POPOVER_WIDTH,
@@ -53,11 +54,8 @@ export function CreateSongPopover({
   const albums = effectiveProjectId ? (projectData?.albums ?? []) : [];
 
   useEffect(() => {
-    if (open) {
-      if (presetProjectId) {
-        setSelectedProjectId(presetProjectId);
-      }
-      titleInputRef.current?.focus();
+    if (open && presetProjectId) {
+      setSelectedProjectId(presetProjectId);
     }
   }, [open, presetProjectId]);
 
@@ -95,6 +93,7 @@ export function CreateSongPopover({
       onSubmit={handleSubmit}
       submitDisabled={!title.trim()}
       submitLoading={createSong.isPending}
+      initialFocusRef={titleInputRef}
     >
       <TextField
         inputRef={titleInputRef}
@@ -113,6 +112,7 @@ export function CreateSongPopover({
           <Select
             value={selectedProjectId}
             label={t('select_project')}
+            MenuProps={getGlassSelectMenuProps()}
             onChange={(e) => {
               const raw = e.target.value as number | '';
               if (raw === '') {
@@ -123,9 +123,9 @@ export function CreateSongPopover({
               setAlbumId('');
             }}
           >
-            <MenuItem value="">{t('project_none')}</MenuItem>
+            <MenuItem sx={glassMenuItemSx} value="">{t('project_none')}</MenuItem>
             {projects?.map(project => (
-              <MenuItem key={project.id} value={project.id}>
+              <MenuItem key={project.id} sx={glassMenuItemSx} value={project.id}>
                 {project.name}
               </MenuItem>
             ))}
@@ -138,11 +138,12 @@ export function CreateSongPopover({
           <Select
             value={albumId}
             label={t('select_album')}
+            MenuProps={getGlassSelectMenuProps()}
             onChange={e => setAlbumId(e.target.value as number | '')}
           >
-            <MenuItem value="">{t('single')}</MenuItem>
+            <MenuItem sx={glassMenuItemSx} value="">{t('single')}</MenuItem>
             {albums.map(album => (
-              <MenuItem key={album.id} value={album.id}>
+              <MenuItem key={album.id} sx={glassMenuItemSx} value={album.id}>
                 {album.name}
               </MenuItem>
             ))}

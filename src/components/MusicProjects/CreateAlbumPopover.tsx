@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateAlbum } from '@/queries/hooks/music-projects/useCreateAlbum';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
+import { getGlassSelectMenuProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
   CREATE_ALBUM_POPOVER_WIDTH,
@@ -49,11 +50,8 @@ export function CreateAlbumPopover({
   const hasProjects = (projects?.length ?? 0) > 0;
 
   useEffect(() => {
-    if (open) {
-      if (presetProjectId) {
-        setSelectedProjectId(presetProjectId);
-      }
-      nameInputRef.current?.focus();
+    if (open && presetProjectId) {
+      setSelectedProjectId(presetProjectId);
     }
   }, [open, presetProjectId]);
 
@@ -89,6 +87,7 @@ export function CreateAlbumPopover({
       onSubmit={handleSubmit}
       submitDisabled={!hasProjects || !effectiveProjectId || !name.trim()}
       submitLoading={createAlbum.isPending}
+      initialFocusRef={nameInputRef}
     >
       <TextField
         inputRef={nameInputRef}
@@ -112,10 +111,11 @@ export function CreateAlbumPopover({
           <Select
             value={selectedProjectId}
             label={t('select_project')}
+            MenuProps={getGlassSelectMenuProps()}
             onChange={e => setSelectedProjectId(e.target.value as number)}
           >
             {projects?.map(project => (
-              <MenuItem key={project.id} value={project.id}>
+              <MenuItem key={project.id} sx={glassMenuItemSx} value={project.id}>
                 {project.name}
               </MenuItem>
             ))}

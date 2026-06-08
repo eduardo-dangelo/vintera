@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 
 export type DropdownOption = {
   label: string;
@@ -92,6 +93,7 @@ export function DropdownButton({
         open={open}
         onClose={handleClose}
         anchorOrigin={anchorOrigin}
+        slotProps={getGlassMenuSlotProps()}
       >
         {options.map((option, index) => (
           <Tooltip
@@ -106,16 +108,27 @@ export function DropdownButton({
                 onClick={e => handleOptionClick(option, e)}
                 disabled={option.disabled}
                 sx={{
-                  fontSize: '0.875rem',
+                  ...glassMenuItemSx,
                   ...option.sx,
                 }}
               >
                 {option.icon && (
-                  <ListItemIcon sx={{ minWidth: 36, fontSize: '1rem' }}>
+                  <ListItemIcon sx={{ 'minWidth': 28, '& .MuiSvgIcon-root': { fontSize: 16 } }}>
                     {option.icon}
                   </ListItemIcon>
                 )}
-                <ListItemText>{option.label}</ListItemText>
+                <ListItemText
+                  primary={option.label}
+                  slotProps={{
+                    primary: {
+                      sx: {
+                        fontSize: glassMenuItemSx.fontSize,
+                        fontWeight: glassMenuItemSx.fontWeight,
+                        lineHeight: glassMenuItemSx.lineHeight,
+                      },
+                    },
+                  }}
+                />
               </MenuItem>
             </span>
           </Tooltip>

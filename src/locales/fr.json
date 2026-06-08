@@ -84,6 +84,8 @@
     "add_member_already_member": "Cet utilisateur est déjà membre",
     "add_member_search_empty": "Aucun utilisateur trouvé",
     "add_member_error": "Échec de l'ajout du membre",
+    "remove_member": "Retirer le membre",
+    "remove_member_confirm": "Retirer {name} de ce projet ?",
     "permission": "Permission",
     "permission_read": "Lecture seule",
     "permission_edit": "Modification",

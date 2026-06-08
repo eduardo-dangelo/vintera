@@ -19,7 +19,10 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 import { Popover } from '@/components/common/Popover';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
-import { glassPaperSx } from '@/utils/glassPaperStyles';
+import {
+  getGlassAutocompleteSlotProps,
+  glassPaperSx,
+} from '@/utils/glassPaperStyles';
 import { primaryGradientFillSx } from '@/utils/primaryGradientStyles';
 
 const POPOVER_WIDTH = 280;
@@ -172,11 +175,9 @@ export function MusicListProjectFilter({
                   />
                 );
               })}
-            slotProps={{
-              popper: {
-                sx: { zIndex: theme => theme.zIndex.modal + 1 },
-              },
-            }}
+            slotProps={getGlassAutocompleteSlotProps({
+              zIndex: theme => theme.zIndex.modal + 1,
+            })}
           />
         </Box>
       </Popover>

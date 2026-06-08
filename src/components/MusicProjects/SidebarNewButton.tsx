@@ -13,22 +13,12 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
-import { glassPaperSx } from '@/utils/glassPaperStyles';
+import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { CreateAlbumPopover } from './CreateAlbumPopover';
 import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
 import { CreateProjectPopover } from './CreateProjectPopover';
 import { CreateSongPopover } from './CreateSongPopover';
 import { GradientIcon } from './GradientIcon';
-
-const menuItemSx = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.75,
-  fontSize: '0.75rem',
-  px: 1,
-  py: 0.45,
-  minHeight: 28,
-} as const;
 
 type SidebarNewButtonProps = {
   locale: string;
@@ -70,10 +60,8 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
     setPopoverAnchorPosition(null);
   };
 
-  const handleProjectCreated = (id: number) => {
+  const handleProjectCreated = () => {
     handlePopoverClose();
-    router.push(`/${locale}/projects/${id}`);
-    router.refresh();
   };
 
   const handleSongCreated = (songId: number) => {
@@ -112,11 +100,11 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
           'justifyContent': 'space-between',
           'textTransform': 'none',
           'fontWeight': 500,
-          'fontSize': menuItemSx.fontSize,
+          'fontSize': glassMenuItemSx.fontSize,
           'borderRadius': 1,
-          'py': menuItemSx.py,
+          'py': glassMenuItemSx.py,
           'px': 1,
-          'minHeight': menuItemSx.minHeight,
+          'minHeight': glassMenuItemSx.minHeight,
           'boxShadow': 'none',
           '&:hover': {
             boxShadow: 'none',
@@ -139,22 +127,14 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         onClose={handleMenuClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        slotProps={{
-          paper: {
-            sx: theme => ({
-              ...glassPaperSx(theme),
-              minWidth: menuAnchorEl?.offsetWidth ?? undefined,
-              mt: 0.5,
-            }),
-          },
-        }}
+        slotProps={getGlassMenuSlotProps({ minWidth: menuAnchorEl?.offsetWidth ?? undefined })}
       >
         {menuItems.map(({ type, label }) => (
           <MenuItem
             key={type}
             onClick={e => handleSelect(type, e)}
             onMouseEnter={playHoverSound}
-            sx={menuItemSx}
+            sx={glassMenuItemSx}
           >
             <GradientIcon kind={type} fontSize={16} gradientOnHover aria-hidden />
             {label}

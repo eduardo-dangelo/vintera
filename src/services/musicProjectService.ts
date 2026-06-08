@@ -1,6 +1,7 @@
 import type { MemberPermission } from '@/types/musicPeople';
 import type { MusicProjectInput, UpdateMusicProjectInput } from '@/validations/MusicProjectValidation';
 import { and, count, eq } from 'drizzle-orm';
+import { buildNewProjectMetadata } from '@/components/MusicProjects/heroBackgroundPresets';
 import { db } from '@/libs/DB';
 import { albumsSchema, musicProjectMembersSchema, musicProjectsSchema, songsSchema } from '@/models/Schema';
 import { getMembersByProjectIds, insertOwnerMember } from '@/services/musicPeopleService';
@@ -187,6 +188,8 @@ export class MusicProjectService {
       return !!existing;
     });
 
+    const metadata = buildNewProjectMetadata(data.metadata);
+
     const [project] = await db
       .insert(musicProjectsSchema)
       .values({
@@ -197,7 +200,7 @@ export class MusicProjectService {
         genre: data.genre,
         color: data.color ?? null,
         coverImageUrl: data.coverImageUrl || null,
-        metadata: data.metadata,
+        metadata,
       })
       .returning();
 

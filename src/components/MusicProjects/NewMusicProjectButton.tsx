@@ -4,7 +4,6 @@ import type { SxProps, Theme } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { IconButton, ListItemButton, ListItemIcon, ListItemText, Tooltip, useTheme } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
@@ -26,7 +25,6 @@ export function NewMusicProjectButton({
 }: NewMusicProjectButtonProps) {
   const theme = useTheme();
   const t = useTranslations('MusicProjects');
-  const router = useRouter();
   const { playHoverSound } = useHoverSound();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [anchorPosition, setAnchorPosition] = useState<{ top: number; left: number } | null>(null);
@@ -43,8 +41,6 @@ export function NewMusicProjectButton({
 
   const handleCreated = (id: number) => {
     onProjectCreated?.(id);
-    router.push(`/${locale}/projects/${id}`);
-    router.refresh();
   };
 
   const defaultSx: SxProps<Theme> = {

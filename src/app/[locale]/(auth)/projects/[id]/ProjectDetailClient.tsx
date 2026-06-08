@@ -95,6 +95,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
             accent={accent}
             members={members}
             metadata={project.metadata}
+            viewerPermission={viewerPermission}
             readOnly={!canEdit}
             canDelete={canDelete}
           />

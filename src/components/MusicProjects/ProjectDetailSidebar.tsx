@@ -1,18 +1,11 @@
 'use client';
 
-import type { MusicProjectMember } from '@/types/musicPeople';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import type { MemberPermission, MusicProjectMember } from '@/types/musicPeople';
+import { Box } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
 import { ProjectDetailCalendarSection } from './ProjectDetailCalendarSection';
 import { ProjectDetailExternalLinksSection } from './ProjectDetailExternalLinksSection';
@@ -27,6 +20,7 @@ type ProjectDetailSidebarProps = {
   accent: string;
   members: MusicProjectMember[];
   metadata: unknown;
+  viewerPermission: 'owner' | MemberPermission;
   readOnly?: boolean;
   canDelete?: boolean;
 };
@@ -39,6 +33,7 @@ export function ProjectDetailSidebar({
   accent,
   members,
   metadata,
+  viewerPermission,
   readOnly = false,
   canDelete = false,
 }: ProjectDetailSidebarProps) {
@@ -46,11 +41,11 @@ export function ProjectDetailSidebar({
   const router = useRouter();
   const deleteProject = useDeleteMusicProject(locale);
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmAnchor, setDeleteConfirmAnchor] = useState<HTMLElement | null>(null);
 
   const handleDeleteProject = async () => {
     await deleteProject.mutateAsync(projectId);
-    setDeleteDialogOpen(false);
+    setDeleteConfirmAnchor(null);
     router.push(`/${locale}/projects`);
   };
 
@@ -75,15 +70,18 @@ export function ProjectDetailSidebar({
           accent={accent}
           readOnly={readOnly}
           canDelete={canDelete}
-          onDeleteRequest={() => setDeleteDialogOpen(true)}
+          onDeleteRequest={anchorEl => setDeleteConfirmAnchor(anchorEl)}
         />
 
         <ProjectDetailMembersSection
           locale={locale}
           projectId={projectId}
           members={members}
+          viewerPermission={viewerPermission}
           readOnly={readOnly}
         />
+
+        <ProjectDetailCalendarSection locale={locale} projectId={projectId} readOnly={readOnly} />
 
         <ProjectDetailExternalLinksSection
           locale={locale}
@@ -92,27 +90,19 @@ export function ProjectDetailSidebar({
           accent={accent}
           readOnly={readOnly}
         />
-
-        <ProjectDetailCalendarSection locale={locale} projectId={projectId} readOnly={readOnly} />
       </Box>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('delete')}</DialogTitle>
-        <DialogContent>
-          <Typography>{t('delete_confirm')}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>{t('cancel')}</Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => void handleDeleteProject()}
-            disabled={deleteProject.isPending}
-          >
-            {t('delete')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmPopover
+        open={Boolean(deleteConfirmAnchor)}
+        anchorEl={deleteConfirmAnchor}
+        onClose={() => setDeleteConfirmAnchor(null)}
+        onConfirm={() => void handleDeleteProject()}
+        message={t('delete_confirm')}
+        confirmLabel={t('delete')}
+        cancelLabel={t('cancel')}
+        confirmColor="error"
+        loading={deleteProject.isPending}
+      />
     </>
   );
 }

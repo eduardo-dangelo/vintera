@@ -602,6 +602,11 @@ export const TITLE_FONT_OPTIONS: TitleFontOption[] = [
   },
 ];
 
+export function pickRandomTitleFontFamily(): string {
+  const index = Math.floor(Math.random() * TITLE_FONT_OPTIONS.length);
+  return TITLE_FONT_OPTIONS[index]!.fontFamily;
+}
+
 export function findTitleFontOptionByFamily(fontFamily: string): TitleFontOption | undefined {
   return TITLE_FONT_OPTIONS.find(o => o.fontFamily === fontFamily);
 }

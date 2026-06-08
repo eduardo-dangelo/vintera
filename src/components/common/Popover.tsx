@@ -54,6 +54,7 @@ export type CommonPopoverProps = {
   transformOrigin?: PopoverOrigin;
   /** When set, position popover at these viewport coordinates instead of anchorEl. Arrow is hidden. */
   anchorPosition?: { top: number; left: number } | null;
+  onEntered?: () => void;
 };
 
 const POSITION_ANCHOR_ORIGIN: PopoverOrigin = { vertical: 'center', horizontal: 'left' };
@@ -77,6 +78,7 @@ export function Popover({
   anchorOrigin: anchorOriginOverride,
   transformOrigin: transformOriginOverride,
   anchorPosition,
+  onEntered,
 }: CommonPopoverProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [arrowTop, setArrowTop] = useState<number | null>(null);
@@ -224,6 +226,7 @@ export function Popover({
             if (effectiveShowArrow) {
               computeArrowTop();
             }
+            onEntered?.();
           },
         },
       }}

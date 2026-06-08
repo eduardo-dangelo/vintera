@@ -28,9 +28,10 @@ export function useCreateMusicProject(locale: string) {
       const { project } = (await res.json()) as { project: { id: number } };
       return project;
     },
-    onSuccess: () => {
+    onSuccess: (project) => {
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
       queryClient.invalidateQueries({ queryKey: sidebarKeys.recents() });
+      router.push(`/${locale}/projects/${project.id}`);
       router.refresh();
     },
   });

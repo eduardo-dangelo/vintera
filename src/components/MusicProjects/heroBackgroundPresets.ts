@@ -16,6 +16,7 @@ import {
 } from '@/components/MusicProjects/heroPatternShapes';
 import { getHeroBackgroundSx } from '@/components/MusicProjects/musicListPageHeaderStyles';
 import { PRIMARY_GRADIENT } from '@/components/MusicProjects/musicListToolbarStyles';
+import { pickRandomTitleFontFamily } from '@/components/MusicProjects/projectTitleFonts';
 import {
   DEFAULT_BUILDER_GRADIENT_ANGLE,
   DEFAULT_BUILDER_GRADIENT_SHARPNESS,
@@ -502,6 +503,26 @@ export function applyHeroPresetRecipe(
       patternPresetId: null,
     },
   });
+}
+
+export function pickRandomHeroPatternPreset(): HeroBackgroundPreset {
+  const index = Math.floor(Math.random() * HERO_PATTERN_PRESETS.length);
+  return HERO_PATTERN_PRESETS[index]!;
+}
+
+export function buildNewProjectMetadata(existing: unknown = {}): MusicProjectMetadata {
+  const parsed = parseMusicProjectMetadata(existing);
+  let metadata: MusicProjectMetadata = parsed;
+
+  if (!parsed.heroBackgroundKind && !parsed.heroImageUrl) {
+    metadata = applyHeroPresetRecipe(metadata, pickRandomHeroPatternPreset());
+  }
+
+  if (!parsed.titleFontFamily) {
+    metadata = { ...metadata, titleFontFamily: pickRandomTitleFontFamily() };
+  }
+
+  return metadata;
 }
 
 export function buildHeroBackgroundSxFromPreset(

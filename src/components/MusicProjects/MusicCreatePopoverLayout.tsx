@@ -34,6 +34,7 @@ export type MusicCreatePopoverLayoutProps = {
   submitLoading?: boolean;
   children: React.ReactNode;
   footerStart?: React.ReactNode;
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
 };
 
 export function MusicCreatePopoverLayout({
@@ -49,8 +50,18 @@ export function MusicCreatePopoverLayout({
   submitLoading = false,
   children,
   footerStart,
+  initialFocusRef,
 }: MusicCreatePopoverLayoutProps) {
   const t = useTranslations('MusicProjects');
+
+  const handleEntered = () => {
+    if (!initialFocusRef) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      initialFocusRef.current?.focus();
+    });
+  };
 
   return (
     <Popover
@@ -60,6 +71,7 @@ export function MusicCreatePopoverLayout({
       anchorOrigin={CREATE_POPOVER_CLICK_ANCHOR_ORIGIN}
       transformOrigin={CREATE_POPOVER_CLICK_TRANSFORM_ORIGIN}
       onClose={onClose}
+      onEntered={handleEntered}
       minWidth={width}
       maxWidth={width}
       maxHeight={maxHeight}

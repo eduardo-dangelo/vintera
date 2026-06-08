@@ -93,6 +93,10 @@ export type CreateProjectMemberInput = {
 
 export type CreateProjectMemberError = 'project_not_found' | 'user_not_found' | 'already_member';
 
+export type DeleteProjectMemberError = 'member_not_found' | 'cannot_remove_admin';
+
+export type ProjectMemberViewerPermission = 'owner' | MemberPermission;
+
 export async function getMemberUserIdsByProjectId(projectId: number): Promise<string[]> {
   const rows = await db
     .select({ userId: musicProjectMembersSchema.userId })
@@ -237,6 +241,43 @@ export async function updateProjectMember(
 
   const members = await getMembersByProjectIds([projectId]);
   return members.get(projectId)?.find(m => m.id === memberId) ?? null;
+}
+
+export async function deleteProjectMember(
+  projectId: number,
+  memberId: number,
+  viewerPermission: ProjectMemberViewerPermission,
+): Promise<{ ok: true } | { error: DeleteProjectMemberError }> {
+  const [existing] = await db
+    .select({
+      id: musicProjectMembersSchema.id,
+      permission: musicProjectMembersSchema.permission,
+    })
+    .from(musicProjectMembersSchema)
+    .where(
+      and(
+        eq(musicProjectMembersSchema.id, memberId),
+        eq(musicProjectMembersSchema.musicProjectId, projectId),
+      ),
+    )
+    .limit(1);
+
+  if (!existing) {
+    return { error: 'member_not_found' };
+  }
+
+  if (
+    viewerPermission === 'admin'
+    && parseMemberPermission(existing.permission) === 'admin'
+  ) {
+    return { error: 'cannot_remove_admin' };
+  }
+
+  await db
+    .delete(musicProjectMembersSchema)
+    .where(eq(musicProjectMembersSchema.id, memberId));
+
+  return { ok: true };
 }
 
 export async function getAuthorsBySongIds(

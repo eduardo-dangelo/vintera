@@ -2,7 +2,7 @@
 
 import { TextField } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCreateMusicProject } from '@/queries/hooks/music-projects/useCreateMusicProject';
 import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
 import {
@@ -33,12 +33,6 @@ export function CreateProjectPopover({
   const [name, setName] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (open) {
-      nameInputRef.current?.focus();
-    }
-  }, [open]);
-
   const handleClose = () => {
     setName('');
     onClose();
@@ -68,6 +62,7 @@ export function CreateProjectPopover({
       onSubmit={handleSubmit}
       submitDisabled={!name.trim()}
       submitLoading={createProject.isPending}
+      initialFocusRef={nameInputRef}
     >
       <TextField
         inputRef={nameInputRef}

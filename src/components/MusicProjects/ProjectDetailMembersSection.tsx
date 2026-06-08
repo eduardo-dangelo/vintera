@@ -1,6 +1,6 @@
 'use client';
 
-import type { MusicProjectMember } from '@/types/musicPeople';
+import type { MemberPermission, MusicProjectMember } from '@/types/musicPeople';
 import { PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { Avatar, Box, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -12,6 +12,7 @@ type ProjectDetailMembersSectionProps = {
   locale: string;
   projectId: number;
   members: MusicProjectMember[];
+  viewerPermission: 'owner' | MemberPermission;
   readOnly?: boolean;
 };
 
@@ -30,6 +31,7 @@ export function ProjectDetailMembersSection({
   locale,
   projectId,
   members,
+  viewerPermission,
   readOnly = false,
 }: ProjectDetailMembersSectionProps) {
   const t = useTranslations('MusicProjects');
@@ -133,6 +135,7 @@ export function ProjectDetailMembersSection({
         member={activeMember}
         locale={locale}
         projectId={projectId}
+        viewerPermission={viewerPermission}
         readOnly={readOnly}
         onClose={handleDetailClose}
       />

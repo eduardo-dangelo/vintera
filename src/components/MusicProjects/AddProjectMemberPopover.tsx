@@ -29,7 +29,12 @@ import {
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { useCreateMusicProjectMember } from '@/queries/hooks/music-projects/useCreateMusicProjectMember';
 import { useSearchUsers } from '@/queries/hooks/users/useSearchUsers';
-import { glassPaperSx } from '@/utils/glassPaperStyles';
+import {
+  getGlassAutocompleteSlotProps,
+  getGlassSelectMenuProps,
+  glassMenuItemSx,
+  glassPaperSx,
+} from '@/utils/glassPaperStyles';
 
 const POPOVER_WIDTH = 320;
 
@@ -185,6 +190,7 @@ export function AddProjectMemberPopover({
                   filterOptions={options => options}
                   getOptionLabel={platformUserDisplayName}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
+                  slotProps={getGlassAutocompleteSlotProps()}
                   noOptionsText={
                     searchQuery.trim().length < 2
                       ? t('add_member_search_placeholder')
@@ -203,10 +209,10 @@ export function AddProjectMemberPopover({
                             {getInitials(name)}
                           </Avatar>
                           <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" noWrap>
+                            <Typography variant="body2" noWrap sx={{ fontSize: '0.75rem' }}>
                               {name}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" noWrap>
+                            <Typography variant="caption" color="text.secondary" noWrap sx={{ fontSize: '0.6875rem' }}>
                               {option.email}
                             </Typography>
                           </Box>
@@ -232,11 +238,12 @@ export function AddProjectMemberPopover({
                       labelId="add-member-permission-label"
                       label={t('permission')}
                       value={draftPermission}
+                      MenuProps={getGlassSelectMenuProps()}
                       onChange={e => setDraftPermission(e.target.value as MemberPermission)}
                     >
-                      <MenuItem value="read">{t('permission_read')}</MenuItem>
-                      <MenuItem value="edit">{t('permission_edit')}</MenuItem>
-                      <MenuItem value="admin">{t('permission_admin')}</MenuItem>
+                      <MenuItem sx={glassMenuItemSx} value="read">{t('permission_read')}</MenuItem>
+                      <MenuItem sx={glassMenuItemSx} value="edit">{t('permission_edit')}</MenuItem>
+                      <MenuItem sx={glassMenuItemSx} value="admin">{t('permission_admin')}</MenuItem>
                     </Select>
                   </FormControl>
                 )}

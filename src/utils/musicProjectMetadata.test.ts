@@ -1,14 +1,17 @@
 import { createTheme } from '@mui/material/styles';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   applyHeroPresetRecipe,
   buildComposedHeroBackgroundSx,
   buildGradientBackground,
   buildMultiStopGradient,
+  buildNewProjectMetadata,
   findHeroBackgroundPreset,
   getPresetDefaultsById,
+  HERO_PATTERN_PRESETS,
   resolveHeroBackground,
 } from '@/components/MusicProjects/heroBackgroundPresets';
+import { TITLE_FONT_OPTIONS } from '@/components/MusicProjects/projectTitleFonts';
 import {
   buildHeroBackgroundMetadataPatch,
   DEFAULT_BUILDER_GRADIENT_STOPS,
@@ -362,5 +365,41 @@ describe('normalizeHeroMetadata legacy pattern', () => {
     expect(normalized.heroBackgroundOverrides?.gradientStops).toEqual(['#1e1e22']);
     expect(normalized.heroBackgroundOverrides?.patternShapeId).toBe('dots');
     expect(normalized.heroBackgroundOverrides?.backgroundColor).toBeUndefined();
+  });
+});
+
+describe('buildNewProjectMetadata', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('applies a random pattern preset and title font for new projects', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    const metadata = buildNewProjectMetadata();
+    const expectedPreset = HERO_PATTERN_PRESETS[0]!;
+    const resolved = resolveHeroBackground(metadata, theme);
+
+    expect(metadata.heroBackgroundKind).toBe('composed');
+    expect(metadata.heroBackgroundPreset).toBe(expectedPreset.id);
+    expect(metadata.titleFontFamily).toBe(TITLE_FONT_OPTIONS[0]!.fontFamily);
+    expect(resolved.kind).toBe('composed');
+
+    const bgImage = (resolved.backgroundSx as { backgroundImage?: string }).backgroundImage;
+
+    expect(bgImage).toBeDefined();
+    expect(bgImage).toContain(',');
+    expect(metadata.heroBackgroundOverrides?.patternShapeId).toBe(expectedPreset.patternShapeId);
+  });
+
+  it('preserves unrelated metadata fields', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    const metadata = buildNewProjectMetadata({
+      titleFontFamily: 'Georgia, serif',
+    });
+
+    expect(metadata.titleFontFamily).toBe('Georgia, serif');
+    expect(metadata.heroBackgroundKind).toBe('composed');
   });
 });

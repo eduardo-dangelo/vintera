@@ -6,7 +6,6 @@ import { CalendarMonth, ChevronLeft, ChevronRight, EventNote } from '@mui/icons-
 import {
   Box,
   ButtonBase,
-  CircularProgress,
   Divider,
   ToggleButton,
   ToggleButtonGroup,
@@ -29,6 +28,7 @@ import { MonthPickerPopover } from '@/components/Calendar/MonthPickerPopover';
 import { MonthView } from '@/components/Calendar/views/MonthView';
 import { ScheduleView } from '@/components/Calendar/views/ScheduleView';
 import { YearPickerPopover } from '@/components/Calendar/YearPickerPopover';
+import { ProjectDetailCalendarSkeleton } from '@/components/MusicProjects/ProjectDetailCalendarSkeleton';
 import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
 import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
 
@@ -244,9 +244,7 @@ export function ProjectDetailCalendarSection({
       </Box>
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-          <CircularProgress size={24} />
-        </Box>
+        <ProjectDetailCalendarSkeleton viewMode={sectionView} />
       )}
 
       {error && (

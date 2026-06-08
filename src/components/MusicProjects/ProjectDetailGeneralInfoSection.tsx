@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { RichTextContent } from '@/components/RichTextEditor/RichTextContent';
 import { RichTextEditor } from '@/components/RichTextEditor/RichTextEditor';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
+import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { getSurfaceAccentChipSx } from '@/utils/heroChromeTextColor';
 import { sanitizeDisplayText, stripInvisibleFormatChars } from '@/utils/sanitizeDisplayText';
 import { normalizeRichTextForSave, sanitizeRichTextHtml } from '@/utils/sanitizeRichTextHtml';
@@ -35,7 +36,7 @@ type ProjectDetailGeneralInfoSectionProps = {
   accent: string;
   readOnly?: boolean;
   canDelete?: boolean;
-  onDeleteRequest: () => void;
+  onDeleteRequest: (anchorEl: HTMLElement) => void;
 };
 
 export function ProjectDetailGeneralInfoSection({
@@ -111,20 +112,25 @@ export function ProjectDetailGeneralInfoSection({
             <IconButton size="small" onClick={e => setMenuAnchor(e.currentTarget)}>
               <MoreHoriz />
             </IconButton>
-            <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
-              <MenuItem onClick={handleEnterEdit}>
-                <EditIcon fontSize="small" sx={{ mr: 1 }} />
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={() => setMenuAnchor(null)}
+              slotProps={getGlassMenuSlotProps()}
+            >
+              <MenuItem onClick={handleEnterEdit} sx={glassMenuItemSx}>
+                <EditIcon sx={{ fontSize: 16, mr: 0.75 }} />
                 {t('edit')}
               </MenuItem>
               {canDelete && (
                 <MenuItem
-                  onClick={() => {
+                  onClick={(e) => {
                     setMenuAnchor(null);
-                    onDeleteRequest();
+                    onDeleteRequest(e.currentTarget);
                   }}
-                  sx={{ color: 'error.main' }}
+                  sx={{ ...glassMenuItemSx, color: 'error.main' }}
                 >
-                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                  <DeleteIcon sx={{ fontSize: 16, mr: 0.75 }} />
                   {t('delete')}
                 </MenuItem>
               )}

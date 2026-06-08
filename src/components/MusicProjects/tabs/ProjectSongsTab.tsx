@@ -40,51 +40,47 @@ export function ProjectSongsTab({
     });
   }, [songs, allSongs, projectId, project, albums]);
 
+  if (songs.length === 0) {
+    return null;
+  }
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {t('songs')}
         </Typography>
-        {songs.length > 0 && (
-          <ListViewControls
-            viewMode={viewMode}
-            cardSize={cardSize}
-            onViewModeChange={setViewMode}
-            onCardSizeChange={setCardSize}
-          />
-        )}
+        <ListViewControls
+          viewMode={viewMode}
+          cardSize={cardSize}
+          onViewModeChange={setViewMode}
+          onCardSizeChange={setCardSize}
+        />
       </Box>
-      {songs.length === 0
+      {viewMode === 'list'
         ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              {t('no_songs')}
-            </Typography>
+            <SongListView
+              songs={songListItems}
+              locale={locale}
+              projectId={projectId}
+            />
           )
-        : viewMode === 'list'
-          ? (
-              <SongListView
-                songs={songListItems}
-                locale={locale}
-                projectId={projectId}
-              />
-            )
-          : (
-              <MusicFolderGrid
-                cardSize={cardSize}
-                items={songListItems.map(song => ({
-                  id: song.id,
-                  content: (
-                    <SongCard
-                      song={song}
-                      locale={locale}
-                      cardSize={cardSize}
-                      projectId={projectId}
-                    />
-                  ),
-                }))}
-              />
-            )}
+        : (
+            <MusicFolderGrid
+              cardSize={cardSize}
+              items={songListItems.map(song => ({
+                id: song.id,
+                content: (
+                  <SongCard
+                    song={song}
+                    locale={locale}
+                    cardSize={cardSize}
+                    projectId={projectId}
+                  />
+                ),
+              }))}
+            />
+          )}
     </Box>
   );
 }

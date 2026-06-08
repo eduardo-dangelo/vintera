@@ -165,23 +165,27 @@ export function ProjectDetailTabs({
   if (visibleTabs.length === 0) {
     return (
       <Box>
-        <Box sx={{ mb: 4 }}>
-          <ProjectAlbumsTab
+        {albums.length > 0 && (
+          <Box sx={{ mb: songs.length > 0 ? 4 : 0 }}>
+            <ProjectAlbumsTab
+              locale={locale}
+              projectId={projectId}
+              project={project}
+              albums={albums}
+              songs={songs}
+              canEdit={canEdit}
+            />
+          </Box>
+        )}
+        {songs.length > 0 && (
+          <ProjectSongsTab
             locale={locale}
             projectId={projectId}
             project={project}
-            albums={albums}
             songs={songs}
-            canEdit={canEdit}
+            albums={albums}
           />
-        </Box>
-        <ProjectSongsTab
-          locale={locale}
-          projectId={projectId}
-          project={project}
-          songs={songs}
-          albums={albums}
-        />
+        )}
       </Box>
     );
   }

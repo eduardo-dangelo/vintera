@@ -227,31 +227,26 @@ export function ProjectDetailCalendarSection({
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {t('calendar')}
         </Typography>
-        <ToggleButtonGroup
-          exclusive
-          size="small"
-          value={displaySectionView}
-          onChange={(_, value: SectionViewMode | null) => {
-            if (value != null) {
-              if (value === 'upcoming' && !canUseScheduleView) {
-                return;
+        {canUseScheduleView && (
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={displaySectionView}
+            onChange={(_, value: SectionViewMode | null) => {
+              if (value != null) {
+                setSectionView(value);
               }
-              setSectionView(value);
-            }
-          }}
-          sx={buttonGroupSx}
-        >
-          <ToggleButton value="calendar" aria-label={t('calendar_view_month')}>
-            <CalendarMonth fontSize="small" />
-          </ToggleButton>
-          <ToggleButton
-            value="upcoming"
-            disabled={!canUseScheduleView}
-            aria-label={t('calendar_view_upcoming')}
+            }}
+            sx={buttonGroupSx}
           >
-            <EventNote fontSize="small" />
-          </ToggleButton>
-        </ToggleButtonGroup>
+            <ToggleButton value="calendar" aria-label={t('calendar_view_month')}>
+              <CalendarMonth fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="upcoming" aria-label={t('calendar_view_upcoming')}>
+              <EventNote fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        )}
       </Box>
 
       {isLoading && (

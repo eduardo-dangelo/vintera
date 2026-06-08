@@ -38,6 +38,10 @@ export function ProjectAlbumsTab({
     [albums, project, songs],
   );
 
+  if (albums.length === 0) {
+    return null;
+  }
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -45,42 +49,34 @@ export function ProjectAlbumsTab({
           {t('albums')}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {albums.length > 0 && (
-            <ListViewControls
-              viewMode={viewMode}
-              cardSize={cardSize}
-              onViewModeChange={setViewMode}
-              onCardSizeChange={setCardSize}
-            />
-          )}
+          <ListViewControls
+            viewMode={viewMode}
+            cardSize={cardSize}
+            onViewModeChange={setViewMode}
+            onCardSizeChange={setCardSize}
+          />
           {canEdit && <NewAlbumButton locale={locale} projectId={projectId} />}
         </Box>
       </Box>
-      {albums.length === 0
+      {viewMode === 'list'
         ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              {t('no_albums')}
-            </Typography>
+            <AlbumListView albums={albumListItems} locale={locale} />
           )
-        : viewMode === 'list'
-          ? (
-              <AlbumListView albums={albumListItems} locale={locale} />
-            )
-          : (
-              <MusicFolderGrid
-                cardSize={cardSize}
-                items={albumListItems.map(album => ({
-                  id: album.id,
-                  content: (
-                    <AlbumCard
-                      album={album}
-                      locale={locale}
-                      cardSize={cardSize}
-                    />
-                  ),
-                }))}
-              />
-            )}
+        : (
+            <MusicFolderGrid
+              cardSize={cardSize}
+              items={albumListItems.map(album => ({
+                id: album.id,
+                content: (
+                  <AlbumCard
+                    album={album}
+                    locale={locale}
+                    cardSize={cardSize}
+                  />
+                ),
+              }))}
+            />
+          )}
     </Box>
   );
 }

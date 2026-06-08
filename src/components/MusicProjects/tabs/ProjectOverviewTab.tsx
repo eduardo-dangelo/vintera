@@ -107,14 +107,8 @@ export function ProjectOverviewTab({
     });
   }, [songs, allSongs, projectId, project, albums, songsHaveTab]);
 
-  const hasContent = albums.length > 0 || songs.length > 0;
-
-  if (!hasContent) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-        {t('overview_empty')}
-      </Typography>
-    );
+  if (albums.length === 0 && songs.length === 0) {
+    return null;
   }
 
   return (

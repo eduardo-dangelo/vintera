@@ -22,6 +22,7 @@ type ProjectEditableTitleProps = {
   /** Keep font/color buttons visible while a picker popover is open. */
   keepAdornmentsVisible?: boolean;
   truncate?: boolean;
+  readOnly?: boolean;
   onSave: (name: string) => Promise<void>;
 };
 
@@ -34,6 +35,7 @@ export function ProjectEditableTitle({
   titleAdornments,
   keepAdornmentsVisible = false,
   truncate = false,
+  readOnly = false,
   onSave,
 }: ProjectEditableTitleProps) {
   const t = useTranslations('MusicProjects');
@@ -147,6 +149,9 @@ export function ProjectEditableTitle({
   };
 
   const handleDisplayClick = () => {
+    if (readOnly) {
+      return;
+    }
     setIsEditing(true);
   };
 
@@ -200,7 +205,7 @@ export function ProjectEditableTitle({
     color: 'text.primary',
     fontFamily: fontFamily ?? 'inherit',
     fontSynthesis: 'none',
-    cursor: 'pointer',
+    cursor: readOnly ? 'default' : 'pointer',
     maxWidth: '100%',
     ...truncateSx,
     ...(!truncate ? { width: 'fit-content' } : {}),

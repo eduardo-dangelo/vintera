@@ -12,6 +12,7 @@ type ProjectDetailMembersSectionProps = {
   locale: string;
   projectId: number;
   members: MusicProjectMember[];
+  readOnly?: boolean;
 };
 
 function getInitials(name: string) {
@@ -29,6 +30,7 @@ export function ProjectDetailMembersSection({
   locale,
   projectId,
   members,
+  readOnly = false,
 }: ProjectDetailMembersSectionProps) {
   const t = useTranslations('MusicProjects');
   const [detailAnchorEl, setDetailAnchorEl] = useState<HTMLElement | null>(null);
@@ -93,28 +95,30 @@ export function ProjectDetailMembersSection({
           </Tooltip>
         ))}
 
-        <Tooltip title={t('add_member')} placement="top" arrow>
-          <IconButton
-            onClick={handleAddClick}
-            aria-label={t('add_member')}
-            sx={{
-              'width': 36,
-              'height': 36,
-              'border': '2px dashed',
-              'borderColor': 'divider',
-              'borderRadius': '50%',
-              'color': 'text.secondary',
-              'transition': 'transform 0.15s ease, border-color 0.15s ease',
-              '&:hover': {
-                transform: 'scale(1.08)',
-                borderColor: 'primary.main',
-                color: 'primary.main',
-              },
-            }}
-          >
-            <PersonAddIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Tooltip>
+        {!readOnly && (
+          <Tooltip title={t('add_member')} placement="top" arrow>
+            <IconButton
+              onClick={handleAddClick}
+              aria-label={t('add_member')}
+              sx={{
+                'width': 36,
+                'height': 36,
+                'border': '2px dashed',
+                'borderColor': 'divider',
+                'borderRadius': '50%',
+                'color': 'text.secondary',
+                'transition': 'transform 0.15s ease, border-color 0.15s ease',
+                '&:hover': {
+                  transform: 'scale(1.08)',
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                },
+              }}
+            >
+              <PersonAddIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       {members.length === 0 && (
@@ -129,6 +133,7 @@ export function ProjectDetailMembersSection({
         member={activeMember}
         locale={locale}
         projectId={projectId}
+        readOnly={readOnly}
         onClose={handleDetailClose}
       />
 
@@ -138,6 +143,7 @@ export function ProjectDetailMembersSection({
         locale={locale}
         projectId={projectId}
         onClose={handleAddClose}
+        onAdded={handleAddClose}
       />
     </Box>
   );

@@ -35,6 +35,7 @@ import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
 type ProjectDetailCalendarSectionProps = {
   locale: string;
   projectId: number;
+  readOnly?: boolean;
 };
 
 type SectionViewMode = 'calendar' | 'upcoming';
@@ -145,7 +146,11 @@ function ProjectNextEventCard({ event, onClick }: ProjectNextEventCardProps) {
   );
 }
 
-export function ProjectDetailCalendarSection({ locale, projectId }: ProjectDetailCalendarSectionProps) {
+export function ProjectDetailCalendarSection({
+  locale,
+  projectId,
+  readOnly = false,
+}: ProjectDetailCalendarSectionProps) {
   const t = useTranslations('MusicProjects');
   const tCal = useTranslations('Calendar');
   const theme = useTheme();
@@ -401,6 +406,7 @@ export function ProjectDetailCalendarSection({ locale, projectId }: ProjectDetai
             setDayPopoverAnchor(null);
             setDayPopoverDate(null);
           }}
+          showCreateEvent={!readOnly}
           onCreateEvent={(date) => {
             setCreatePopoverAnchor(dayPopoverAnchor);
             setCreatePopoverDate(date);
@@ -448,15 +454,17 @@ export function ProjectDetailCalendarSection({ locale, projectId }: ProjectDetai
             setEventDetailsAnchorPosition(null);
             setEventDetailsEvent(null);
           }}
-          onEdit={() => {
-            if (!eventDetailsEvent || !eventDetailsAnchor) {
-              return;
-            }
-            setEditingEvent(eventDetailsEvent);
-            setEditPopoverAnchor(eventDetailsAnchor);
-            setEventDetailsAnchor(null);
-            setEventDetailsEvent(null);
-          }}
+          onEdit={readOnly
+            ? undefined
+            : () => {
+                if (!eventDetailsEvent || !eventDetailsAnchor) {
+                  return;
+                }
+                setEditingEvent(eventDetailsEvent);
+                setEditPopoverAnchor(eventDetailsAnchor);
+                setEventDetailsAnchor(null);
+                setEventDetailsEvent(null);
+              }}
           locale={locale}
         />
       )}

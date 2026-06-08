@@ -4,7 +4,6 @@ import {
   Add as AddIcon,
   ArrowDropDown as ArrowDropDownIcon,
   EventNote as EventNoteIcon,
-  PersonOutline as PersonOutlineIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -16,6 +15,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { AddProjectMemberPopover } from '@/components/MusicProjects/AddProjectMemberPopover';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
 import { CreateAlbumPopover } from './CreateAlbumPopover';
@@ -33,21 +33,16 @@ const menuItemSx = {
   minHeight: 28,
 } as const;
 
-const stubIconSx = {
-  fontSize: 16,
-  color: 'action.active',
-} as const;
-
 type ProjectDetailNewButtonProps = {
   locale: string;
   projectId: number;
 };
 
-type PopoverType = 'album' | 'song' | null;
+type PopoverType = 'album' | 'song' | 'member' | null;
 
 type MenuEntry
-  = | { kind: 'action'; type: PopoverType; label: string; iconKind: 'song' | 'album' }
-    | { kind: 'stub'; id: 'member' | 'event'; label: string };
+  = | { kind: 'action'; type: PopoverType; label: string; iconKind: 'song' | 'album' | 'member' }
+    | { kind: 'stub'; id: 'event'; label: string };
 
 export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
@@ -98,7 +93,7 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
   const menuItems: MenuEntry[] = [
     { kind: 'action', type: 'song', label: tMusic('song_detail_title'), iconKind: 'song' },
     { kind: 'action', type: 'album', label: tMusic('album_detail_title'), iconKind: 'album' },
-    { kind: 'stub', id: 'member', label: tMusic('member_detail_title') },
+    { kind: 'action', type: 'member', label: tMusic('member_detail_title'), iconKind: 'member' },
     { kind: 'stub', id: 'event', label: tMusic('event_detail_title') },
   ];
 
@@ -157,13 +152,11 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
             );
           }
 
-          const StubIcon = item.id === 'member' ? PersonOutlineIcon : EventNoteIcon;
-
           return (
             <Tooltip key={item.id} title={tMusic('coming_soon')} placement="left">
               <Box component="span" sx={{ display: 'block' }}>
                 <MenuItem disabled sx={menuItemSx}>
-                  <StubIcon sx={stubIconSx} aria-hidden />
+                  <EventNoteIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />
                   {item.label}
                 </MenuItem>
               </Box>
@@ -187,6 +180,14 @@ export function ProjectDetailNewButton({ locale, projectId }: ProjectDetailNewBu
         projectId={projectId}
         onCreated={handleAlbumCreated}
         anchorPosition={popoverAnchorPosition}
+      />
+      <AddProjectMemberPopover
+        open={openPopover === 'member'}
+        anchorPosition={popoverAnchorPosition}
+        locale={locale}
+        projectId={projectId}
+        onClose={handlePopoverClose}
+        onAdded={handlePopoverClose}
       />
     </>
   );

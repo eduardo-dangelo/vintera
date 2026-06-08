@@ -92,12 +92,14 @@ export const DELETE = async (
       return NextResponse.json({ error: 'Invalid project ID' }, { status: 400 });
     }
 
-    const existing = await MusicProjectService.getProjectById(projectId, user.id);
-    if (!existing) {
+    const result = await MusicProjectService.deleteProject(projectId, user.id);
+    if (!result.ok) {
+      if (result.reason === 'forbidden') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    await MusicProjectService.deleteProject(projectId, user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error(`Error deleting music project: ${error instanceof Error ? error.message : String(error)}`);

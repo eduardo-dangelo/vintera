@@ -63,8 +63,12 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
     );
   }
 
-  const { project, albums, songs, members } = data;
+  const { project, albums, songs, members, viewerPermission } = data;
   const accent = project.color || '#7c3aed';
+  const canEdit = viewerPermission === 'owner'
+    || viewerPermission === 'edit'
+    || viewerPermission === 'admin';
+  const canDelete = viewerPermission === 'owner' || viewerPermission === 'admin';
 
   return (
     <Box>
@@ -78,6 +82,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
         albumCount={albums.length}
         songCount={songs.length}
         memberCount={members.length}
+        readOnly={!canEdit}
       />
 
       <Grid container spacing={4}>
@@ -90,6 +95,8 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
             accent={accent}
             members={members}
             metadata={project.metadata}
+            readOnly={!canEdit}
+            canDelete={canDelete}
           />
         </Grid>
 
@@ -99,7 +106,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 {t('albums')}
               </Typography>
-              <NewAlbumButton locale={locale} projectId={projectId} />
+              {canEdit && <NewAlbumButton locale={locale} projectId={projectId} />}
             </Box>
             {albums.length === 0
               ? (

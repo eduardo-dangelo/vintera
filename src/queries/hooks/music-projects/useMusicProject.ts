@@ -1,6 +1,6 @@
 'use client';
 
-import type { MusicProjectMember } from '@/types/musicPeople';
+import type { MemberPermission, MusicProjectMember } from '@/types/musicPeople';
 import { useQuery } from '@tanstack/react-query';
 import { musicProjectKeys } from '@/queries/keys';
 
@@ -46,6 +46,7 @@ export type MusicProjectDetail = {
     updatedAt: string;
   }>;
   members: MusicProjectMember[];
+  viewerPermission: 'owner' | MemberPermission;
 };
 
 export function useMusicProject(locale: string, projectId: number) {

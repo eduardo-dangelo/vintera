@@ -1,6 +1,7 @@
 import { and, eq, gte, sql } from 'drizzle-orm';
 import { db } from '@/libs/DB';
-import { assetsSchema, calendarEventsSchema, musicProjectsSchema } from '@/models/Schema';
+import { assetsSchema, calendarEventsSchema } from '@/models/Schema';
+import { MusicProjectService } from '@/services/musicProjectService';
 
 export type EventReminders = {
   useDefault: boolean;
@@ -35,19 +36,21 @@ export class CalendarEventService {
     return asset.length > 0;
   }
 
-  private static async verifyMusicProjectOwnership(projectId: number, userId: string) {
-    const project = await db
-      .select()
-      .from(musicProjectsSchema)
-      .where(
-        and(
-          eq(musicProjectsSchema.id, projectId),
-          eq(musicProjectsSchema.userId, userId),
-        ),
-      )
-      .limit(1);
-
-    return project.length > 0;
+  private static async verifyMusicProjectAccess(
+    projectId: number,
+    userId: string,
+    requireEdit = false,
+  ) {
+    const access = await MusicProjectService.getUserProjectAccess(projectId, userId);
+    if (!access) {
+      return false;
+    }
+    if (!requireEdit) {
+      return true;
+    }
+    return access.viewerPermission === 'owner'
+      || access.viewerPermission === 'edit'
+      || access.viewerPermission === 'admin';
   }
 
   static async create(eventData: CalendarEventData, userId: string) {
@@ -64,7 +67,7 @@ export class CalendarEventService {
         throw new Error('Unauthorized: Asset not found or access denied');
       }
     } else {
-      const hasAccess = await this.verifyMusicProjectOwnership(eventData.musicProjectId!, userId);
+      const hasAccess = await this.verifyMusicProjectAccess(eventData.musicProjectId!, userId, true);
       if (!hasAccess) {
         throw new Error('Unauthorized: Music project not found or access denied');
       }
@@ -120,7 +123,7 @@ export class CalendarEventService {
   }
 
   static async getByMusicProjectId(projectId: number, userId: string) {
-    const hasAccess = await this.verifyMusicProjectOwnership(projectId, userId);
+    const hasAccess = await this.verifyMusicProjectAccess(projectId, userId);
     if (!hasAccess) {
       throw new Error('Unauthorized: Music project not found or access denied');
     }
@@ -176,7 +179,7 @@ export class CalendarEventService {
 
     if (updates.musicProjectId !== undefined && updates.musicProjectId !== existing.musicProjectId) {
       if (updates.musicProjectId != null) {
-        const hasAccess = await this.verifyMusicProjectOwnership(updates.musicProjectId, userId);
+        const hasAccess = await this.verifyMusicProjectAccess(updates.musicProjectId, userId, true);
         if (!hasAccess) {
           throw new Error('Unauthorized: Music project not found or access denied');
         }

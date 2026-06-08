@@ -43,6 +43,7 @@ type ProjectMemberDetailPopoverProps = {
   member: MusicProjectMember | null;
   locale: string;
   projectId: number;
+  readOnly?: boolean;
   onClose: () => void;
 };
 
@@ -63,6 +64,7 @@ export function ProjectMemberDetailPopover({
   member,
   locale,
   projectId,
+  readOnly = false,
   onClose,
 }: ProjectMemberDetailPopoverProps) {
   const t = useTranslations('MusicProjects');
@@ -146,7 +148,7 @@ export function ProjectMemberDetailPopover({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {!isEditing && (
+            {!isEditing && !readOnly && (
               <IconButton
                 size="small"
                 onClick={() => setIsEditing(true)}

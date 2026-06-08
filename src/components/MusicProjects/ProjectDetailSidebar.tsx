@@ -27,6 +27,8 @@ type ProjectDetailSidebarProps = {
   accent: string;
   members: MusicProjectMember[];
   metadata: unknown;
+  readOnly?: boolean;
+  canDelete?: boolean;
 };
 
 export function ProjectDetailSidebar({
@@ -37,6 +39,8 @@ export function ProjectDetailSidebar({
   accent,
   members,
   metadata,
+  readOnly = false,
+  canDelete = false,
 }: ProjectDetailSidebarProps) {
   const t = useTranslations('MusicProjects');
   const router = useRouter();
@@ -69,6 +73,8 @@ export function ProjectDetailSidebar({
           genre={genre}
           description={description}
           accent={accent}
+          readOnly={readOnly}
+          canDelete={canDelete}
           onDeleteRequest={() => setDeleteDialogOpen(true)}
         />
 
@@ -76,6 +82,7 @@ export function ProjectDetailSidebar({
           locale={locale}
           projectId={projectId}
           members={members}
+          readOnly={readOnly}
         />
 
         <ProjectDetailExternalLinksSection
@@ -83,9 +90,10 @@ export function ProjectDetailSidebar({
           projectId={projectId}
           metadata={metadata}
           accent={accent}
+          readOnly={readOnly}
         />
 
-        <ProjectDetailCalendarSection locale={locale} projectId={projectId} />
+        <ProjectDetailCalendarSection locale={locale} projectId={projectId} readOnly={readOnly} />
       </Box>
 
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>

@@ -99,6 +99,7 @@ type ProjectDetailPageHeaderProps = {
   albumCount: number;
   songCount: number;
   memberCount: number;
+  readOnly?: boolean;
 };
 
 async function uploadProjectImage(
@@ -134,6 +135,7 @@ export function ProjectDetailPageHeader({
   albumCount,
   songCount,
   memberCount,
+  readOnly = false,
 }: ProjectDetailPageHeaderProps) {
   const t = useTranslations('MusicProjects');
   const theme = useTheme();
@@ -446,48 +448,50 @@ export function ProjectDetailPageHeader({
     '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
   };
 
-  const titleAdornments = (
-    <>
-      <Tooltip title={t('title_font')}>
-        <IconButton
-          size="small"
-          disableRipple
-          aria-label={t('title_font')}
-          onClick={e => setFontPickerAnchor(e.currentTarget)}
-          sx={{
-            ...titleAdornmentButtonSx,
-            'color': `${titleChromeColor} !important`,
-            '& .MuiSvgIcon-root': {
-              color: 'inherit !important',
-            },
-          }}
-        >
-          <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
-        </IconButton>
-      </Tooltip>
-      <Tooltip title={t('title_color')}>
-        <IconButton
-          size="small"
-          disableRipple
-          aria-label={t('title_color')}
-          onClick={e => setColorPickerAnchor(e.currentTarget)}
-          sx={titleAdornmentButtonSx}
-        >
-          <Box
-            component="span"
-            sx={{
-              width: useCompactHeader ? 14 : 16,
-              height: useCompactHeader ? 14 : 16,
-              borderRadius: '50%',
-              bgcolor: resolvedTitleColor,
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
-              display: 'block',
-            }}
-          />
-        </IconButton>
-      </Tooltip>
-    </>
-  );
+  const titleAdornments = readOnly
+    ? null
+    : (
+        <>
+          <Tooltip title={t('title_font')}>
+            <IconButton
+              size="small"
+              disableRipple
+              aria-label={t('title_font')}
+              onClick={e => setFontPickerAnchor(e.currentTarget)}
+              sx={{
+                ...titleAdornmentButtonSx,
+                'color': `${titleChromeColor} !important`,
+                '& .MuiSvgIcon-root': {
+                  color: 'inherit !important',
+                },
+              }}
+            >
+              <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t('title_color')}>
+            <IconButton
+              size="small"
+              disableRipple
+              aria-label={t('title_color')}
+              onClick={e => setColorPickerAnchor(e.currentTarget)}
+              sx={titleAdornmentButtonSx}
+            >
+              <Box
+                component="span"
+                sx={{
+                  width: useCompactHeader ? 14 : 16,
+                  height: useCompactHeader ? 14 : 16,
+                  borderRadius: '50%',
+                  bgcolor: resolvedTitleColor,
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
+                  display: 'block',
+                }}
+              />
+            </IconButton>
+          </Tooltip>
+        </>
+      );
 
   const hasStats = songCount >= 1 || albumCount >= 1 || memberCount >= 1;
 
@@ -566,24 +570,26 @@ export function ProjectDetailPageHeader({
           </Breadcrumbs>
         </Box>
 
-        <Tooltip title={t('hero_background')}>
-          <IconButton
-            aria-label={t('hero_background')}
-            onClick={e => setHeroPickerAnchor(e.currentTarget)}
-            disabled={uploadingHero}
-            sx={{
-              'position': 'absolute',
-              'top': { xs: 12, md: 16 },
-              'right': { xs: 16, sm: 24 },
-              'zIndex': 2,
-              'bgcolor': 'rgba(0, 0, 0, 0.45)',
-              'color': '#fff',
-              '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.6)' },
-            }}
-          >
-            <PhotoCameraIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {!readOnly && (
+          <Tooltip title={t('hero_background')}>
+            <IconButton
+              aria-label={t('hero_background')}
+              onClick={e => setHeroPickerAnchor(e.currentTarget)}
+              disabled={uploadingHero}
+              sx={{
+                'position': 'absolute',
+                'top': { xs: 12, md: 16 },
+                'right': { xs: 16, sm: 24 },
+                'zIndex': 2,
+                'bgcolor': 'rgba(0, 0, 0, 0.45)',
+                'color': '#fff',
+                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.6)' },
+              }}
+            >
+              <PhotoCameraIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       <Box
@@ -599,18 +605,18 @@ export function ProjectDetailPageHeader({
               <Box sx={getProjectDetailLeftGroupSx()}>
                 <Box sx={getProjectDetailLogoSpacerSx(isStuck, isMobile)} aria-hidden />
                 <Box sx={getProjectDetailLogoAbsoluteSx()}>
-                  <Tooltip title={t('upload_logo')}>
+                  <Tooltip title={readOnly ? '' : t('upload_logo')}>
                     <Box
-                      component="button"
-                      type="button"
-                      aria-label={t('upload_logo')}
-                      disabled={uploadingLogo}
-                      onClick={() => logoInputRef.current?.click()}
+                      component={readOnly ? 'div' : 'button'}
+                      type={readOnly ? undefined : 'button'}
+                      aria-label={readOnly ? undefined : t('upload_logo')}
+                      disabled={readOnly ? undefined : uploadingLogo}
+                      onClick={readOnly ? undefined : () => logoInputRef.current?.click()}
                       sx={{
                         ...getProjectDetailLogoButtonSx(),
                         'opacity': uploadingLogo ? 0.6 : 1,
-                        'cursor': uploadingLogo ? 'wait' : 'pointer',
-                        '&:hover': { opacity: 0.9 },
+                        'cursor': readOnly ? 'default' : uploadingLogo ? 'wait' : 'pointer',
+                        '&:hover': readOnly ? {} : { opacity: 0.9 },
                       }}
                     >
                       {coverImageUrl
@@ -650,6 +656,7 @@ export function ProjectDetailPageHeader({
                     fontFamily={titleFontFamily}
                     compact={useCompactHeader}
                     truncate
+                    readOnly={readOnly}
                     heroTitleStyle={heroTitleStyle}
                     titleAdornments={titleAdornments}
                     keepAdornmentsVisible={
@@ -680,7 +687,9 @@ export function ProjectDetailPageHeader({
                         aria-hidden
                       />
                     )}
-                    <ProjectDetailNewButton locale={locale} projectId={projectId} />
+                    {!readOnly && (
+                      <ProjectDetailNewButton locale={locale} projectId={projectId} />
+                    )}
                   </Box>
                 </Box>
               </Box>

@@ -22,6 +22,7 @@ type ProjectDetailExternalLinksSectionProps = {
   projectId: number;
   metadata: unknown;
   accent: string;
+  readOnly?: boolean;
 };
 
 type DraftLink = {
@@ -35,6 +36,7 @@ export function ProjectDetailExternalLinksSection({
   projectId,
   metadata,
   accent,
+  readOnly = false,
 }: ProjectDetailExternalLinksSectionProps) {
   const t = useTranslations('MusicProjects');
   const updateProject = useUpdateMusicProject(locale);
@@ -113,27 +115,29 @@ export function ProjectDetailExternalLinksSection({
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {t('external_links')}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          {isEditing && (
-            <IconButton size="small" onClick={handleAddLink} aria-label={t('add_external_link')}>
-              <AddIcon fontSize="small" />
+        {!readOnly && (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {isEditing && (
+              <IconButton size="small" onClick={handleAddLink} aria-label={t('add_external_link')}>
+                <AddIcon fontSize="small" />
+              </IconButton>
+            )}
+            <IconButton
+              size="small"
+              onClick={() => {
+                if (isEditing) {
+                  void handleSave();
+                } else {
+                  handleEnterEdit();
+                }
+              }}
+              disabled={updateProject.isPending}
+              aria-label={isEditing ? t('save') : t('edit')}
+            >
+              {isEditing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />}
             </IconButton>
-          )}
-          <IconButton
-            size="small"
-            onClick={() => {
-              if (isEditing) {
-                void handleSave();
-              } else {
-                handleEnterEdit();
-              }
-            }}
-            disabled={updateProject.isPending}
-            aria-label={isEditing ? t('save') : t('edit')}
-          >
-            {isEditing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />}
-          </IconButton>
-        </Box>
+          </Box>
+        )}
       </Box>
 
       {isEditing

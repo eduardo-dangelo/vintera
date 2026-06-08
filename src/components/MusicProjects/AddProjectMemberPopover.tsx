@@ -1,6 +1,6 @@
 'use client';
 
-import type { PlatformUserSearchResult } from '@/types/musicPeople';
+import type { MemberPermission, PlatformUserSearchResult } from '@/types/musicPeople';
 import { Close as CloseIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -8,16 +8,24 @@ import {
   Avatar,
   Box,
   Button,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   Tab,
   Tabs,
   TextField,
   Typography,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Popover } from '@/components/common/Popover';
-import { createPopoverCreateButtonSx } from '@/components/MusicProjects/createMusicPopoverStyles';
+import {
+  CREATE_POPOVER_CLICK_ANCHOR_ORIGIN,
+  CREATE_POPOVER_CLICK_TRANSFORM_ORIGIN,
+  createPopoverCreateButtonSx,
+} from '@/components/MusicProjects/createMusicPopoverStyles';
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { useCreateMusicProjectMember } from '@/queries/hooks/music-projects/useCreateMusicProjectMember';
 import { useSearchUsers } from '@/queries/hooks/users/useSearchUsers';
@@ -27,10 +35,12 @@ const POPOVER_WIDTH = 320;
 
 type AddProjectMemberPopoverProps = {
   open: boolean;
-  anchorEl: HTMLElement | null;
+  anchorEl?: HTMLElement | null;
+  anchorPosition?: { top: number; left: number } | null;
   locale: string;
   projectId: number;
   onClose: () => void;
+  onAdded?: () => void;
 };
 
 function platformUserDisplayName(user: PlatformUserSearchResult) {
@@ -54,10 +64,12 @@ function getInitials(name: string) {
 
 export function AddProjectMemberPopover({
   open,
-  anchorEl,
+  anchorEl = null,
+  anchorPosition = null,
   locale,
   projectId,
   onClose,
+  onAdded,
 }: AddProjectMemberPopoverProps) {
   const t = useTranslations('MusicProjects');
   const createMember = useCreateMusicProjectMember(locale);
@@ -65,6 +77,7 @@ export function AddProjectMemberPopover({
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<PlatformUserSearchResult | null>(null);
+  const [draftPermission, setDraftPermission] = useState<MemberPermission>('edit');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data, isFetching } = useSearchUsers(locale, searchQuery, {
@@ -73,48 +86,56 @@ export function AddProjectMemberPopover({
   });
 
   const searchResults = data?.users ?? [];
+  const usePositionAnchor = anchorPosition != null;
+
+  const resetState = useCallback(() => {
+    setActiveTab(0);
+    setSearchQuery('');
+    setSelectedUser(null);
+    setDraftPermission('edit');
+    setErrorMessage(null);
+  }, []);
 
   useEffect(() => {
     if (!open) {
-      setActiveTab(0);
-      setSearchQuery('');
-      setSelectedUser(null);
-      setErrorMessage(null);
+      resetState();
     }
-  }, [open]);
+  }, [open, resetState]);
 
   const handleClose = () => {
-    setErrorMessage(null);
+    resetState();
     onClose();
   };
 
-  const handleAdd = async () => {
-    if (!selectedUser) {
+  const handleAdded = () => {
+    resetState();
+    onAdded?.();
+    onClose();
+  };
+
+  const handleAdd = () => {
+    if (!selectedUser || createMember.isPending) {
       return;
     }
 
-    setErrorMessage(null);
+    const userId = selectedUser.id;
+    const permission = draftPermission;
 
-    try {
-      await createMember.mutateAsync({
-        projectId,
-        userId: selectedUser.id,
-      });
-      handleClose();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t('add_member_error');
-      if (message.toLowerCase().includes('already')) {
-        setErrorMessage(t('add_member_already_member'));
-      } else {
-        setErrorMessage(message);
-      }
-    }
+    // Close before the mutation so the anchor (+ button) doesn't shift when
+    // the optimistic member avatar is inserted into the row.
+    handleAdded();
+
+    createMember.mutate({ projectId, userId, permission });
   };
 
   return (
     <Popover
       open={open}
-      anchorEl={anchorEl}
+      anchorEl={usePositionAnchor ? null : anchorEl}
+      anchorPosition={usePositionAnchor ? anchorPosition : null}
+      anchorOrigin={usePositionAnchor ? CREATE_POPOVER_CLICK_ANCHOR_ORIGIN : undefined}
+      transformOrigin={usePositionAnchor ? CREATE_POPOVER_CLICK_TRANSFORM_ORIGIN : undefined}
+      showArrow={!usePositionAnchor}
       onClose={handleClose}
       minWidth={POPOVER_WIDTH}
       maxWidth={POPOVER_WIDTH}
@@ -203,6 +224,22 @@ export function AddProjectMemberPopover({
                     />
                   )}
                 />
+
+                {selectedUser && (
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="add-member-permission-label">{t('permission')}</InputLabel>
+                    <Select
+                      labelId="add-member-permission-label"
+                      label={t('permission')}
+                      value={draftPermission}
+                      onChange={e => setDraftPermission(e.target.value as MemberPermission)}
+                    >
+                      <MenuItem value="read">{t('permission_read')}</MenuItem>
+                      <MenuItem value="edit">{t('permission_edit')}</MenuItem>
+                      <MenuItem value="admin">{t('permission_admin')}</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
 
                 {errorMessage && (
                   <Alert severity="error" sx={{ py: 0 }}>

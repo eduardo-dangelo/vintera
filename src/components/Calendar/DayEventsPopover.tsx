@@ -18,6 +18,7 @@ type DayEventsPopoverProps = {
   events: CalendarEvent[];
   onClose: () => void;
   onCreateEvent: (date: Date) => void;
+  showCreateEvent?: boolean;
   onDayTitleClick?: (date: Date) => void;
   onEventClick?: (event: CalendarEvent, anchorEl: HTMLElement) => void;
   locale?: string;
@@ -30,6 +31,7 @@ export function DayEventsPopover({
   events,
   onClose,
   onCreateEvent,
+  showCreateEvent = true,
   onDayTitleClick,
   onEventClick,
 }: DayEventsPopoverProps) {
@@ -109,16 +111,18 @@ export function DayEventsPopover({
                 ))
               )}
         </Box>
-        <Button
-          variant="contained"
-          size="small"
-          fullWidth
-          startIcon={<AddIcon fontSize="small" />}
-          onClick={() => onCreateEvent(date)}
-          sx={{ mt: 0.5, textTransform: 'none' }}
-        >
-          {t('new_event')}
-        </Button>
+        {showCreateEvent && (
+          <Button
+            variant="contained"
+            size="small"
+            fullWidth
+            startIcon={<AddIcon fontSize="small" />}
+            onClick={() => onCreateEvent(date)}
+            sx={{ mt: 0.5, textTransform: 'none' }}
+          >
+            {t('new_event')}
+          </Button>
+        )}
       </Box>
     </Popover>
   );

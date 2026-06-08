@@ -33,6 +33,8 @@ type ProjectDetailGeneralInfoSectionProps = {
   genre: string | null;
   description: string | null;
   accent: string;
+  readOnly?: boolean;
+  canDelete?: boolean;
   onDeleteRequest: () => void;
 };
 
@@ -42,6 +44,8 @@ export function ProjectDetailGeneralInfoSection({
   genre,
   description,
   accent,
+  readOnly = false,
+  canDelete = false,
   onDeleteRequest,
 }: ProjectDetailGeneralInfoSectionProps) {
   const t = useTranslations('MusicProjects');
@@ -102,7 +106,7 @@ export function ProjectDetailGeneralInfoSection({
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {t('general_info')}
         </Typography>
-        {!isEditing && (
+        {!isEditing && !readOnly && (
           <>
             <IconButton size="small" onClick={e => setMenuAnchor(e.currentTarget)}>
               <MoreHoriz />
@@ -112,16 +116,18 @@ export function ProjectDetailGeneralInfoSection({
                 <EditIcon fontSize="small" sx={{ mr: 1 }} />
                 {t('edit')}
               </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  setMenuAnchor(null);
-                  onDeleteRequest();
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                {t('delete')}
-              </MenuItem>
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onDeleteRequest();
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t('delete')}
+                </MenuItem>
+              )}
             </Menu>
           </>
         )}

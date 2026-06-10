@@ -299,13 +299,24 @@ export function ProjectEditableTitle({
               {titleAdornments}
             </Box>
           )}
+          {saving && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                mt: 0.25,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+              }}
+            >
+              {t('saving')}
+            </Typography>
+          )}
         </Box>
       </Box>
-      {saving && (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25 }}>
-          {t('saving')}
-        </Typography>
-      )}
     </Box>
   );
 }

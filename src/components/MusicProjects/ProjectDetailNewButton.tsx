@@ -7,16 +7,15 @@ import {
   EventNote as EventNoteIcon,
 } from '@mui/icons-material';
 import {
-  Box,
   Button,
   Menu,
   MenuItem,
   ThemeProvider,
-  Tooltip,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { CreateEventPopover } from '@/components/Calendar/CreateEventPopover';
 import { AddProjectMemberPopover } from '@/components/MusicProjects/AddProjectMemberPopover';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { glassMenuItemSx, glassMenuPaperSx } from '@/utils/glassPaperStyles';
@@ -31,11 +30,11 @@ type ProjectDetailNewButtonProps = {
   appTheme: Theme;
 };
 
-type PopoverType = 'album' | 'song' | 'member' | null;
+type PopoverType = 'album' | 'song' | 'member' | 'event';
 
 type MenuEntry
-  = | { kind: 'action'; type: PopoverType; label: string; iconKind: 'song' | 'album' | 'member' }
-    | { kind: 'stub'; id: 'event'; label: string };
+  = | { type: PopoverType; label: string; iconKind: 'song' | 'album' | 'member' }
+    | { type: 'event'; label: string };
 
 function getProjectNewMenuSlotProps(appTheme: Theme, minWidth = 160) {
   const isLight = appTheme.palette.mode === 'light';
@@ -55,13 +54,20 @@ function getProjectNewMenuSlotProps(appTheme: Theme, minWidth = 160) {
   } as const;
 }
 
+function renderMenuIcon(item: MenuEntry) {
+  if (item.type === 'event') {
+    return <EventNoteIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />;
+  }
+  return <GradientIcon kind={item.iconKind} fontSize={16} gradientOnHover aria-hidden />;
+}
+
 export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectDetailNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
   const tMusic = useTranslations('MusicProjects');
   const router = useRouter();
   const { playHoverSound } = useHoverSound();
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [openPopover, setOpenPopover] = useState<PopoverType>(null);
+  const [openPopover, setOpenPopover] = useState<PopoverType | null>(null);
   const [popoverAnchorPosition, setPopoverAnchorPosition] = useState<{
     top: number;
     left: number;
@@ -101,11 +107,16 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
     router.refresh();
   };
 
+  const handleEventCreated = () => {
+    handlePopoverClose();
+    router.refresh();
+  };
+
   const menuItems: MenuEntry[] = [
-    { kind: 'action', type: 'song', label: tMusic('song_detail_title'), iconKind: 'song' },
-    { kind: 'action', type: 'album', label: tMusic('album_detail_title'), iconKind: 'album' },
-    { kind: 'action', type: 'member', label: tMusic('member_detail_title'), iconKind: 'member' },
-    { kind: 'stub', id: 'event', label: tMusic('event_detail_title') },
+    { type: 'song', label: tMusic('song_detail_title'), iconKind: 'song' },
+    { type: 'album', label: tMusic('album_detail_title'), iconKind: 'album' },
+    { type: 'member', label: tMusic('member_detail_title'), iconKind: 'member' },
+    { type: 'event', label: tMusic('event_detail_title') },
   ];
 
   return (
@@ -142,29 +153,17 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
           slotProps={getProjectNewMenuSlotProps(appTheme, 160)}
         >
           {menuItems.map((item) => {
-            if (item.kind === 'action') {
-              return (
-                <MenuItem
-                  key={item.type}
-                  onClick={e => handleSelect(item.type, e)}
-                  onMouseEnter={playHoverSound}
-                  sx={glassMenuItemSx}
-                >
-                  <GradientIcon kind={item.iconKind} fontSize={16} gradientOnHover aria-hidden />
-                  {item.label}
-                </MenuItem>
-              );
-            }
-
+            const key = item.type;
             return (
-              <Tooltip key={item.id} title={tMusic('coming_soon')} placement="left">
-                <Box component="span" sx={{ display: 'block' }}>
-                  <MenuItem disabled sx={glassMenuItemSx}>
-                    <EventNoteIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />
-                    {item.label}
-                  </MenuItem>
-                </Box>
-              </Tooltip>
+              <MenuItem
+                key={key}
+                onClick={e => handleSelect(item.type, e)}
+                onMouseEnter={playHoverSound}
+                sx={glassMenuItemSx}
+              >
+                {renderMenuIcon(item)}
+                {item.label}
+              </MenuItem>
             );
           })}
         </Menu>
@@ -193,6 +192,15 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
         projectId={projectId}
         onClose={handlePopoverClose}
         onAdded={handlePopoverClose}
+      />
+      <CreateEventPopover
+        open={openPopover === 'event'}
+        anchorPosition={popoverAnchorPosition}
+        onClose={handlePopoverClose}
+        initialDate={new Date()}
+        musicProjectId={projectId}
+        locale={locale}
+        onCreateSuccess={handleEventCreated}
       />
     </>
   );

@@ -4,6 +4,10 @@ import type { AssetOption } from './CreateEventForm';
 import type { CalendarEvent } from './types';
 import { Box } from '@mui/material';
 import { Popover } from '@/components/common/Popover';
+import {
+  CREATE_POPOVER_CLICK_ANCHOR_ORIGIN,
+  CREATE_POPOVER_CLICK_TRANSFORM_ORIGIN,
+} from '@/components/MusicProjects/createMusicPopoverStyles';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
 import { CreateEventForm } from './CreateEventForm';
 
@@ -12,7 +16,8 @@ const POPOVER_MAX_HEIGHT = 580;
 
 type CreateEventPopoverProps = {
   open: boolean;
-  anchorEl: HTMLElement | null;
+  anchorEl?: HTMLElement | null;
+  anchorPosition?: { top: number; left: number } | null;
   onClose: () => void;
   initialDate?: Date;
   assetId?: number;
@@ -29,7 +34,8 @@ type CreateEventPopoverProps = {
 
 export function CreateEventPopover({
   open,
-  anchorEl,
+  anchorEl = null,
+  anchorPosition,
   onClose,
   initialDate,
   assetId,
@@ -48,14 +54,20 @@ export function CreateEventPopover({
     onClose();
   };
 
+  const usePositionAnchor = anchorPosition != null;
+
   return (
     <Popover
       open={open}
-      anchorEl={anchorEl}
+      anchorEl={usePositionAnchor ? null : anchorEl}
+      anchorPosition={anchorPosition}
+      anchorOrigin={usePositionAnchor ? CREATE_POPOVER_CLICK_ANCHOR_ORIGIN : undefined}
+      transformOrigin={usePositionAnchor ? CREATE_POPOVER_CLICK_TRANSFORM_ORIGIN : undefined}
       onClose={onClose}
       minWidth={POPOVER_WIDTH}
       maxWidth={POPOVER_WIDTH}
       maxHeight={POPOVER_MAX_HEIGHT}
+      showArrow={!usePositionAnchor}
       paperSx={glassPaperSx}
     >
       <Box sx={{ maxHeight: POPOVER_MAX_HEIGHT, overflow: 'auto' }}>

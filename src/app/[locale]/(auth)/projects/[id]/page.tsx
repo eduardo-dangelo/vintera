@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { ProjectDetailPageSkeleton } from '@/components/MusicProjects/ProjectDetailPageSkeleton';
 import { ProjectDetailClient } from './ProjectDetailClient';
 
 type PageProps = {
@@ -20,7 +21,7 @@ export default async function ProjectDetailPage(props: PageProps) {
   const projectId = Number.parseInt(id, 10);
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ProjectDetailPageSkeleton />}>
       <ProjectDetailClient locale={locale} projectId={projectId} />
     </Suspense>
   );

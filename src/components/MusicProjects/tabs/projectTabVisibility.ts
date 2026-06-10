@@ -1,6 +1,6 @@
 export type ProjectTabName = 'overview' | 'songs' | 'albums';
 
-export const TAB_THRESHOLD = 10;
+export const TAB_THRESHOLD = 6;
 export const OVERVIEW_PREVIEW_LIMIT = 5;
 
 export function hasAlbumsTab(albumCount: number): boolean {

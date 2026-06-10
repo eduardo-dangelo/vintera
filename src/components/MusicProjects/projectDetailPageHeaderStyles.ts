@@ -119,6 +119,35 @@ export function getProjectDetailActionsSx(): SxProps<Theme> {
   };
 }
 
+/** Placeholder logo box when the project has no cover image. */
+export function getProjectDetailLogoPlaceholderSx(
+  appTheme: Theme,
+  onHeroImage: boolean,
+): SxProps<Theme> {
+  const isLight = appTheme.palette.mode === 'light';
+
+  if (isLight && onHeroImage) {
+    return {
+      bgcolor: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(2px)',
+      WebkitBackdropFilter: 'blur(2px)',
+      border: '1px solid rgba(0, 0, 0, 0.08)',
+    };
+  }
+
+  if (isLight) {
+    return {
+      bgcolor: appTheme.palette.background.paper,
+      border: `1px solid ${appTheme.palette.divider}`,
+      boxShadow: appTheme.shadows[2],
+    };
+  }
+
+  return {
+    bgcolor: 'action.hover',
+  };
+}
+
 /** Shared frosted glass panel — breadcrumbs, stats counters, etc. */
 export function getProjectDetailGlassPanelSx(): SxProps<Theme> {
   return {

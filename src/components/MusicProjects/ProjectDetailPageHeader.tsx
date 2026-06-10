@@ -55,6 +55,7 @@ import {
   getProjectDetailLeftGroupSx,
   getProjectDetailLogoAbsoluteSx,
   getProjectDetailLogoButtonSx,
+  getProjectDetailLogoPlaceholderSx,
   getProjectDetailLogoSize,
   getProjectDetailLogoSpacerSx,
   getProjectDetailMainRowSx,
@@ -633,10 +634,10 @@ export function ProjectDetailPageHeader({
                                 width: logoSize,
                                 height: logoSize,
                                 borderRadius: 1,
-                                bgcolor: 'action.hover',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                ...getProjectDetailLogoPlaceholderSx(theme, onHeroImage),
                               }}
                             >
                               <GradientIcon
@@ -688,7 +689,7 @@ export function ProjectDetailPageHeader({
                       />
                     )}
                     {!readOnly && (
-                      <ProjectDetailNewButton locale={locale} projectId={projectId} />
+                      <ProjectDetailNewButton locale={locale} projectId={projectId} appTheme={theme} />
                     )}
                   </Box>
                 </Box>

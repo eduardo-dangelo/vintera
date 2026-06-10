@@ -24,6 +24,14 @@ export type SongProjectSummary = {
   name: string;
   color: string | null;
   slug: string;
+  metadata: unknown;
+  coverImageUrl: string | null;
+};
+
+export type SongAlbumSummary = {
+  id: number;
+  name: string;
+  coverImageUrl: string | null;
 };
 
 export function useSong(locale: string, songId: number) {
@@ -34,7 +42,11 @@ export function useSong(locale: string, songId: number) {
       if (!res.ok) {
         throw new Error('Failed to fetch song');
       }
-      return (await res.json()) as { song: SongDetail; project: SongProjectSummary | null };
+      return (await res.json()) as {
+        song: SongDetail;
+        project: SongProjectSummary | null;
+        album: SongAlbumSummary | null;
+      };
     },
     enabled: songId > 0,
   });

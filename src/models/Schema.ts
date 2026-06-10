@@ -230,6 +230,7 @@ export const albumsSchema = pgTable('albums', {
   description: text('description'),
   releaseDate: timestamp('release_date', { mode: 'date' }),
   coverImageUrl: text('cover_image_url'),
+  metadata: jsonb('metadata'),
   sortOrder: integer('sort_order').notNull().default(0),
   status: text('status').notNull().default('draft'),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),

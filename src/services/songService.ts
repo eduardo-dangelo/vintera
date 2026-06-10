@@ -48,9 +48,15 @@ export class SongService {
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
         projectSlug: musicProjectsSchema.slug,
+        projectMetadata: musicProjectsSchema.metadata,
+        projectCoverImageUrl: musicProjectsSchema.coverImageUrl,
+        albumId: albumsSchema.id,
+        albumName: albumsSchema.name,
+        albumCoverImageUrl: albumsSchema.coverImageUrl,
       })
       .from(songsSchema)
       .leftJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(albumsSchema, eq(songsSchema.albumId, albumsSchema.id))
       .where(
         and(
           eq(songsSchema.id, songId),
@@ -71,6 +77,15 @@ export class SongService {
             name: row.projectName!,
             color: row.projectColor,
             slug: row.projectSlug!,
+            metadata: row.projectMetadata,
+            coverImageUrl: row.projectCoverImageUrl,
+          }
+        : null,
+      album: row.albumId != null
+        ? {
+            id: row.albumId,
+            name: row.albumName!,
+            coverImageUrl: row.albumCoverImageUrl,
           }
         : null,
     };

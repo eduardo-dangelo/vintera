@@ -43,14 +43,27 @@ export class AlbumService {
         projectName: musicProjectsSchema.name,
         projectColor: musicProjectsSchema.color,
         projectSlug: musicProjectsSchema.slug,
+        projectMetadata: musicProjectsSchema.metadata,
+        projectCoverImageUrl: musicProjectsSchema.coverImageUrl,
+        songCount: sql<number>`cast(count(${songsSchema.id}) as int)`,
       })
       .from(albumsSchema)
       .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
+      .leftJoin(songsSchema, eq(songsSchema.albumId, albumsSchema.id))
       .where(
         and(
           eq(albumsSchema.id, albumId),
           eq(musicProjectsSchema.userId, userId),
         ),
+      )
+      .groupBy(
+        albumsSchema.id,
+        musicProjectsSchema.id,
+        musicProjectsSchema.name,
+        musicProjectsSchema.color,
+        musicProjectsSchema.slug,
+        musicProjectsSchema.metadata,
+        musicProjectsSchema.coverImageUrl,
       )
       .limit(1);
 
@@ -65,7 +78,10 @@ export class AlbumService {
         name: row.projectName,
         color: row.projectColor,
         slug: row.projectSlug,
+        metadata: row.projectMetadata,
+        coverImageUrl: row.projectCoverImageUrl,
       },
+      songCount: row.songCount,
     };
   }
 
@@ -175,6 +191,9 @@ export class AlbumService {
     }
     if (data.sortOrder !== undefined) {
       updateData.sortOrder = data.sortOrder;
+    }
+    if (data.metadata !== undefined) {
+      updateData.metadata = data.metadata;
     }
 
     const [updated] = await db

@@ -178,10 +178,10 @@
       "breakpoints": true
     },
     {
-      "idx": 25,
+      "idx": 26,
       "version": "7",
-      "when": 1780800000000,
-      "tag": "0025_member_project_roles_array",
+      "when": 1780900000000,
+      "tag": "0026_albums_metadata",
       "breakpoints": true
     }
   ]

@@ -10,6 +10,7 @@ export type AlbumDetail = {
   description: string | null;
   releaseDate: string | null;
   coverImageUrl: string | null;
+  metadata: unknown;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,8 @@ export type AlbumProjectSummary = {
   name: string;
   color: string | null;
   slug: string;
+  metadata: unknown;
+  coverImageUrl: string | null;
 };
 
 export function useAlbum(locale: string, albumId: number) {
@@ -30,7 +33,11 @@ export function useAlbum(locale: string, albumId: number) {
       if (!res.ok) {
         throw new Error('Failed to fetch album');
       }
-      return (await res.json()) as { album: AlbumDetail; project: AlbumProjectSummary };
+      return (await res.json()) as {
+        album: AlbumDetail;
+        project: AlbumProjectSummary;
+        songCount: number;
+      };
     },
     enabled: albumId > 0,
   });

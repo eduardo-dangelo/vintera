@@ -3,25 +3,18 @@
 import type { HeroBackgroundPreset } from '@/components/MusicProjects/heroBackgroundPresets';
 import type { HeroBackgroundOverrides, MusicProjectMetadata } from '@/utils/musicProjectMetadata';
 import {
-  PhotoCamera as PhotoCameraIcon,
   TextFields as TextFieldsIcon,
 } from '@mui/icons-material';
 import {
   Box,
-  Breadcrumbs,
   IconButton,
-  ThemeProvider,
   Tooltip,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
-import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import {
   DEFAULT_HEADER_TEXT_COLOR,
   HEADER_TEXT_COLOR_COLUMNS,
@@ -32,37 +25,10 @@ import {
   applyHeroPresetRecipe,
   resolveHeroBackground,
 } from '@/components/MusicProjects/heroBackgroundPresets';
-import { MusicCoverImage } from '@/components/MusicProjects/MusicCoverImage';
-import {
-  createHeroDarkTheme,
-  getHeroBandSx,
-  getHeroOverlaySx,
-  getHeroTitleSx,
-  getHeroToolbarWrapperSx,
-  getStickyBarSx,
-} from '@/components/MusicProjects/musicListPageHeaderStyles';
-import {
-  getHeroActionsDividerSx,
-  getHeroActionsToolbarSx,
-} from '@/components/MusicProjects/musicListToolbarStyles';
+import { MusicDetailPageHeader } from '@/components/MusicProjects/MusicDetailPageHeader';
 import { MusicStatBadge, MusicStatBadgeRow } from '@/components/MusicProjects/MusicStatBadge';
 import { ProjectDetailNewButton } from '@/components/MusicProjects/ProjectDetailNewButton';
-import {
-  getProjectDetailActionsSx,
-  getProjectDetailBreadcrumbSx,
-  getProjectDetailBreadcrumbWrapperSx,
-  getProjectDetailGlassPanelSx,
-  getProjectDetailLeftGroupSx,
-  getProjectDetailLogoAbsoluteSx,
-  getProjectDetailLogoButtonSx,
-  getProjectDetailLogoPlaceholderSx,
-  getProjectDetailLogoSize,
-  getProjectDetailLogoSpacerSx,
-  getProjectDetailMainRowSx,
-  getProjectDetailStickyBarContentSx,
-  getProjectDetailTitleGroupSx,
-} from '@/components/MusicProjects/projectDetailPageHeaderStyles';
-import { ProjectEditableTitle } from '@/components/MusicProjects/ProjectEditableTitle';
+import { getProjectDetailGlassPanelSx } from '@/components/MusicProjects/projectDetailPageHeaderStyles';
 import { ProjectHeroBackgroundPicker } from '@/components/MusicProjects/ProjectHeroBackgroundPicker';
 import { ProjectTitleFontPicker } from '@/components/MusicProjects/ProjectTitleFontPicker';
 import {
@@ -72,8 +38,6 @@ import {
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
 import {
   resolveHeroChromeTextColor,
-  resolveStickyBarChromeTextColor,
-  resolveTitleChromeColor,
 } from '@/utils/heroChromeTextColor';
 import {
   buildHeroBackgroundMetadataPatch,
@@ -81,13 +45,6 @@ import {
   mergeMusicProjectMetadata,
   parseMusicProjectMetadata,
 } from '@/utils/musicProjectMetadata';
-
-const heroImageStyle = {
-  objectFit: 'cover' as const,
-  objectPosition: 'center',
-};
-
-const TITLE_COLOR_EARLY_SWITCH_PX = 28;
 
 type ProjectDetailPageHeaderProps = {
   locale: string;
@@ -149,14 +106,12 @@ export function ProjectDetailPageHeader({
   const [optimisticHeaderColor, setOptimisticHeaderColor] = useState<string | null>(null);
   const [optimisticTitleFontFamily, setOptimisticTitleFontFamily] = useState<string | null>(null);
   const [optimisticHeroMetadata, setOptimisticHeroMetadata] = useState<MusicProjectMetadata | null>(null);
-  const [isStuck, setIsStuck] = useState(false);
-  const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
-  const [isHeroTextOutOfView, setIsHeroTextOutOfView] = useState(false);
   const [fontPickerAnchor, setFontPickerAnchor] = useState<null | HTMLElement>(null);
   const [colorPickerAnchor, setColorPickerAnchor] = useState<null | HTMLElement>(null);
   const [heroPickerAnchor, setHeroPickerAnchor] = useState<null | HTMLElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
+  const heroInputRef = useRef<HTMLInputElement>(null);
 
   const pendingHeroMetadata = useMemo(() => {
     if (!optimisticHeroMetadata) {
@@ -179,18 +134,6 @@ export function ProjectDetailPageHeader({
     [effectiveMetadata, theme],
   );
 
-  const heroBandRef = useRef<HTMLDivElement>(null);
-  const stickyBarRef = useRef<HTMLDivElement>(null);
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const heroInputRef = useRef<HTMLInputElement>(null);
-
-  const useCompactHeader = isMobile || isStuck;
-  const logoSize = getProjectDetailLogoSize(isStuck, isMobile);
-  const hasHeroBackdrop = resolvedHero.hasHeroBackdrop;
-  const topOffset = isMobile ? 56 : 0;
-  const onHeroImage = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
-  const iconButtonSize = useCompactHeader ? 26 : 32;
-
   const pendingTitleColor
     = optimisticHeaderColor && titleColor !== optimisticHeaderColor
       ? optimisticHeaderColor
@@ -198,20 +141,6 @@ export function ProjectDetailPageHeader({
 
   const resolvedTitleColor
     = pendingTitleColor ?? resolveProjectHeaderTextColor(titleColor);
-
-  const heroChromeColor = useMemo(() => {
-    const saved = parseMusicProjectMetadata(effectiveMetadata).heroChromeTextColor;
-    if (saved) {
-      return saved;
-    }
-    return resolveHeroChromeTextColor(resolvedHero, theme);
-  }, [effectiveMetadata, resolvedHero, theme]);
-
-  const statsChromeColor = onHeroImage
-    ? heroChromeColor
-    : resolveStickyBarChromeTextColor(theme);
-
-  const titleChromeColor = resolveTitleChromeColor(onHeroImage, resolvedTitleColor, theme);
 
   const titleFontFamily
     = optimisticTitleFontFamily
@@ -223,67 +152,7 @@ export function ProjectDetailPageHeader({
     ensureTitleFontLoaded(titleFontFamily);
   }, [titleFontFamily]);
 
-  useEffect(() => {
-    const heroBand = heroBandRef.current;
-    const stickyBar = stickyBarRef.current;
-    if (!stickyBar) {
-      return undefined;
-    }
-
-    const scrollRoot = stickyBar.closest('main');
-
-    const updateHeaderState = () => {
-      const { top } = stickyBar.getBoundingClientRect();
-      setIsStuck(top <= topOffset + 0.5);
-
-      if (!hasHeroBackdrop || !heroBand) {
-        setIsHeroOutOfView(true);
-        setIsHeroTextOutOfView(true);
-        return;
-      }
-
-      const heroBottom = heroBand.getBoundingClientRect().bottom;
-      setIsHeroOutOfView(heroBottom <= topOffset + 0.5);
-      setIsHeroTextOutOfView(heroBottom <= topOffset + TITLE_COLOR_EARLY_SWITCH_PX);
-    };
-
-    const initialUpdateFrame = window.requestAnimationFrame(updateHeaderState);
-    scrollRoot?.addEventListener('scroll', updateHeaderState, { passive: true });
-    window.addEventListener('resize', updateHeaderState);
-
-    return () => {
-      window.cancelAnimationFrame(initialUpdateFrame);
-      scrollRoot?.removeEventListener('scroll', updateHeaderState);
-      window.removeEventListener('resize', updateHeaderState);
-    };
-  }, [hasHeroBackdrop, topOffset]);
-
-  const heroDarkTheme = useMemo(() => createHeroDarkTheme(theme), [theme]);
-  const useHeroBarTheme = hasHeroBackdrop && !(theme.palette.mode === 'light' && isHeroTextOutOfView);
-  const showStickyGlass = hasHeroBackdrop ? isHeroOutOfView : isStuck;
-  const barTheme = useHeroBarTheme ? heroDarkTheme : theme;
-
-  const titleTextSx = {
-    'color': titleChromeColor,
-    '@media (prefers-reduced-motion: no-preference)': {
-      transition: 'color 0.2s ease',
-    },
-  };
-
-  const heroTitleStyle = {
-    ...getHeroTitleSx(
-      hasHeroBackdrop,
-      useCompactHeader,
-      isHeroTextOutOfView,
-      theme,
-    ),
-    ...titleTextSx,
-  } as Record<string, unknown>;
-
-  const breadcrumbSx = useMemo(
-    () => getProjectDetailBreadcrumbSx(heroChromeColor),
-    [heroChromeColor],
-  );
+  const iconButtonSize = isMobile ? 26 : 32;
 
   const persistHeroBackground = async (patch: MusicProjectMetadata) => {
     const prev = parseMusicProjectMetadata(metadataRaw);
@@ -425,22 +294,6 @@ export function ProjectDetailPageHeader({
     void persistHeroBackground(overridesOnly);
   };
 
-  const onLogoInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (file) {
-      void handleLogoFile(file);
-    }
-  };
-
-  const onHeroInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (file) {
-      void handleHeroFile(file);
-    }
-  };
-
   const titleAdornmentButtonSx = {
     'flexShrink': 0,
     'width': iconButtonSize,
@@ -449,295 +302,188 @@ export function ProjectDetailPageHeader({
     '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
   };
 
-  const titleAdornments = readOnly
-    ? null
-    : (
-        <>
-          <Tooltip title={t('title_font')}>
-            <IconButton
-              size="small"
-              disableRipple
-              aria-label={t('title_font')}
-              onClick={e => setFontPickerAnchor(e.currentTarget)}
-              sx={{
-                ...titleAdornmentButtonSx,
-                'color': `${titleChromeColor} !important`,
-                '& .MuiSvgIcon-root': {
-                  color: 'inherit !important',
-                },
-              }}
-            >
-              <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('title_color')}>
-            <IconButton
-              size="small"
-              disableRipple
-              aria-label={t('title_color')}
-              onClick={e => setColorPickerAnchor(e.currentTarget)}
-              sx={titleAdornmentButtonSx}
-            >
-              <Box
-                component="span"
+  const renderTitleAdornments = ({
+    titleChromeColor,
+    useCompactHeader,
+  }: {
+    titleChromeColor: string;
+    useCompactHeader: boolean;
+  }) => (
+    readOnly
+      ? null
+      : (
+          <>
+            <Tooltip title={t('title_font')}>
+              <IconButton
+                size="small"
+                disableRipple
+                aria-label={t('title_font')}
+                onClick={e => setFontPickerAnchor(e.currentTarget)}
                 sx={{
-                  width: useCompactHeader ? 14 : 16,
-                  height: useCompactHeader ? 14 : 16,
-                  borderRadius: '50%',
-                  bgcolor: resolvedTitleColor,
-                  boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
-                  display: 'block',
+                  ...titleAdornmentButtonSx,
+                  'width': useCompactHeader ? 26 : 32,
+                  'height': useCompactHeader ? 26 : 32,
+                  'color': `${titleChromeColor} !important`,
+                  '& .MuiSvgIcon-root': {
+                    color: 'inherit !important',
+                  },
                 }}
-              />
-            </IconButton>
-          </Tooltip>
-        </>
-      );
+              >
+                <TextFieldsIcon sx={{ fontSize: useCompactHeader ? 16 : 18 }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t('title_color')}>
+              <IconButton
+                size="small"
+                disableRipple
+                aria-label={t('title_color')}
+                onClick={e => setColorPickerAnchor(e.currentTarget)}
+                sx={{
+                  ...titleAdornmentButtonSx,
+                  width: useCompactHeader ? 26 : 32,
+                  height: useCompactHeader ? 26 : 32,
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    width: useCompactHeader ? 14 : 16,
+                    height: useCompactHeader ? 14 : 16,
+                    borderRadius: '50%',
+                    bgcolor: resolvedTitleColor,
+                    boxShadow: '0 0 0 1px rgba(255,255,255,0.35)',
+                    display: 'block',
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          </>
+        )
+  );
 
   const hasStats = songCount >= 1 || albumCount >= 1 || memberCount >= 1;
 
-  const statsBadges = (
-    <MusicStatBadgeRow compact={useCompactHeader} nowrap>
-      {songCount >= 1 && (
-        <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={statsChromeColor} />
-      )}
-      {albumCount >= 1 && (
-        <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={statsChromeColor} />
-      )}
-      {memberCount >= 1 && (
-        <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={statsChromeColor} />
-      )}
-    </MusicStatBadgeRow>
-  );
+  const renderStats = ({
+    onHeroImage,
+    useCompactHeader,
+    statsChromeColor,
+  }: {
+    onHeroImage: boolean;
+    useCompactHeader: boolean;
+    statsChromeColor: string;
+  }) => {
+    if (!hasStats) {
+      return null;
+    }
 
-  const statsRow = hasStats
-    ? onHeroImage
+    const statsBadges = (
+      <MusicStatBadgeRow compact={useCompactHeader} nowrap>
+        {songCount >= 1 && (
+          <MusicStatBadge count={songCount} label={t('songs_stat_label')} compact chromeColor={statsChromeColor} />
+        )}
+        {albumCount >= 1 && (
+          <MusicStatBadge count={albumCount} label={t('albums_stat_label')} compact chromeColor={statsChromeColor} />
+        )}
+        {memberCount >= 1 && (
+          <MusicStatBadge count={memberCount} label={t('members_stat_label')} compact chromeColor={statsChromeColor} />
+        )}
+      </MusicStatBadgeRow>
+    );
+
+    return onHeroImage
       ? <Box sx={getProjectDetailGlassPanelSx()}>{statsBadges}</Box>
-      : statsBadges
-    : null;
+      : statsBadges;
+  };
+
+  const breadcrumbs = [
+    { label: t('breadcrumb_projects'), href: `/${locale}/projects` },
+    { label: name },
+  ];
 
   return (
-    <Fragment>
-      <input
-        ref={logoInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-        hidden
-        onChange={onLogoInputChange}
-      />
-      <input
-        ref={heroInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-        hidden
-        onChange={onHeroInputChange}
-      />
-
-      <Box ref={heroBandRef} sx={getHeroBandSx()}>
-        <Box sx={resolvedHero.backgroundSx}>
-          {resolvedHero.kind === 'image' && resolvedHero.imageUrl && (
-            <Image
-              src={resolvedHero.imageUrl}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              style={heroImageStyle}
-            />
-          )}
-        </Box>
-        <Box sx={getHeroOverlaySx(theme, hasHeroBackdrop, resolvedHero.overlayKind)} />
-
-        <Box sx={getProjectDetailBreadcrumbWrapperSx()}>
-          <Breadcrumbs aria-label="breadcrumb" sx={breadcrumbSx}>
-            <Link href={`/${locale}/projects`}>
-              {t('breadcrumb_projects')}
-            </Link>
-            <Typography
-              component="span"
-              color="inherit"
-              sx={{
-                fontSize: 'inherit',
-                fontWeight: 500,
-                maxWidth: { xs: 140, sm: 280 },
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                display: 'block',
-              }}
-            >
-              {name}
-            </Typography>
-          </Breadcrumbs>
-        </Box>
-
-        {!readOnly && (
-          <Tooltip title={t('hero_background')}>
-            <IconButton
-              aria-label={t('hero_background')}
-              onClick={e => setHeroPickerAnchor(e.currentTarget)}
-              disabled={uploadingHero}
-              sx={{
-                'position': 'absolute',
-                'top': { xs: 12, md: 16 },
-                'right': { xs: 16, sm: 24 },
-                'zIndex': 2,
-                'bgcolor': 'rgba(0, 0, 0, 0.45)',
-                'color': '#fff',
-                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.6)' },
-              }}
-            >
-              <PhotoCameraIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
-
-      <Box
-        ref={stickyBarRef}
-        sx={{
-          ...getStickyBarSx(theme, isMobile, showStickyGlass),
-          overflow: 'visible',
+    <>
+      <MusicDetailPageHeader
+        locale={locale}
+        breadcrumbs={breadcrumbs}
+        title={name}
+        coverImageUrl={coverImageUrl}
+        titleColor={resolvedTitleColor}
+        titleFontFamily={titleFontFamily}
+        metadata={effectiveMetadata}
+        readOnly={readOnly}
+        customization={{
+          heroBackground: true,
+          logoUpload: true,
+          titleEdit: true,
+          fontPicker: true,
+          colorPicker: true,
         }}
-      >
-        <Box sx={getProjectDetailStickyBarContentSx(isStuck)}>
-          <ThemeProvider theme={barTheme}>
-            <Box sx={getProjectDetailMainRowSx(isStuck)}>
-              <Box sx={getProjectDetailLeftGroupSx()}>
-                <Box sx={getProjectDetailLogoSpacerSx(isStuck, isMobile)} aria-hidden />
-                <Box sx={getProjectDetailLogoAbsoluteSx()}>
-                  <Tooltip title={readOnly ? '' : t('upload_logo')}>
-                    <Box
-                      component={readOnly ? 'div' : 'button'}
-                      type={readOnly ? undefined : 'button'}
-                      aria-label={readOnly ? undefined : t('upload_logo')}
-                      disabled={readOnly ? undefined : uploadingLogo}
-                      onClick={readOnly ? undefined : () => logoInputRef.current?.click()}
-                      sx={{
-                        ...getProjectDetailLogoButtonSx(),
-                        'opacity': uploadingLogo ? 0.6 : 1,
-                        'cursor': readOnly ? 'default' : uploadingLogo ? 'wait' : 'pointer',
-                        '&:hover': readOnly ? {} : { opacity: 0.9 },
-                      }}
-                    >
-                      {coverImageUrl
-                        ? (
-                            <MusicCoverImage
-                              imageUrl={coverImageUrl}
-                              type="project"
-                              size={logoSize}
-                            />
-                          )
-                        : (
-                            <Box
-                              sx={{
-                                width: logoSize,
-                                height: logoSize,
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                ...getProjectDetailLogoPlaceholderSx(theme, onHeroImage),
-                              }}
-                            >
-                              <GradientIcon
-                                kind="project"
-                                fontSize={Math.round(logoSize * 0.44)}
-                                aria-hidden
-                              />
-                            </Box>
-                          )}
-                    </Box>
-                  </Tooltip>
-                </Box>
+        logoKind="project"
+        coverImageType="project"
+        renderStats={renderStats}
+        actions={!readOnly
+          ? (
+              <ProjectDetailNewButton locale={locale} projectId={projectId} appTheme={theme} />
+            )
+          : null}
+        renderTitleAdornments={renderTitleAdornments}
+        keepAdornmentsVisible={
+          Boolean(fontPickerAnchor)
+          || Boolean(colorPickerAnchor)
+          || Boolean(heroPickerAnchor)
+        }
+        onSaveTitle={handleSaveName}
+        onLogoFile={handleLogoFile}
+        onHeroPickerOpen={setHeroPickerAnchor}
+        onHeroFile={handleHeroFile}
+        uploadingLogo={uploadingLogo}
+        uploadingHero={uploadingHero}
+        heroFileInputRef={heroInputRef}
+        heroPickerSlot={(
+          <>
+            <ProjectTitleFontPicker
+              anchorEl={fontPickerAnchor}
+              open={Boolean(fontPickerAnchor)}
+              onClose={() => setFontPickerAnchor(null)}
+              previewLabel={name}
+              selectedFontFamily={titleFontFamily}
+              onSelect={handleFontSelect}
+            />
 
-                <Box sx={getProjectDetailTitleGroupSx()}>
-                  <ProjectEditableTitle
-                    name={name}
-                    fontFamily={titleFontFamily}
-                    compact={useCompactHeader}
-                    truncate
-                    readOnly={readOnly}
-                    heroTitleStyle={heroTitleStyle}
-                    titleAdornments={titleAdornments}
-                    keepAdornmentsVisible={
-                      Boolean(fontPickerAnchor)
-                      || Boolean(colorPickerAnchor)
-                      || Boolean(heroPickerAnchor)
-                    }
-                    onSave={handleSaveName}
-                  />
-                </Box>
-              </Box>
+            <EventColorPickerPopover
+              open={Boolean(colorPickerAnchor)}
+              anchorEl={colorPickerAnchor}
+              onClose={() => setColorPickerAnchor(null)}
+              value={resolvedTitleColor}
+              onChange={handleColorSelect}
+              valueMode="hex"
+              colorRows={HEADER_TEXT_COLOR_ROWS}
+              columns={HEADER_TEXT_COLOR_COLUMNS}
+              defaultCustomHex={DEFAULT_HEADER_TEXT_COLOR}
+              swatchVariant="square"
+              customColorAriaLabel={t('hero_bg_custom_color')}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            />
 
-              <Box sx={getProjectDetailActionsSx()}>
-                <Box
-                  sx={getHeroToolbarWrapperSx(
-                    hasHeroBackdrop,
-                    useCompactHeader,
-                    isHeroTextOutOfView,
-                    theme,
-                  )}
-                >
-                  <Box sx={getHeroActionsToolbarSx()}>
-                    {statsRow}
-                    {hasStats && (
-                      <Box
-                        component="span"
-                        sx={getHeroActionsDividerSx(theme, onHeroImage)}
-                        aria-hidden
-                      />
-                    )}
-                    {!readOnly && (
-                      <ProjectDetailNewButton locale={locale} projectId={projectId} appTheme={theme} />
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          </ThemeProvider>
-        </Box>
-      </Box>
-
-      <ProjectTitleFontPicker
-        anchorEl={fontPickerAnchor}
-        open={Boolean(fontPickerAnchor)}
-        onClose={() => setFontPickerAnchor(null)}
-        previewLabel={name}
-        selectedFontFamily={titleFontFamily}
-        onSelect={handleFontSelect}
+            <ProjectHeroBackgroundPicker
+              anchorEl={heroPickerAnchor}
+              open={Boolean(heroPickerAnchor)}
+              onClose={() => setHeroPickerAnchor(null)}
+              resolved={resolvedHero}
+              onSelectPreset={handleSelectPreset}
+              onSelectCustomSolid={handleSelectCustomSolid}
+              onPreviewCustom={handlePreviewCustom}
+              onApplyCustom={handleApplyCustom}
+              onUploadClick={() => heroInputRef.current?.click()}
+              uploading={uploadingHero}
+              textColor={resolvedTitleColor}
+              onTextColorChange={handleColorSelect}
+            />
+          </>
+        )}
       />
 
-      <EventColorPickerPopover
-        open={Boolean(colorPickerAnchor)}
-        anchorEl={colorPickerAnchor}
-        onClose={() => setColorPickerAnchor(null)}
-        value={resolvedTitleColor}
-        onChange={handleColorSelect}
-        valueMode="hex"
-        colorRows={HEADER_TEXT_COLOR_ROWS}
-        columns={HEADER_TEXT_COLOR_COLUMNS}
-        defaultCustomHex={DEFAULT_HEADER_TEXT_COLOR}
-        swatchVariant="square"
-        customColorAriaLabel={t('hero_bg_custom_color')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      />
-
-      <ProjectHeroBackgroundPicker
-        anchorEl={heroPickerAnchor}
-        open={Boolean(heroPickerAnchor)}
-        onClose={() => setHeroPickerAnchor(null)}
-        resolved={resolvedHero}
-        onSelectPreset={handleSelectPreset}
-        onSelectCustomSolid={handleSelectCustomSolid}
-        onPreviewCustom={handlePreviewCustom}
-        onApplyCustom={handleApplyCustom}
-        onUploadClick={() => heroInputRef.current?.click()}
-        uploading={uploadingHero}
-        textColor={resolvedTitleColor}
-        onTextColorChange={handleColorSelect}
-      />
-    </Fragment>
+    </>
   );
 }

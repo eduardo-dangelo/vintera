@@ -1,6 +1,7 @@
 'use client';
 
 import type { Theme } from '@mui/material/styles';
+import type { ProjectCreatePopoverType } from './useProjectCreatePopovers';
 import {
   Add as AddIcon,
   ArrowDropDown as ArrowDropDownIcon,
@@ -13,16 +14,12 @@ import {
   ThemeProvider,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CreateEventPopover } from '@/components/Calendar/CreateEventPopover';
-import { AddProjectMemberPopover } from '@/components/MusicProjects/AddProjectMemberPopover';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { glassMenuItemSx, glassMenuPaperSx } from '@/utils/glassPaperStyles';
-import { CreateAlbumPopover } from './CreateAlbumPopover';
-import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
-import { CreateSongPopover } from './CreateSongPopover';
 import { GradientIcon } from './GradientIcon';
+import { ProjectCreatePopovers } from './ProjectCreatePopovers';
+import { useProjectCreatePopovers } from './useProjectCreatePopovers';
 
 type ProjectDetailNewButtonProps = {
   locale: string;
@@ -30,10 +27,8 @@ type ProjectDetailNewButtonProps = {
   appTheme: Theme;
 };
 
-type PopoverType = 'album' | 'song' | 'member' | 'event';
-
 type MenuEntry
-  = | { type: PopoverType; label: string; iconKind: 'song' | 'album' | 'member' }
+  = | { type: ProjectCreatePopoverType; label: string; iconKind: 'song' | 'album' | 'member' }
     | { type: 'event'; label: string };
 
 function getProjectNewMenuSlotProps(appTheme: Theme, minWidth = 160) {
@@ -64,14 +59,9 @@ function renderMenuIcon(item: MenuEntry) {
 export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectDetailNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
   const tMusic = useTranslations('MusicProjects');
-  const router = useRouter();
   const { playHoverSound } = useHoverSound();
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [openPopover, setOpenPopover] = useState<PopoverType | null>(null);
-  const [popoverAnchorPosition, setPopoverAnchorPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
+  const popoverState = useProjectCreatePopovers(locale, projectId);
 
   const menuOpen = Boolean(menuAnchorEl);
 
@@ -84,32 +74,9 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
     setMenuAnchorEl(null);
   };
 
-  const handleSelect = (type: PopoverType, event: React.MouseEvent<HTMLElement>) => {
-    setPopoverAnchorPosition(getCreatePopoverAnchorPositionFromClick(event));
+  const handleSelect = (type: ProjectCreatePopoverType, event: React.MouseEvent<HTMLElement>) => {
+    popoverState.openPopoverFromClick(type, event);
     handleMenuClose();
-    setOpenPopover(type);
-  };
-
-  const handlePopoverClose = () => {
-    setOpenPopover(null);
-    setPopoverAnchorPosition(null);
-  };
-
-  const handleSongCreated = (songId: number) => {
-    handlePopoverClose();
-    router.push(`/${locale}/songs/${songId}`);
-    router.refresh();
-  };
-
-  const handleAlbumCreated = (albumId: number) => {
-    handlePopoverClose();
-    router.push(`/${locale}/albums/${albumId}`);
-    router.refresh();
-  };
-
-  const handleEventCreated = () => {
-    handlePopoverClose();
-    router.refresh();
   };
 
   const menuItems: MenuEntry[] = [
@@ -169,39 +136,7 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
         </Menu>
       </ThemeProvider>
 
-      <CreateSongPopover
-        open={openPopover === 'song'}
-        onClose={handlePopoverClose}
-        locale={locale}
-        projectId={projectId}
-        onCreated={handleSongCreated}
-        anchorPosition={popoverAnchorPosition}
-      />
-      <CreateAlbumPopover
-        open={openPopover === 'album'}
-        onClose={handlePopoverClose}
-        locale={locale}
-        projectId={projectId}
-        onCreated={handleAlbumCreated}
-        anchorPosition={popoverAnchorPosition}
-      />
-      <AddProjectMemberPopover
-        open={openPopover === 'member'}
-        anchorPosition={popoverAnchorPosition}
-        locale={locale}
-        projectId={projectId}
-        onClose={handlePopoverClose}
-        onAdded={handlePopoverClose}
-      />
-      <CreateEventPopover
-        open={openPopover === 'event'}
-        anchorPosition={popoverAnchorPosition}
-        onClose={handlePopoverClose}
-        initialDate={new Date()}
-        musicProjectId={projectId}
-        locale={locale}
-        onCreateSuccess={handleEventCreated}
-      />
+      <ProjectCreatePopovers state={popoverState} />
     </>
   );
 }

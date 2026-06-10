@@ -11,6 +11,7 @@ import { Box, Tab, Tabs, useTheme } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
+import { ProjectDetailEmptyState } from './ProjectDetailEmptyState';
 import { ProjectAlbumsTab } from './tabs/ProjectAlbumsTab';
 import { ProjectOverviewTab } from './tabs/ProjectOverviewTab';
 import { ProjectSongsTab } from './tabs/ProjectSongsTab';
@@ -163,6 +164,16 @@ export function ProjectDetailTabs({
   };
 
   if (visibleTabs.length === 0) {
+    if (albums.length === 0 && songs.length === 0) {
+      return (
+        <ProjectDetailEmptyState
+          locale={locale}
+          projectId={projectId}
+          canEdit={canEdit}
+        />
+      );
+    }
+
     return (
       <Box>
         {albums.length > 0 && (

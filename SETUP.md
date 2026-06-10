@@ -20,6 +20,10 @@ If the repo already exists, push with:
 git push -u origin main
 ```
 
+### Collaborating
+
+`main` is protected on GitHub. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch and PR workflow. Code owners are defined in [`.github/CODEOWNERS`](.github/CODEOWNERS).
+
 ---
 
 ## Quick start

@@ -82,6 +82,16 @@ export function TopbarActions({ variant = 'default' }: TopbarActionsProps) {
               invisible={unreadCount === 0}
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              sx={{
+                '& .MuiBadge-badge': {
+                  fontSize: '0.625rem',
+                  fontWeight: 600,
+                  width: 14,
+                  height: 14,
+                  minWidth: 14,
+                  padding: 0,
+                },
+              }}
             >
               <NotificationsOutlined sx={{ fontSize: iconSize }} fontSize={isSidebar ? undefined : 'small'} />
             </Badge>

@@ -48,7 +48,7 @@ export function TopbarActions({ variant = 'default' }: TopbarActionsProps) {
   const iconHoverColor = isSidebar ? theme.palette.sidebar.textPrimary : undefined;
   const iconSize = isSidebar ? 16 : undefined;
   const avatarSize = isSidebar ? 22 : 26;
-  const gap = isSidebar ? 0.25 : 1;
+  const gap = isSidebar ? 0.75 : 1;
 
   const iconButtonSx = {
     'color': iconColor,

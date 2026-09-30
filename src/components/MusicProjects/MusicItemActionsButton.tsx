@@ -1,5 +1,6 @@
 'use client';
 
+import type { SxProps, Theme } from '@mui/material';
 import type { MusicItemMenuTarget } from './musicItemMenuTypes';
 import { MoreHoriz as MoreHorizIcon } from '@mui/icons-material';
 import { IconButton, Tooltip } from '@mui/material';
@@ -8,9 +9,10 @@ import { useTranslations } from 'next-intl';
 type MusicItemActionsButtonProps = {
   target: MusicItemMenuTarget;
   onOpen: (event: React.MouseEvent<HTMLElement>, target: MusicItemMenuTarget) => void;
+  sx?: SxProps<Theme>;
 };
 
-export function MusicItemActionsButton({ target, onOpen }: MusicItemActionsButtonProps) {
+export function MusicItemActionsButton({ target, onOpen, sx }: MusicItemActionsButtonProps) {
   const t = useTranslations('MusicProjects');
 
   return (
@@ -26,6 +28,7 @@ export function MusicItemActionsButton({ target, onOpen }: MusicItemActionsButto
           'color': 'text.secondary',
           'p': 0.25,
           '& .MuiSvgIcon-root': { fontSize: 18 },
+          ...sx,
         }}
       >
         <MoreHorizIcon fontSize="small" />

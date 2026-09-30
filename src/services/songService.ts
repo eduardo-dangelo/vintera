@@ -294,6 +294,31 @@ export class SongService {
     return updated ? omitStatus(updated) : null;
   }
 
+  static async duplicateSong(songId: number, userId: string) {
+    const existing = await this.getSongByIdForUser(songId, userId);
+    if (!existing) {
+      return null;
+    }
+
+    const { song } = existing;
+    const metadata = typeof song.metadata === 'object' && song.metadata !== null && !Array.isArray(song.metadata)
+      ? song.metadata as Record<string, unknown>
+      : undefined;
+
+    return this.createSongForUser(userId, {
+      musicProjectId: song.musicProjectId,
+      albumId: song.albumId ?? undefined,
+      title: `${song.title} (Copy)`,
+      trackNumber: song.trackNumber ?? undefined,
+      durationSeconds: song.durationSeconds ?? undefined,
+      key: song.key ?? undefined,
+      bpm: song.bpm ?? undefined,
+      lyrics: song.lyrics ?? undefined,
+      chordsOrTabs: song.chordsOrTabs ?? undefined,
+      metadata,
+    });
+  }
+
   static async deleteSong(songId: number, projectId: number | null, userId: string) {
     const existing = projectId != null
       ? await this.getSongById(songId, projectId, userId)

@@ -1,6 +1,9 @@
 'use client';
 
-import { Delete as DeleteIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
+import {
+  ContentCopy as ContentCopyIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import {
@@ -23,8 +26,9 @@ export type MusicItemContextMenuPopoverProps = {
   anchorEl: HTMLElement | null;
   anchorPosition: { top: number; left: number } | null;
   onClose: () => void;
-  onView: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
+  duplicating?: boolean;
 };
 
 export function MusicItemContextMenuPopover({
@@ -32,8 +36,9 @@ export function MusicItemContextMenuPopover({
   anchorEl,
   anchorPosition,
   onClose,
-  onView,
+  onDuplicate,
   onDelete,
+  duplicating = false,
 }: MusicItemContextMenuPopoverProps) {
   const t = useTranslations('MusicProjects');
   const { playHoverSound } = useHoverSound();
@@ -57,14 +62,19 @@ export function MusicItemContextMenuPopover({
           role="menuitem"
           onMouseEnter={playHoverSound}
           onClick={() => {
-            onView();
-            onClose();
+            if (duplicating) {
+              return;
+            }
+            onDuplicate();
           }}
-          sx={contextMenuRowSx}
+          sx={{
+            ...contextMenuRowSx,
+            ...(duplicating ? { opacity: 0.5, pointerEvents: 'none' } : {}),
+          }}
         >
-          <VisibilityIcon sx={contextMenuIconSx} color="action" />
+          <ContentCopyIcon sx={contextMenuIconSx} color="action" />
           <Typography component="span" sx={contextMenuItemTextSx}>
-            {t('context_menu_view')}
+            {t('context_menu_duplicate')}
           </Typography>
         </Box>
         <Box

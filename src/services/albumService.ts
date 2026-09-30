@@ -156,6 +156,7 @@ export class AlbumService {
         releaseDate: data.releaseDate ?? null,
         coverImageUrl: data.coverImageUrl || null,
         sortOrder: data.sortOrder ?? 0,
+        metadata: data.metadata,
       })
       .returning();
 
@@ -203,6 +204,27 @@ export class AlbumService {
       .returning();
 
     return updated ? omitStatus(updated) : null;
+  }
+
+  static async duplicateAlbum(albumId: number, userId: string) {
+    const existing = await this.getAlbumByIdForUser(albumId, userId);
+    if (!existing) {
+      return null;
+    }
+
+    const { album } = existing;
+    const metadata = typeof album.metadata === 'object' && album.metadata !== null && !Array.isArray(album.metadata)
+      ? album.metadata as Record<string, unknown>
+      : undefined;
+
+    return this.createAlbum(album.musicProjectId, {
+      name: `${album.name} (Copy)`,
+      description: album.description ?? undefined,
+      releaseDate: album.releaseDate ?? undefined,
+      coverImageUrl: album.coverImageUrl ?? undefined,
+      sortOrder: album.sortOrder ?? undefined,
+      metadata,
+    }, userId);
   }
 
   static async deleteAlbum(albumId: number, projectId: number, userId: string) {

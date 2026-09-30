@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { useDeleteAlbumById } from '@/queries/hooks/albums/useDeleteAlbumById';
+import { useDuplicateAlbumById } from '@/queries/hooks/albums/useDuplicateAlbumById';
 import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteMusicProject';
+import { useDuplicateMusicProject } from '@/queries/hooks/music-projects/useDuplicateMusicProject';
 import { useDeleteSongById } from '@/queries/hooks/songs/useDeleteSongById';
+import { useDuplicateSongById } from '@/queries/hooks/songs/useDuplicateSongById';
 import { MusicItemContextMenuPopover } from './MusicItemContextMenuPopover';
 
 type MenuState = {
@@ -22,6 +25,9 @@ export function useMusicItemContextMenu(locale: string) {
   const deleteProject = useDeleteMusicProject(locale);
   const deleteSong = useDeleteSongById(locale);
   const deleteAlbum = useDeleteAlbumById(locale);
+  const duplicateProject = useDuplicateMusicProject(locale);
+  const duplicateSong = useDuplicateSongById(locale);
+  const duplicateAlbum = useDuplicateAlbumById(locale);
 
   const [menuState, setMenuState] = useState<MenuState | null>(null);
   const [deleteConfirmAnchor, setDeleteConfirmAnchor] = useState<HTMLElement | null>(null);
@@ -55,13 +61,24 @@ export function useMusicItemContextMenu(locale: string) {
     });
   }, []);
 
-  const handleView = useCallback(() => {
+  const handleDuplicate = useCallback(async () => {
     if (!menuState) {
       return;
     }
-    router.push(menuState.target.href);
-    closeMenu();
-  }, [menuState, router, closeMenu]);
+    const { kind, id } = menuState.target;
+    try {
+      if (kind === 'project') {
+        await duplicateProject.mutateAsync(id);
+      } else if (kind === 'song') {
+        await duplicateSong.mutateAsync({ songId: id });
+      } else {
+        await duplicateAlbum.mutateAsync({ albumId: id });
+      }
+      closeMenu();
+    } catch {
+      // Keep menu open on error
+    }
+  }, [menuState, duplicateProject, duplicateSong, duplicateAlbum, closeMenu]);
 
   const handleDeleteClick = useCallback(() => {
     if (!menuState) {
@@ -131,6 +148,7 @@ export function useMusicItemContextMenu(locale: string) {
   ]);
 
   const isDeleting = deleteProject.isPending || deleteSong.isPending || deleteAlbum.isPending;
+  const isDuplicating = duplicateProject.isPending || duplicateSong.isPending || duplicateAlbum.isPending;
 
   const renderMenus = useCallback(() => (
     <>
@@ -139,8 +157,11 @@ export function useMusicItemContextMenu(locale: string) {
         anchorEl={menuState?.anchorEl ?? null}
         anchorPosition={menuState?.anchorPosition ?? null}
         onClose={closeMenu}
-        onView={handleView}
+        onDuplicate={() => {
+          void handleDuplicate();
+        }}
         onDelete={handleDeleteClick}
+        duplicating={isDuplicating}
       />
       <ConfirmPopover
         open={Boolean(pendingDelete && (deleteConfirmAnchor ?? deleteConfirmAnchorPosition))}
@@ -160,8 +181,9 @@ export function useMusicItemContextMenu(locale: string) {
   ), [
     menuState,
     closeMenu,
-    handleView,
+    handleDuplicate,
     handleDeleteClick,
+    isDuplicating,
     deleteConfirmAnchor,
     deleteConfirmAnchorPosition,
     pendingDelete,
@@ -177,5 +199,6 @@ export function useMusicItemContextMenu(locale: string) {
     openFromContextMenu,
     closeMenu,
     renderMenus,
+    menuTarget: menuState?.target ?? null,
   };
 }

@@ -55,6 +55,7 @@
     "song_delete_confirm": "Delete this song?",
     "album_delete_confirm": "Delete this album?",
     "context_menu_view": "View",
+    "context_menu_duplicate": "Duplicate",
     "context_menu_actions": "Actions",
     "albums": "Albums",
     "songs": "Songs",

@@ -279,6 +279,24 @@ export class MusicProjectService {
     return omitStatus(updated);
   }
 
+  static async duplicateProject(projectId: number, userId: string) {
+    const existing = await this.getProjectById(projectId, userId);
+    if (!existing) {
+      return null;
+    }
+
+    const metadata = isRecord(existing.metadata) ? existing.metadata : undefined;
+
+    return this.createProject({
+      name: `${existing.name} (Copy)`,
+      description: existing.description ?? undefined,
+      genre: existing.genre ?? undefined,
+      color: existing.color ?? undefined,
+      coverImageUrl: existing.coverImageUrl ?? undefined,
+      metadata,
+    }, userId);
+  }
+
   static async deleteProject(projectId: number, userId: string) {
     const access = await this.getUserProjectAccess(projectId, userId);
     if (!access) {

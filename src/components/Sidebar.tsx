@@ -1,10 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { MusicItemKind } from './MusicProjects/musicItemMenuTypes';
+import type { MusicItemKind, MusicItemMenuTarget } from './MusicProjects/musicItemMenuTypes';
 import { SignOutButton } from '@clerk/nextjs';
 import {
   Album as AlbumIcon,
+  ExpandMore as ExpandMoreIcon,
   LibraryMusic as LibraryMusicIcon,
   Logout as LogoutIcon,
   Menu as MenuIcon,
@@ -39,9 +40,7 @@ import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
 import { GradientIcon } from './MusicProjects/GradientIcon';
 import { MusicCoverImage } from './MusicProjects/MusicCoverImage';
-import { NewAlbumButton } from './MusicProjects/NewAlbumButton';
-import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
-import { NewSongButton } from './MusicProjects/NewSongButton';
+import { MusicItemActionsButton } from './MusicProjects/MusicItemActionsButton';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
 import { TopbarActions } from './TopbarActions';
@@ -56,12 +55,8 @@ type SidebarItem = {
   coverImageUrl?: string | null;
 };
 
-type SidebarCreateKind = 'project' | 'song' | 'album';
-
 type SidebarSectionProps = {
   title: string;
-  locale: string;
-  createKind: SidebarCreateKind;
   viewAllHref?: string;
   viewAllLabel?: string;
   items: SidebarItem[];
@@ -69,60 +64,12 @@ type SidebarSectionProps = {
   onItemClick: (href: string) => void;
   onItemHover: (href: string | null) => void;
   onItemContextMenu: (event: React.MouseEvent, item: SidebarItem) => void;
+  onOpenActions: (event: React.MouseEvent<HTMLElement>, target: MusicItemMenuTarget) => void;
+  openMenuTarget: MusicItemMenuTarget | null;
 };
-
-const sectionCreateButtonSx = {
-  'height': 20,
-  'width': 20,
-  'bgcolor': 'transparent',
-  'color': 'inherit',
-  'p': 0,
-  '&:hover': {
-    bgcolor: 'rgba(255, 255, 255, 0.06)',
-  },
-  '& .MuiSvgIcon-root': {
-    fontSize: 14,
-  },
-} as const;
-
-function SidebarSectionCreateButton({
-  locale,
-  createKind,
-}: {
-  locale: string;
-  createKind: SidebarCreateKind;
-}) {
-  if (createKind === 'project') {
-    return (
-      <NewMusicProjectButton
-        locale={locale}
-        variant="icon"
-        iconButtonSx={sectionCreateButtonSx}
-      />
-    );
-  }
-  if (createKind === 'song') {
-    return (
-      <NewSongButton
-        locale={locale}
-        variant="icon"
-        iconButtonSx={sectionCreateButtonSx}
-      />
-    );
-  }
-  return (
-    <NewAlbumButton
-      locale={locale}
-      variant="icon"
-      iconButtonSx={sectionCreateButtonSx}
-    />
-  );
-}
 
 function SidebarSection({
   title,
-  locale,
-  createKind,
   viewAllHref,
   viewAllLabel,
   items,
@@ -130,27 +77,31 @@ function SidebarSection({
   onItemClick,
   onItemHover,
   onItemContextMenu,
+  onOpenActions,
+  openMenuTarget,
 }: SidebarSectionProps) {
   const theme = useTheme();
   const { playHoverSound } = useHoverSound();
+  const [expanded, setExpanded] = useState(true);
 
   const menuItemIconColor = 'rgba(200, 200, 210, 0.9)';
 
   const rowSx = (active: boolean) => ({
-    'borderRadius': 1,
-    'color': active ? theme.palette.sidebar.textPrimary : theme.palette.sidebar.textSecondary,
-    'bgcolor': active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-    'pl': 1,
-    'pr': 1,
-    'py': 0.25,
-    'minHeight': 28,
-    'transition': 'background-color 0.15s ease-in-out, color 0.15s ease-in-out',
-    '&:hover': {
-      'bgcolor': 'rgba(255, 255, 255, 0.06)',
-      'color': theme.palette.sidebar.textPrimary,
-      '& .MuiListItemIcon-root svg': {
-        ...(active ? {} : { color: 'rgba(244, 244, 245, 0.95)' }),
-      },
+    borderRadius: 1,
+    color: active ? theme.palette.sidebar.textPrimary : theme.palette.sidebar.textSecondary,
+    bgcolor: active ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+    pl: 1,
+    pr: 3.25,
+    py: 0.25,
+    minHeight: 28,
+    transition: 'background-color 0.15s ease-in-out, color 0.15s ease-in-out',
+  });
+
+  const rowHoverSx = (active: boolean) => ({
+    'bgcolor': 'rgba(255, 255, 255, 0.06)',
+    'color': theme.palette.sidebar.textPrimary,
+    '& .MuiListItemIcon-root svg': {
+      ...(active ? {} : { color: 'rgba(244, 244, 245, 0.95)' }),
     },
   });
 
@@ -176,95 +127,178 @@ function SidebarSection({
         >
           {title}
         </Typography>
-        <SidebarSectionCreateButton locale={locale} createKind={createKind} />
+        <IconButton
+          size="small"
+          aria-expanded={expanded}
+          aria-label={expanded ? `Collapse ${title}` : `Expand ${title}`}
+          onMouseEnter={playHoverSound}
+          onClick={() => setExpanded(prev => !prev)}
+          sx={{
+            'height': 20,
+            'width': 20,
+            'p': 0,
+            'color': 'inherit',
+            'bgcolor': 'transparent',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.06)',
+              color: theme.palette.sidebar.textPrimary,
+            },
+          }}
+        >
+          <ExpandMoreIcon
+            sx={{
+              fontSize: 16,
+              transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+              transition: 'transform 0.2s ease-in-out',
+            }}
+          />
+        </IconButton>
       </Box>
 
       <List disablePadding>
         <TransitionGroup component={null}>
-          {items.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+          {expanded
+            && items.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              const menuTarget: MusicItemMenuTarget = {
+                kind: item.kind,
+                id: item.id,
+                href: item.href,
+              };
+              const actionsOpen = openMenuTarget?.kind === item.kind
+                && openMenuTarget.id === item.id;
 
-            return (
-              <Collapse key={item.key} timeout={200}>
-                <ListItem disablePadding sx={{ mb: 0.125 }}>
-                  <ListItemButton
-                    component={Link}
-                    href={item.href}
+              return (
+                <Collapse key={item.key} timeout={200}>
+                  <ListItem
+                    disablePadding
                     onMouseEnter={() => {
                       playHoverSound();
                       onItemHover(item.href);
                     }}
                     onMouseLeave={() => onItemHover(null)}
-                    onClick={() => onItemClick(item.href)}
-                    onContextMenu={e => onItemContextMenu(e, item)}
-                    sx={rowSx(active)}
+                    sx={{
+                      'mb': 0.125,
+                      'position': 'relative',
+                      // Keep row hover while pointer is over MoreHoriz (sibling of the button)
+                      // or while that row's actions menu is open.
+                      '&:hover .MuiListItemButton-root, &:has([data-sidebar-actions][data-open="true"]) .MuiListItemButton-root':
+                        rowHoverSx(active),
+                      '&:hover [data-sidebar-actions], & [data-sidebar-actions][data-open="true"]': {
+                        opacity: 1,
+                        pointerEvents: 'auto',
+                      },
+                    }}
                   >
-                    <ListItemIcon sx={{ minWidth: 24 }}>
-                      {item.kind === 'project' && item.coverImageUrl
-                        ? (
-                            <MusicCoverImage
-                              imageUrl={item.coverImageUrl}
-                              type="project"
-                              size={16}
-                            />
-                          )
-                        : active
+                    <ListItemButton
+                      component={Link}
+                      href={item.href}
+                      onClick={() => onItemClick(item.href)}
+                      onContextMenu={e => onItemContextMenu(e, item)}
+                      sx={rowSx(active)}
+                    >
+                      <ListItemIcon sx={{ minWidth: 24 }}>
+                        {item.kind === 'project' && item.coverImageUrl
                           ? (
-                              <GradientIcon
-                                kind={item.kind}
-                                fontSize={16}
-                                sx={{ display: 'block' }}
+                              <MusicCoverImage
+                                imageUrl={item.coverImageUrl}
+                                type="project"
+                                size={16}
                               />
                             )
-                          : (
-                              <Icon
-                                sx={{
-                                  fontSize: 16,
-                                  color: menuItemIconColor,
-                                }}
-                              />
-                            )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: '0.75rem',
-                        fontWeight: 400,
-                        noWrap: true,
-                        sx: { textOverflow: 'ellipsis' },
+                          : active
+                            ? (
+                                <GradientIcon
+                                  kind={item.kind}
+                                  fontSize={16}
+                                  sx={{ display: 'block' }}
+                                />
+                              )
+                            : (
+                                <Icon
+                                  sx={{
+                                    fontSize: 16,
+                                    color: menuItemIconColor,
+                                  }}
+                                />
+                              )}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{
+                          fontSize: '0.75rem',
+                          fontWeight: 400,
+                          noWrap: true,
+                          sx: { textOverflow: 'ellipsis' },
+                        }}
+                      />
+                    </ListItemButton>
+                    <Box
+                      data-sidebar-actions=""
+                      data-open={actionsOpen ? 'true' : undefined}
+                      sx={{
+                        position: 'absolute',
+                        right: 2,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        opacity: 0,
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.15s ease',
+                        zIndex: 1,
                       }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              </Collapse>
-            );
-          })}
+                    >
+                      <MusicItemActionsButton
+                        target={menuTarget}
+                        onOpen={onOpenActions}
+                        sx={{
+                          'color': theme.palette.sidebar.textSecondary,
+                          'p': 0.125,
+                          'height': 20,
+                          'width': 20,
+                          '&:hover': {
+                            color: theme.palette.sidebar.textPrimary,
+                            bgcolor: 'rgba(255, 255, 255, 0.08)',
+                          },
+                          '& .MuiSvgIcon-root': { fontSize: 14 },
+                        }}
+                      />
+                    </Box>
+                  </ListItem>
+                </Collapse>
+              );
+            })}
+          {expanded && viewAllHref && viewAllLabel && (
+            <Collapse key="view-more" timeout={200}>
+              <ListItem disablePadding sx={{ mb: 0.125 }}>
+                <ListItemButton
+                  component={Link}
+                  href={viewAllHref}
+                  onMouseEnter={playHoverSound}
+                  onClick={() => onItemClick(viewAllHref)}
+                  sx={{
+                    ...rowSx(false),
+                    ...{
+                      'color': theme.palette.sidebar.textSecondary,
+                      'pr': 1,
+                      '&:hover': rowHoverSx(false),
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={`... ${viewAllLabel}`}
+                    primaryTypographyProps={{
+                      fontSize: '0.75rem',
+                      fontWeight: 400,
+                      noWrap: true,
+                      sx: { textOverflow: 'ellipsis' },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            </Collapse>
+          )}
         </TransitionGroup>
-        {viewAllHref && viewAllLabel && (
-          <ListItem disablePadding sx={{ mb: 0.125 }}>
-            <ListItemButton
-              component={Link}
-              href={viewAllHref}
-              onMouseEnter={playHoverSound}
-              onClick={() => onItemClick(viewAllHref)}
-              sx={{
-                ...rowSx(false),
-                color: theme.palette.sidebar.textSecondary,
-              }}
-            >
-              <ListItemText
-                primary={`... ${viewAllLabel}`}
-                primaryTypographyProps={{
-                  fontSize: '0.75rem',
-                  fontWeight: 400,
-                  noWrap: true,
-                  sx: { textOverflow: 'ellipsis' },
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        )}
       </List>
     </Box>
   );
@@ -297,7 +331,12 @@ export function Sidebar({
 
   const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
   const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale);
-  const { openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);
+  const {
+    openFromButton,
+    openFromContextMenu,
+    renderMenus,
+    menuTarget: openMenuTarget,
+  } = useMusicItemContextMenu(locale);
 
   const handleItemContextMenu = (event: React.MouseEvent, item: SidebarItem) => {
     openFromContextMenu(event, {
@@ -391,8 +430,6 @@ export function Sidebar({
         {!isRecentsLoading && projectItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.projects}
-            locale={locale}
-            createKind="project"
             viewAllHref={`/${locale}/projects`}
             viewAllLabel={sectionLabels.viewAll}
             items={projectItems}
@@ -400,14 +437,14 @@ export function Sidebar({
             onItemClick={setClickedHref}
             onItemHover={() => {}}
             onItemContextMenu={handleItemContextMenu}
+            onOpenActions={openFromButton}
+            openMenuTarget={openMenuTarget}
           />
         )}
 
         {!isRecentsLoading && songItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.songs}
-            locale={locale}
-            createKind="song"
             viewAllHref={`/${locale}/songs`}
             viewAllLabel={sectionLabels.viewAll}
             items={songItems}
@@ -415,14 +452,14 @@ export function Sidebar({
             onItemClick={setClickedHref}
             onItemHover={() => {}}
             onItemContextMenu={handleItemContextMenu}
+            onOpenActions={openFromButton}
+            openMenuTarget={openMenuTarget}
           />
         )}
 
         {!isRecentsLoading && albumItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.albums}
-            locale={locale}
-            createKind="album"
             viewAllHref={`/${locale}/albums`}
             viewAllLabel={sectionLabels.viewAll}
             items={albumItems}
@@ -430,6 +467,8 @@ export function Sidebar({
             onItemClick={setClickedHref}
             onItemHover={() => {}}
             onItemContextMenu={handleItemContextMenu}
+            onOpenActions={openFromButton}
+            openMenuTarget={openMenuTarget}
           />
         )}
       </Box>

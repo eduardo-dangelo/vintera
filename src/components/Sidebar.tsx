@@ -39,6 +39,9 @@ import { GlobalTopbarContentProvider } from './GlobalTopbarContentContext';
 import { Logo } from './Logo';
 import { GradientIcon } from './MusicProjects/GradientIcon';
 import { MusicCoverImage } from './MusicProjects/MusicCoverImage';
+import { NewAlbumButton } from './MusicProjects/NewAlbumButton';
+import { NewMusicProjectButton } from './MusicProjects/NewMusicProjectButton';
+import { NewSongButton } from './MusicProjects/NewSongButton';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
 import { TopbarActions } from './TopbarActions';
@@ -53,8 +56,12 @@ type SidebarItem = {
   coverImageUrl?: string | null;
 };
 
+type SidebarCreateKind = 'project' | 'song' | 'album';
+
 type SidebarSectionProps = {
   title: string;
+  locale: string;
+  createKind: SidebarCreateKind;
   viewAllHref?: string;
   viewAllLabel?: string;
   items: SidebarItem[];
@@ -64,8 +71,58 @@ type SidebarSectionProps = {
   onItemContextMenu: (event: React.MouseEvent, item: SidebarItem) => void;
 };
 
+const sectionCreateButtonSx = {
+  'height': 20,
+  'width': 20,
+  'bgcolor': 'transparent',
+  'color': 'inherit',
+  'p': 0,
+  '&:hover': {
+    bgcolor: 'rgba(255, 255, 255, 0.06)',
+  },
+  '& .MuiSvgIcon-root': {
+    fontSize: 14,
+  },
+} as const;
+
+function SidebarSectionCreateButton({
+  locale,
+  createKind,
+}: {
+  locale: string;
+  createKind: SidebarCreateKind;
+}) {
+  if (createKind === 'project') {
+    return (
+      <NewMusicProjectButton
+        locale={locale}
+        variant="icon"
+        iconButtonSx={sectionCreateButtonSx}
+      />
+    );
+  }
+  if (createKind === 'song') {
+    return (
+      <NewSongButton
+        locale={locale}
+        variant="icon"
+        iconButtonSx={sectionCreateButtonSx}
+      />
+    );
+  }
+  return (
+    <NewAlbumButton
+      locale={locale}
+      variant="icon"
+      iconButtonSx={sectionCreateButtonSx}
+    />
+  );
+}
+
 function SidebarSection({
   title,
+  locale,
+  createKind,
   viewAllHref,
   viewAllLabel,
   items,
@@ -106,55 +163,20 @@ function SidebarSection({
           justifyContent: 'space-between',
           px: 0.5,
           mb: 0.5,
+          color: theme.palette.sidebar.textSecondary,
         }}
       >
-        {viewAllHref
-          ? (
-              <Typography
-                component={Link}
-                href={viewAllHref}
-                variant="caption"
-                onMouseEnter={playHoverSound}
-                sx={{
-                  'fontWeight': 500,
-                  'color': theme.palette.sidebar.textSecondary,
-                  'fontSize': '0.6875rem',
-                  'textDecoration': 'none',
-                  '&:hover': { color: theme.palette.sidebar.textPrimary },
-                }}
-              >
-                {title}
-              </Typography>
-            )
-          : (
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 500,
-                  color: theme.palette.sidebar.textSecondary,
-                  fontSize: '0.6875rem',
-                }}
-              >
-                {title}
-              </Typography>
-            )}
-        {viewAllHref && viewAllLabel && (
-          <Typography
-            component={Link}
-            href={viewAllHref}
-            variant="caption"
-            onMouseEnter={playHoverSound}
-            sx={{
-              'color': theme.palette.sidebar.textSecondary,
-              'textDecoration': 'none',
-              'fontSize': '0.6875rem',
-              'px': 0.5,
-              '&:hover': { color: theme.palette.sidebar.textPrimary },
-            }}
-          >
-            {viewAllLabel}
-          </Typography>
-        )}
+        <Typography
+          variant="caption"
+          sx={{
+            fontWeight: 500,
+            color: 'inherit',
+            fontSize: '0.6875rem',
+          }}
+        >
+          {title}
+        </Typography>
+        <SidebarSectionCreateButton locale={locale} createKind={createKind} />
       </Box>
 
       <List disablePadding>
@@ -219,6 +241,30 @@ function SidebarSection({
             );
           })}
         </TransitionGroup>
+        {viewAllHref && viewAllLabel && (
+          <ListItem disablePadding sx={{ mb: 0.125 }}>
+            <ListItemButton
+              component={Link}
+              href={viewAllHref}
+              onMouseEnter={playHoverSound}
+              onClick={() => onItemClick(viewAllHref)}
+              sx={{
+                ...rowSx(false),
+                color: theme.palette.sidebar.textSecondary,
+              }}
+            >
+              <ListItemText
+                primary={`... ${viewAllLabel}`}
+                primaryTypographyProps={{
+                  fontSize: '0.75rem',
+                  fontWeight: 400,
+                  noWrap: true,
+                  sx: { textOverflow: 'ellipsis' },
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        )}
       </List>
     </Box>
   );
@@ -345,6 +391,8 @@ export function Sidebar({
         {!isRecentsLoading && projectItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.projects}
+            locale={locale}
+            createKind="project"
             viewAllHref={`/${locale}/projects`}
             viewAllLabel={sectionLabels.viewAll}
             items={projectItems}
@@ -358,6 +406,8 @@ export function Sidebar({
         {!isRecentsLoading && songItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.songs}
+            locale={locale}
+            createKind="song"
             viewAllHref={`/${locale}/songs`}
             viewAllLabel={sectionLabels.viewAll}
             items={songItems}
@@ -371,6 +421,8 @@ export function Sidebar({
         {!isRecentsLoading && albumItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.albums}
+            locale={locale}
+            createKind="album"
             viewAllHref={`/${locale}/albums`}
             viewAllLabel={sectionLabels.viewAll}
             items={albumItems}

@@ -4,6 +4,13 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 <!-- Newest first -->
 
+### Project sidebar sections
+- Status: evolving
+- What: Project detail sidebar (below general info) is a metadata-driven list of sections: members, calendar, video, link, text — add via divider +, MoreHoriz for edit/move/hide-or-delete.
+- Paths: `src/components/MusicProjects/ProjectDetailSidebar.tsx`, `src/utils/projectSidebarSections.ts`, `src/utils/musicProjectMetadata.ts`, `src/components/MusicProjects/SidebarSectionFormPopover.tsx`
+- Invariants: Members/calendar at most once and can only be Hidden (not deleted); video/link/text deletable; reorder via Move up/down; legacy `externalLinks` migrate on read
+- Updated: 2026-10-03
+
 ### Project general info inline field edit
 - Status: evolving
 - What: Genre and description edit one field at a time via click-to-edit; genre is multi-chip (comma/Enter commits tags, stored comma-joined); no MoreHoriz on the section; project delete stays on the app sidebar item menu.

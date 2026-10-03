@@ -36,6 +36,8 @@ type ProjectDetailCalendarSectionProps = {
   locale: string;
   projectId: number;
   readOnly?: boolean;
+  /** When true, omit outer divider + title (provided by sidebar section chrome). */
+  hideChrome?: boolean;
 };
 
 type SectionViewMode = 'calendar' | 'upcoming';
@@ -150,6 +152,7 @@ export function ProjectDetailCalendarSection({
   locale,
   projectId,
   readOnly = false,
+  hideChrome = false,
 }: ProjectDetailCalendarSectionProps) {
   const t = useTranslations('MusicProjects');
   const tCal = useTranslations('Calendar');
@@ -221,12 +224,23 @@ export function ProjectDetailCalendarSection({
   }), []);
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Divider sx={{ mb: 2 }} />
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {t('calendar')}
-        </Typography>
+    <Box sx={hideChrome ? undefined : { mt: 3 }}>
+      {!hideChrome && <Divider sx={{ mb: 2 }} />}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: hideChrome ? 'flex-end' : 'space-between',
+          gap: 1,
+          mb: canUseScheduleView || !hideChrome ? 1.5 : 0,
+          minHeight: canUseScheduleView ? 32 : 0,
+        }}
+      >
+        {!hideChrome && (
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {t('calendar')}
+          </Typography>
+        )}
         {canUseScheduleView && (
           <ToggleButtonGroup
             exclusive

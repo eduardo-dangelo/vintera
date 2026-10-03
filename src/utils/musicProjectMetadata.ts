@@ -1,4 +1,5 @@
 import type { ExternalLink } from '@/utils/externalLinkEmbed';
+import type { ProjectSidebarSection } from '@/utils/projectSidebarSections';
 import {
   hasPatternOverlay,
   MAX_PATTERN_SIZE,
@@ -7,6 +8,7 @@ import {
 } from '@/components/MusicProjects/heroPatternShapes';
 import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
 import { parseExternalLinks } from '@/utils/externalLinkEmbed';
+import { parseSidebarSections } from '@/utils/projectSidebarSections';
 
 export type HeroBackgroundKind = 'solid' | 'pattern' | 'gradient' | 'composed' | 'image';
 
@@ -44,7 +46,9 @@ export type MusicProjectMetadata = {
   heroChromeTextColor?: string;
   heroImageUrl?: string;
   titleFontFamily?: string;
+  /** @deprecated Migrated into sidebarSections on read */
   externalLinks?: ExternalLink[];
+  sidebarSections?: ProjectSidebarSection[];
 };
 
 const HERO_BACKGROUND_KINDS: HeroBackgroundKind[] = [
@@ -281,6 +285,11 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
     metadata.externalLinks = externalLinks;
   }
 
+  const sidebarSections = parseSidebarSections(raw.sidebarSections);
+  if (sidebarSections != null) {
+    metadata.sidebarSections = sidebarSections;
+  }
+
   return normalizeHeroMetadata(metadata);
 }
 
@@ -292,6 +301,19 @@ export function mergeExternalLinks(
   return {
     ...current,
     externalLinks: links,
+  };
+}
+
+export function mergeSidebarSections(
+  existing: unknown,
+  sections: ProjectSidebarSection[],
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  const { externalLinks: _legacy, ...rest } = current;
+  return {
+    ...rest,
+    sidebarSections: sections,
+    externalLinks: [],
   };
 }
 

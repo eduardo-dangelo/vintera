@@ -14,6 +14,8 @@ type ProjectDetailMembersSectionProps = {
   members: MusicProjectMember[];
   viewerPermission: 'owner' | MemberPermission;
   readOnly?: boolean;
+  /** When true, omit outer divider + title (provided by sidebar section chrome). */
+  hideChrome?: boolean;
 };
 
 function getInitials(name: string) {
@@ -33,6 +35,7 @@ export function ProjectDetailMembersSection({
   members,
   viewerPermission,
   readOnly = false,
+  hideChrome = false,
 }: ProjectDetailMembersSectionProps) {
   const t = useTranslations('MusicProjects');
   const [detailAnchorEl, setDetailAnchorEl] = useState<HTMLElement | null>(null);
@@ -65,11 +68,15 @@ export function ProjectDetailMembersSection({
   };
 
   return (
-    <Box sx={{ mt: 3 }}>
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
-        {t('members')}
-      </Typography>
+    <Box sx={hideChrome ? undefined : { mt: 3 }}>
+      {!hideChrome && (
+        <>
+          <Divider sx={{ mb: 2 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1.5 }}>
+            {t('members')}
+          </Typography>
+        </>
+      )}
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
         {members.map(member => (

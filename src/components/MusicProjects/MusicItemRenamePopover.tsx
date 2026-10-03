@@ -1,6 +1,7 @@
 'use client';
 
 import type { MusicItemMenuTarget } from './musicItemMenuTypes';
+import { DriveFileRenameOutline as RenameIcon } from '@mui/icons-material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -98,9 +99,15 @@ export function MusicItemRenamePopover({
       paperSx={glassPaperSx}
     >
       <Box sx={{ p: 1.25, display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Typography component="h2" sx={createPopoverTitleSx}>
-          {t('context_menu_rename')}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+          <RenameIcon
+            sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }}
+            aria-hidden
+          />
+          <Typography component="h2" sx={createPopoverTitleSx}>
+            {t('context_menu_rename')}
+          </Typography>
+        </Box>
         <TextField
           autoFocus
           fullWidth

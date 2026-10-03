@@ -7,8 +7,8 @@ Status: `locked` = must not regress · `evolving` = still iterating
 ### Music item context menu (Notion-like)
 - Status: evolving
 - What: Item more-menu is Copy link → Duplicate → Rename (popover) → Delete; Copy link writes the public share URL and shows brief copied feedback.
-- Paths: `src/components/MusicProjects/useMusicItemContextMenu.tsx`, `src/components/MusicProjects/MusicItemContextMenuPopover.tsx`, `src/components/MusicProjects/MusicItemRenamePopover.tsx`, `src/utils/shareUrls.ts`
-- Invariants: Menu order fixed as above; rename prefills from `MusicItemMenuTarget.name` and anchors like delete confirm; share popover is not opened from this menu; delete still confirms then removes
+- Paths: `src/components/MusicProjects/useMusicItemContextMenu.tsx`, `src/components/MusicProjects/MusicItemContextMenuPopover.tsx`, `src/components/MusicProjects/MusicItemRenamePopover.tsx`, `src/utils/shareUrls.ts`, `src/utils/glassPaperStyles.ts`
+- Invariants: Menu order fixed as above; Delete icon uses error color; glass popovers use mode-aware paper alpha (~0.82 light / ~0.78 dark) + 10px blur; rename prefills from `MusicItemMenuTarget.name`; share popover is not opened from this menu
 - Updated: 2026-10-03
 
 ### Discreet scrollbar (sidebar + main)

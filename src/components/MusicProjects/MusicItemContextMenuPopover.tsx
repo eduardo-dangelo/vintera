@@ -116,7 +116,7 @@ export function MusicItemContextMenuPopover({
           onClick={onDelete}
           sx={contextMenuRowSx}
         >
-          <DeleteOutlineIcon sx={contextMenuIconSx} color="action" />
+          <DeleteOutlineIcon sx={contextMenuIconSx} color="error" />
           <Typography component="span" sx={contextMenuItemTextSx}>
             {t('delete')}
           </Typography>

@@ -1,11 +1,15 @@
 import type { SxProps, Theme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 
-export const glassPaperSx = (theme: Theme) => ({
-  bgcolor: alpha(theme.palette.background.paper, 0.62),
-  backdropFilter: 'blur(6px)',
-  WebkitBackdropFilter: 'blur(6px)',
-});
+export const glassPaperSx = (theme: Theme) => {
+  const opacity = theme.palette.mode === 'light' ? 0.82 : 0.78;
+  const filter = 'blur(10px) saturate(1.15)';
+  return {
+    bgcolor: alpha(theme.palette.background.paper, opacity),
+    backdropFilter: filter,
+    WebkitBackdropFilter: filter,
+  };
+};
 
 export const glassMenuItemSx = {
   display: 'flex',

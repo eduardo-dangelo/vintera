@@ -1,20 +1,22 @@
 'use client';
 
-import type { SidebarSectionKind } from '@/utils/projectSidebarSections';
+import type {
+  ProjectSidebarSection,
+  SidebarSectionKind,
+} from '@/utils/projectSidebarSections';
 import {
   Add as AddIcon,
   CalendarMonth as CalendarIcon,
-  Link as LinkIcon,
   Notes as TextIcon,
-  People as PeopleIcon,
   SmartDisplay as VideoIcon,
 } from '@mui/icons-material';
-import { Box, IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Box, IconButton, Menu, MenuItem } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useHoverSound } from '@/hooks/useHoverSound';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { canAddSidebarSectionKind } from '@/utils/projectSidebarSections';
-import type { ProjectSidebarSection } from '@/utils/projectSidebarSections';
+import { GradientIcon } from './GradientIcon';
 
 const ADDABLE_KINDS: SidebarSectionKind[] = ['members', 'calendar', 'video', 'link', 'text'];
 
@@ -30,6 +32,7 @@ export function ProjectSidebarDividerInsert({
   onAddKind,
 }: ProjectSidebarDividerInsertProps) {
   const t = useTranslations('MusicProjects');
+  const { playHoverSound } = useHoverSound();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
   if (readOnly) {
@@ -39,15 +42,15 @@ export function ProjectSidebarDividerInsert({
   const kindIcon = (kind: SidebarSectionKind) => {
     switch (kind) {
       case 'members':
-        return <PeopleIcon sx={{ fontSize: 16 }} />;
+        return <GradientIcon kind="member" fontSize={16} gradientOnHover aria-hidden />;
       case 'calendar':
-        return <CalendarIcon sx={{ fontSize: 16 }} />;
+        return <CalendarIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />;
       case 'video':
-        return <VideoIcon sx={{ fontSize: 16 }} />;
+        return <VideoIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />;
       case 'link':
-        return <LinkIcon sx={{ fontSize: 16 }} />;
+        return <GradientIcon kind="link" fontSize={16} gradientOnHover aria-hidden />;
       case 'text':
-        return <TextIcon sx={{ fontSize: 16 }} />;
+        return <TextIcon sx={{ fontSize: 16, color: 'action.active' }} aria-hidden />;
     }
   };
 
@@ -98,38 +101,52 @@ export function ProjectSidebarDividerInsert({
           transition: 'border-color 0.15s ease, opacity 0.15s ease',
         }}
       />
-      <IconButton
+      <Box
         className="sidebar-divider-add"
         data-open={menuAnchor ? 'true' : undefined}
-        size="small"
-        aria-label={t('sidebar_section_add')}
-        onClick={e => setMenuAnchor(e.currentTarget)}
         sx={{
-          'position': 'relative',
-          'zIndex': 1,
-          'opacity': 0,
-          'pointerEvents': 'none',
-          'width': 24,
-          'height': 24,
-          'borderRadius': 1,
-          'bgcolor': 'background.paper',
-          'border': '1px solid',
-          'borderColor': 'divider',
-          'transition': 'opacity 0.15s ease',
-          '&:hover': {
-            bgcolor: 'action.hover',
-            borderColor: 'primary.main',
-            color: 'primary.main',
-          },
+          position: 'relative',
+          zIndex: 1,
+          opacity: 0,
+          pointerEvents: 'none',
+          px: 1,
+          bgcolor: 'background.default',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'opacity 0.15s ease',
         }}
       >
-        <AddIcon sx={{ fontSize: 16 }} />
-      </IconButton>
+        <IconButton
+          size="small"
+          aria-label={t('sidebar_section_add')}
+          onClick={(e) => {
+            playHoverSound();
+            setMenuAnchor(e.currentTarget);
+          }}
+          sx={{
+            'width': 24,
+            'height': 24,
+            'borderRadius': 1,
+            'border': 'none',
+            'bgcolor': 'transparent',
+            'color': 'text.secondary',
+            '&:hover': {
+              bgcolor: 'action.hover',
+              color: 'primary.main',
+            },
+          }}
+        >
+          <AddIcon sx={{ fontSize: 16 }} />
+        </IconButton>
+      </Box>
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={() => setMenuAnchor(null)}
-        slotProps={getGlassMenuSlotProps()}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
       >
         {ADDABLE_KINDS.map((kind) => {
           const disabled = !canAddSidebarSectionKind(sections, kind);
@@ -137,9 +154,10 @@ export function ProjectSidebarDividerInsert({
             <MenuItem
               key={kind}
               disabled={disabled}
+              onMouseEnter={playHoverSound}
               sx={glassMenuItemSx}
               onClick={() => {
-                if (!menuAnchor) {
+                if (!menuAnchor || disabled) {
                   return;
                 }
                 const anchor = menuAnchor;
@@ -147,10 +165,8 @@ export function ProjectSidebarDividerInsert({
                 onAddKind(kind, anchor);
               }}
             >
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                {kindIcon(kind)}
-              </ListItemIcon>
-              <ListItemText primary={kindLabel(kind)} />
+              {kindIcon(kind)}
+              {kindLabel(kind)}
             </MenuItem>
           );
         })}

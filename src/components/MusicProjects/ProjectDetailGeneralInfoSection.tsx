@@ -158,7 +158,10 @@ export function ProjectDetailGeneralInfoSection({
   }, [draftDescription, description, projectId, updateProject]);
 
   const displayGenres = parseGenres(genre);
-  const chipSx = getSurfaceAccentChipSx(accent, theme);
+  const chipSx = {
+    ...getSurfaceAccentChipSx(accent, theme),
+    borderRadius: 1,
+  };
   const clickableSx = readOnly
     ? {}
     : {

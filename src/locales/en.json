@@ -166,6 +166,8 @@
     "sidebar_section_text_placeholder": "Write something…",
     "sidebar_section_text_empty": "No text yet",
     "sidebar_section_invalid_video_url": "Enter a valid YouTube URL",
+    "sidebar_section_add_another_link": "Add another link",
+    "sidebar_section_add_another_video": "Add another video",
     "calendar": "Calendar",
     "calendar_empty": "No events this month",
     "calendar_view_month": "Calendar view",

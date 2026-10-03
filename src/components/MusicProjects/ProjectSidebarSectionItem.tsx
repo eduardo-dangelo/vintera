@@ -17,6 +17,7 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
@@ -142,6 +143,16 @@ export function ProjectSidebarSectionItem({
                 'pointerEvents': 'auto',
                 'opacity': showActions ? 1 : 0,
                 'transition': 'opacity 0.15s ease',
+                ...(!displayTitle
+                  ? {
+                      bgcolor: theme => alpha(theme.palette.background.default, 0.82),
+                      color: 'text.primary',
+                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.18)',
+                      '&:hover': {
+                        bgcolor: theme => alpha(theme.palette.background.default, 0.92),
+                      },
+                    }
+                  : {}),
               }}
             >
               <MoreHoriz sx={{ fontSize: 16 }} />

@@ -1,5 +1,6 @@
 'use client';
 
+import type { SidebarSectionFormDraft } from '@/components/MusicProjects/SidebarSectionFormPopover';
 import type { MemberPermission, MusicProjectMember } from '@/types/musicPeople';
 import type {
   ProjectSidebarSection,
@@ -16,7 +17,6 @@ import { ProjectSidebarSectionItem } from '@/components/MusicProjects/ProjectSid
 import {
   EMPTY_SIDEBAR_SECTION_DRAFT,
   SidebarSectionFormPopover,
-  type SidebarSectionFormDraft,
 } from '@/components/MusicProjects/SidebarSectionFormPopover';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
 import { flipFromFirstTop, readElementTop } from '@/utils/flipListSwap';
@@ -143,10 +143,18 @@ export function ProjectDetailSidebar({
     const section = options?.section;
     if (section && (section.kind === 'video' || section.kind === 'link')) {
       setEditingId(section.id);
-      setFormDraft({ url: section.url, title: section.title ?? '', body: '' });
+      setFormDraft({
+        title: section.title ?? '',
+        body: '',
+        urls: [section.url],
+      });
     } else if (section && section.kind === 'text') {
       setEditingId(section.id);
-      setFormDraft({ url: '', title: section.title ?? '', body: section.body });
+      setFormDraft({
+        title: section.title ?? '',
+        body: section.body,
+        urls: [''],
+      });
     } else {
       setEditingId(undefined);
       setFormDraft(EMPTY_SIDEBAR_SECTION_DRAFT);
@@ -169,15 +177,22 @@ export function ProjectDetailSidebar({
     openContentForm(kind, 'create', anchorEl, { atIndex });
   };
 
-  const handleFormBuilt = async (section: ProjectSidebarSection) => {
+  const handleFormBuilt = async (built: ProjectSidebarSection[]) => {
+    if (built.length === 0) {
+      return;
+    }
     if (formMode === 'edit' && editingId) {
-      await applySections(displaySections.map(item => (item.id === editingId ? section : item)));
+      const [updated] = built;
+      if (!updated) {
+        return;
+      }
+      await applySections(displaySections.map(item => (item.id === editingId ? updated : item)));
       closeForm();
       return;
     }
     const next = [...displaySections];
     const index = insertIndex == null ? next.length : insertIndex;
-    next.splice(index, 0, section);
+    next.splice(index, 0, ...built);
     await applySections(next);
     closeForm();
   };
@@ -318,11 +333,9 @@ export function ProjectDetailSidebar({
         editingId={editingId}
         urlError={urlError}
         isPending={updateProject.isPending}
-        onDraftChange={(field, value) => {
-          setFormDraft(prev => ({ ...prev, [field]: value }));
-        }}
-        onBuilt={(section) => {
-          void handleFormBuilt(section);
+        onDraftChange={setFormDraft}
+        onBuilt={(sections) => {
+          void handleFormBuilt(sections);
         }}
         onClose={closeForm}
         onUrlError={setUrlError}

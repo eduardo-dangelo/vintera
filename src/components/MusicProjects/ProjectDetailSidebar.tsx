@@ -5,9 +5,10 @@ import type {
   ProjectSidebarSection,
   SidebarSectionKind,
 } from '@/utils/projectSidebarSections';
-import { Box } from '@mui/material';
+import { Box, Collapse } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { TransitionGroup } from 'react-transition-group';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { ProjectDetailGeneralInfoSection } from '@/components/MusicProjects/ProjectDetailGeneralInfoSection';
 import { ProjectSidebarDividerInsert } from '@/components/MusicProjects/ProjectSidebarDividerInsert';
@@ -18,12 +19,16 @@ import {
   type SidebarSectionFormDraft,
 } from '@/components/MusicProjects/SidebarSectionFormPopover';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
+import { flipFromFirstTop, readElementTop } from '@/utils/flipListSwap';
 import { mergeSidebarSections, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
 import {
   createCalendarSection,
   createMembersSection,
   resolveSidebarSections,
 } from '@/utils/projectSidebarSections';
+
+const SECTION_COLLAPSE_MS = 250;
+const SECTION_FLIP_MS = 220;
 
 type ProjectDetailSidebarProps = {
   locale: string;
@@ -61,6 +66,13 @@ function moveSection(
   return next;
 }
 
+function sectionNode(sectionId: string): HTMLElement | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  return document.querySelector<HTMLElement>(`[data-sidebar-section-id="${sectionId}"]`);
+}
+
 export function ProjectDetailSidebar({
   locale,
   projectId,
@@ -75,10 +87,16 @@ export function ProjectDetailSidebar({
   const t = useTranslations('MusicProjects');
   const updateProject = useUpdateMusicProject(locale);
 
-  const sections = useMemo(() => {
+  const resolvedSections = useMemo(() => {
     const parsed = parseMusicProjectMetadata(metadata);
     return resolveSidebarSections(parsed.sidebarSections, parsed.externalLinks);
   }, [metadata]);
+
+  const [displaySections, setDisplaySections] = useState(resolvedSections);
+
+  useEffect(() => {
+    setDisplaySections(resolvedSections);
+  }, [resolvedSections]);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formAnchorEl, setFormAnchorEl] = useState<HTMLElement | null>(null);
@@ -92,7 +110,8 @@ export function ProjectDetailSidebar({
   const [removeId, setRemoveId] = useState<string | null>(null);
   const [removeAnchor, setRemoveAnchor] = useState<HTMLElement | null>(null);
 
-  const persistSections = useCallback(async (next: ProjectSidebarSection[]) => {
+  const applySections = useCallback(async (next: ProjectSidebarSection[]) => {
+    setDisplaySections(next);
     const merged = mergeSidebarSections(metadata, next);
     await updateProject.mutateAsync({
       projectId,
@@ -142,9 +161,9 @@ export function ProjectDetailSidebar({
   ) => {
     if (kind === 'members' || kind === 'calendar') {
       const section = kind === 'members' ? createMembersSection() : createCalendarSection();
-      const next = [...sections];
+      const next = [...displaySections];
       next.splice(atIndex, 0, section);
-      await persistSections(next);
+      await applySections(next);
       return;
     }
     openContentForm(kind, 'create', anchorEl, { atIndex });
@@ -152,40 +171,64 @@ export function ProjectDetailSidebar({
 
   const handleFormBuilt = async (section: ProjectSidebarSection) => {
     if (formMode === 'edit' && editingId) {
-      await persistSections(sections.map(item => (item.id === editingId ? section : item)));
+      await applySections(displaySections.map(item => (item.id === editingId ? section : item)));
       closeForm();
       return;
     }
-    const next = [...sections];
+    const next = [...displaySections];
     const index = insertIndex == null ? next.length : insertIndex;
     next.splice(index, 0, section);
-    await persistSections(next);
+    await applySections(next);
     closeForm();
   };
 
   const handleMove = async (sectionId: string, direction: -1 | 1) => {
-    const next = moveSection(sections, sectionId, direction);
+    const index = displaySections.findIndex(section => section.id === sectionId);
+    if (index === -1) {
+      return;
+    }
+    const neighbor = displaySections[index + direction];
+    const next = moveSection(displaySections, sectionId, direction);
     if (!next) {
       return;
     }
-    await persistSections(next);
+
+    const movedFirstTop = readElementTop(sectionNode(sectionId));
+    const neighborFirstTop = neighbor ? readElementTop(sectionNode(neighbor.id)) : null;
+
+    setDisplaySections(next);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        flipFromFirstTop(sectionNode(sectionId), movedFirstTop, SECTION_FLIP_MS);
+        if (neighbor) {
+          flipFromFirstTop(sectionNode(neighbor.id), neighborFirstTop, SECTION_FLIP_MS);
+        }
+      });
+    });
+
+    const merged = mergeSidebarSections(metadata, next);
+    await updateProject.mutateAsync({
+      projectId,
+      data: { metadata: merged },
+    });
   };
 
   const handleHideSection = async (sectionId: string) => {
-    await persistSections(sections.filter(section => section.id !== sectionId));
+    await applySections(displaySections.filter(section => section.id !== sectionId));
   };
 
   const handleConfirmRemove = async () => {
     if (!removeId) {
       return;
     }
-    const target = sections.find(section => section.id === removeId);
+    const target = displaySections.find(section => section.id === removeId);
     if (target?.kind === 'members' || target?.kind === 'calendar') {
       setRemoveId(null);
       setRemoveAnchor(null);
       return;
     }
-    await persistSections(sections.filter(section => section.id !== removeId));
+    await applySections(displaySections.filter(section => section.id !== removeId));
     setRemoveId(null);
     setRemoveAnchor(null);
   };
@@ -213,53 +256,57 @@ export function ProjectDetailSidebar({
         />
 
         <ProjectSidebarDividerInsert
-          sections={sections}
+          sections={displaySections}
           readOnly={readOnly}
           onAddKind={(kind, anchorEl) => {
             void handleAddKindAt(kind, 0, anchorEl);
           }}
         />
 
-        {sections.map((section, index) => (
-          <Box key={section.id}>
-            <ProjectSidebarSectionItem
-              section={section}
-              locale={locale}
-              projectId={projectId}
-              accent={accent}
-              members={members}
-              viewerPermission={viewerPermission}
-              readOnly={readOnly}
-              canMoveUp={index > 0}
-              canMoveDown={index < sections.length - 1}
-              onEdit={(target, anchorEl) => {
-                if (target.kind === 'video' || target.kind === 'link' || target.kind === 'text') {
-                  openContentForm(target.kind, 'edit', anchorEl, { section: target });
-                }
-              }}
-              onHide={(sectionId) => {
-                void handleHideSection(sectionId);
-              }}
-              onRemove={(sectionId, anchorEl) => {
-                setRemoveId(sectionId);
-                setRemoveAnchor(anchorEl);
-              }}
-              onMoveUp={(sectionId) => {
-                void handleMove(sectionId, -1);
-              }}
-              onMoveDown={(sectionId) => {
-                void handleMove(sectionId, 1);
-              }}
-            />
-            <ProjectSidebarDividerInsert
-              sections={sections}
-              readOnly={readOnly}
-              onAddKind={(kind, anchorEl) => {
-                void handleAddKindAt(kind, index + 1, anchorEl);
-              }}
-            />
-          </Box>
-        ))}
+        <TransitionGroup component={null}>
+          {displaySections.map((section, index) => (
+            <Collapse key={section.id} timeout={SECTION_COLLAPSE_MS}>
+              <Box data-sidebar-section-id={section.id}>
+                <ProjectSidebarSectionItem
+                  section={section}
+                  locale={locale}
+                  projectId={projectId}
+                  accent={accent}
+                  members={members}
+                  viewerPermission={viewerPermission}
+                  readOnly={readOnly}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < displaySections.length - 1}
+                  onEdit={(target, anchorEl) => {
+                    if (target.kind === 'video' || target.kind === 'link' || target.kind === 'text') {
+                      openContentForm(target.kind, 'edit', anchorEl, { section: target });
+                    }
+                  }}
+                  onHide={(sectionId) => {
+                    void handleHideSection(sectionId);
+                  }}
+                  onRemove={(sectionId, anchorEl) => {
+                    setRemoveId(sectionId);
+                    setRemoveAnchor(anchorEl);
+                  }}
+                  onMoveUp={(sectionId) => {
+                    void handleMove(sectionId, -1);
+                  }}
+                  onMoveDown={(sectionId) => {
+                    void handleMove(sectionId, 1);
+                  }}
+                />
+                <ProjectSidebarDividerInsert
+                  sections={displaySections}
+                  readOnly={readOnly}
+                  onAddKind={(kind, anchorEl) => {
+                    void handleAddKindAt(kind, index + 1, anchorEl);
+                  }}
+                />
+              </Box>
+            </Collapse>
+          ))}
+        </TransitionGroup>
       </Box>
 
       <SidebarSectionFormPopover

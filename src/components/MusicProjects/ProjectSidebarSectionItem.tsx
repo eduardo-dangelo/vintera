@@ -83,10 +83,13 @@ export function ProjectSidebarSectionItem({
   const showActions = !readOnly && (hovered || Boolean(menuAnchor));
   const isHideOnly = section.kind === 'members' || section.kind === 'calendar';
   const canEditContent = section.kind === 'video' || section.kind === 'link' || section.kind === 'text';
-  const displayTitle = (section.kind === 'video' || section.kind === 'link' || section.kind === 'text')
-    && section.title
-    ? section.title
-    : sectionTitle(section.kind, t);
+  const customTitle = (section.kind === 'video' || section.kind === 'link' || section.kind === 'text')
+    ? section.title?.trim() || null
+    : null;
+  const displayTitle = isHideOnly
+    ? sectionTitle(section.kind, t)
+    : customTitle;
+  const showTitleRow = Boolean(displayTitle) || !readOnly;
 
   return (
     <Box
@@ -98,35 +101,54 @@ export function ProjectSidebarSectionItem({
       }}
       sx={{ position: 'relative' }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          mb: 1,
-          minHeight: 28,
-        }}
-      >
-        <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, minWidth: 0, fontSize: '1.05rem' }}>
-          {displayTitle}
-        </Typography>
-        {!readOnly && (
-          <IconButton
-            size="small"
-            aria-label={t('context_menu_actions')}
-            onClick={e => setMenuAnchor(e.currentTarget)}
-            sx={{
-              'width': 24,
-              'height': 24,
-              'borderRadius': 1,
-              'opacity': showActions ? 1 : 0,
-              'transition': 'opacity 0.15s ease',
-            }}
-          >
-            <MoreHoriz sx={{ fontSize: 16 }} />
-          </IconButton>
-        )}
-      </Box>
+      {showTitleRow && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            mb: displayTitle ? 1 : 0.5,
+            minHeight: 28,
+            ...(displayTitle
+              ? {}
+              : {
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  zIndex: 1,
+                  justifyContent: 'flex-end',
+                  width: '100%',
+                  pointerEvents: 'none',
+                  mb: 0,
+                }),
+          }}
+        >
+          {displayTitle
+            ? (
+                <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, minWidth: 0, fontSize: '1.05rem' }}>
+                  {displayTitle}
+                </Typography>
+              )
+            : <Box sx={{ flex: 1 }} />}
+          {!readOnly && (
+            <IconButton
+              size="small"
+              aria-label={t('context_menu_actions')}
+              onClick={e => setMenuAnchor(e.currentTarget)}
+              sx={{
+                'width': 24,
+                'height': 24,
+                'borderRadius': 1,
+                'pointerEvents': 'auto',
+                'opacity': showActions ? 1 : 0,
+                'transition': 'opacity 0.15s ease',
+              }}
+            >
+              <MoreHoriz sx={{ fontSize: 16 }} />
+            </IconButton>
+          )}
+        </Box>
+      )}
 
       {section.kind === 'members' && (
         <ProjectDetailMembersSection

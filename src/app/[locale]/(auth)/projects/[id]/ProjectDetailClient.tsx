@@ -60,7 +60,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
   const canEdit = viewerPermission === 'owner'
     || viewerPermission === 'edit'
     || viewerPermission === 'admin';
-  const canDelete = viewerPermission === 'owner' || viewerPermission === 'admin';
 
   return (
     <Box>
@@ -89,7 +88,6 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
             metadata={project.metadata}
             viewerPermission={viewerPermission}
             readOnly={!canEdit}
-            canDelete={canDelete}
           />
         </Grid>
 

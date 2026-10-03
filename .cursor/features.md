@@ -4,6 +4,13 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 <!-- Newest first -->
 
+### Project general info inline field edit
+- Status: evolving
+- What: Genre and description edit one field at a time via click-to-edit; genre is multi-chip (comma/Enter commits tags, stored comma-joined); no MoreHoriz on the section; project delete stays on the app sidebar item menu.
+- Paths: `src/components/MusicProjects/ProjectDetailGeneralInfoSection.tsx`, `src/components/MusicProjects/ProjectDetailSidebar.tsx`
+- Invariants: Only one field open; Cancel/Save per field; active editors use `primary.main`; genre read mode shows one chip per tag; read-only skips click-to-edit
+- Updated: 2026-10-03
+
 ### Music item context menu (Notion-like)
 - Status: evolving
 - What: Item more-menu is Copy link → Duplicate → Rename (popover) → Delete; Copy link writes the public share URL and shows brief copied feedback.

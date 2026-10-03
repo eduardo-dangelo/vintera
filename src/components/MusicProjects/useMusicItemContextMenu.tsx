@@ -231,7 +231,7 @@ export function useMusicItemContextMenu(locale: string) {
           void handleConfirmDelete();
         }}
         message={pendingDelete ? getDeleteConfirmMessage(pendingDelete) : ''}
-        confirmLabel={t('context_menu_move_to_trash')}
+        confirmLabel={t('delete')}
         cancelLabel={t('cancel')}
         confirmColor="error"
         loading={isDeleting}

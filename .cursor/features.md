@@ -6,7 +6,7 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 ### Music item context menu (Notion-like)
 - Status: evolving
-- What: Item more-menu is Copy link → Duplicate → Rename (popover) → Move to Trash; Copy link writes the public share URL and shows brief copied feedback.
+- What: Item more-menu is Copy link → Duplicate → Rename (popover) → Delete; Copy link writes the public share URL and shows brief copied feedback.
 - Paths: `src/components/MusicProjects/useMusicItemContextMenu.tsx`, `src/components/MusicProjects/MusicItemContextMenuPopover.tsx`, `src/components/MusicProjects/MusicItemRenamePopover.tsx`, `src/utils/shareUrls.ts`
 - Invariants: Menu order fixed as above; rename prefills from `MusicItemMenuTarget.name` and anchors like delete confirm; share popover is not opened from this menu; delete still confirms then removes
 - Updated: 2026-10-03

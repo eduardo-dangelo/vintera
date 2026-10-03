@@ -37,6 +37,7 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
     kind: 'album' as const,
     id: album.id,
     href: `/${locale}/albums/${album.id}`,
+    name: album.name,
   };
 
   const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);

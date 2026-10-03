@@ -39,6 +39,7 @@ export function ProjectListView({ projects, locale }: ProjectListViewProps) {
           kind: 'project',
           id: project.id,
           href: `/${locale}/projects/${project.id}`,
+          name: project.name,
         },
         statPrimary: (
           <MusicStatBadge

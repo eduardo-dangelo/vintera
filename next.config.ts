@@ -14,6 +14,19 @@ const baseConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/': ['./migrations/**/*'],
   },
+  async headers() {
+    return [
+      {
+        source: '/:locale/embed/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: 'frame-ancestors *',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // Initialize the Next-Intl plugin

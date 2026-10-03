@@ -29,6 +29,7 @@ export function AlbumListView({ albums, locale }: AlbumListViewProps) {
           kind: 'album',
           id: album.id,
           href: `/${locale}/albums/${album.id}`,
+          name: album.name,
         },
         statPrimary: (
           <MusicStatBadge

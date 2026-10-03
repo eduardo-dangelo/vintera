@@ -4,4 +4,5 @@ export type MusicItemMenuTarget = {
   kind: MusicItemKind;
   id: number;
   href: string;
+  name: string;
 };

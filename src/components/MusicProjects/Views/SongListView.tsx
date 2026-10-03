@@ -31,6 +31,7 @@ export function SongListView({ songs, locale, projectId }: SongListViewProps) {
             kind: 'song',
             id: song.id,
             href,
+            name: song.title,
           },
           meta: <MusicPeopleAvatarGroup people={song.authors} size={22} />,
           trailing: format(new Date(song.updatedAt), 'MMM d, yyyy'),

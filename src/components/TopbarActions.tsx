@@ -52,6 +52,14 @@ export function TopbarActions({ variant = 'default' }: TopbarActionsProps) {
 
   const iconButtonSx = {
     'color': iconColor,
+    ...(isSidebar
+      ? {
+          width: 28,
+          height: 28,
+          borderRadius: 1,
+          p: 0.5,
+        }
+      : {}),
     '&:hover': {
       bgcolor: iconHoverBg,
       ...(iconHoverColor && { color: iconHoverColor }),

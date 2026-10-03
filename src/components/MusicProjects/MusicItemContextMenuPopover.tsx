@@ -1,8 +1,11 @@
 'use client';
 
 import {
-  ContentCopy as ContentCopyIcon,
-  Delete as DeleteIcon,
+  Check as CheckIcon,
+  DeleteOutline as DeleteOutlineIcon,
+  DriveFileRenameOutline as RenameIcon,
+  FilterNone as DuplicateIcon,
+  LinkOutlined as LinkOutlinedIcon,
 } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
@@ -19,16 +22,19 @@ import {
   contextMenuRowSx,
 } from './contextMenuStyles';
 
-const POPOVER_WIDTH = 168;
+const POPOVER_WIDTH = 200;
 
 export type MusicItemContextMenuPopoverProps = {
   open: boolean;
   anchorEl: HTMLElement | null;
   anchorPosition: { top: number; left: number } | null;
   onClose: () => void;
+  onCopyLink: () => void;
   onDuplicate: () => void;
+  onRename: () => void;
   onDelete: () => void;
   duplicating?: boolean;
+  linkCopied?: boolean;
 };
 
 export function MusicItemContextMenuPopover({
@@ -36,9 +42,12 @@ export function MusicItemContextMenuPopover({
   anchorEl,
   anchorPosition,
   onClose,
+  onCopyLink,
   onDuplicate,
+  onRename,
   onDelete,
   duplicating = false,
+  linkCopied = false,
 }: MusicItemContextMenuPopoverProps) {
   const t = useTranslations('MusicProjects');
   const { playHoverSound } = useHoverSound();
@@ -61,6 +70,19 @@ export function MusicItemContextMenuPopover({
         <Box
           role="menuitem"
           onMouseEnter={playHoverSound}
+          onClick={onCopyLink}
+          sx={contextMenuRowSx}
+        >
+          {linkCopied
+            ? <CheckIcon sx={contextMenuIconSx} color="action" />
+            : <LinkOutlinedIcon sx={contextMenuIconSx} color="action" />}
+          <Typography component="span" sx={contextMenuItemTextSx}>
+            {linkCopied ? t('share_copied') : t('context_menu_copy_link')}
+          </Typography>
+        </Box>
+        <Box
+          role="menuitem"
+          onMouseEnter={playHoverSound}
           onClick={() => {
             if (duplicating) {
               return;
@@ -72,7 +94,7 @@ export function MusicItemContextMenuPopover({
             ...(duplicating ? { opacity: 0.5, pointerEvents: 'none' } : {}),
           }}
         >
-          <ContentCopyIcon sx={contextMenuIconSx} color="action" />
+          <DuplicateIcon sx={contextMenuIconSx} color="action" />
           <Typography component="span" sx={contextMenuItemTextSx}>
             {t('context_menu_duplicate')}
           </Typography>
@@ -80,17 +102,23 @@ export function MusicItemContextMenuPopover({
         <Box
           role="menuitem"
           onMouseEnter={playHoverSound}
-          onClick={() => {
-            onDelete();
-          }}
-          sx={{
-            ...contextMenuRowSx,
-            '& .MuiSvgIcon-root': { color: 'error.main' },
-          }}
+          onClick={onRename}
+          sx={contextMenuRowSx}
         >
-          <DeleteIcon sx={contextMenuIconSx} />
+          <RenameIcon sx={contextMenuIconSx} color="action" />
           <Typography component="span" sx={contextMenuItemTextSx}>
-            {t('delete')}
+            {t('context_menu_rename')}
+          </Typography>
+        </Box>
+        <Box
+          role="menuitem"
+          onMouseEnter={playHoverSound}
+          onClick={onDelete}
+          sx={contextMenuRowSx}
+        >
+          <DeleteOutlineIcon sx={contextMenuIconSx} color="action" />
+          <Typography component="span" sx={contextMenuItemTextSx}>
+            {t('context_menu_move_to_trash')}
           </Typography>
         </Box>
       </Box>

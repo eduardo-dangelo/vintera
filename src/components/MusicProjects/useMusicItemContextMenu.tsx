@@ -11,7 +11,9 @@ import { useDeleteMusicProject } from '@/queries/hooks/music-projects/useDeleteM
 import { useDuplicateMusicProject } from '@/queries/hooks/music-projects/useDuplicateMusicProject';
 import { useDeleteSongById } from '@/queries/hooks/songs/useDeleteSongById';
 import { useDuplicateSongById } from '@/queries/hooks/songs/useDuplicateSongById';
+import { getSharePageHref } from '@/utils/shareUrls';
 import { MusicItemContextMenuPopover } from './MusicItemContextMenuPopover';
+import { MusicItemRenamePopover } from './MusicItemRenamePopover';
 
 type MenuState = {
   target: MusicItemMenuTarget;
@@ -30,6 +32,13 @@ export function useMusicItemContextMenu(locale: string) {
   const duplicateAlbum = useDuplicateAlbumById(locale);
 
   const [menuState, setMenuState] = useState<MenuState | null>(null);
+  const [renameTarget, setRenameTarget] = useState<MusicItemMenuTarget | null>(null);
+  const [renameAnchor, setRenameAnchor] = useState<HTMLElement | null>(null);
+  const [renameAnchorPosition, setRenameAnchorPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [deleteConfirmAnchor, setDeleteConfirmAnchor] = useState<HTMLElement | null>(null);
   const [deleteConfirmAnchorPosition, setDeleteConfirmAnchorPosition] = useState<{
     top: number;
@@ -39,11 +48,13 @@ export function useMusicItemContextMenu(locale: string) {
 
   const closeMenu = useCallback(() => {
     setMenuState(null);
+    setLinkCopied(false);
   }, []);
 
   const openFromButton = useCallback((event: React.MouseEvent<HTMLElement>, target: MusicItemMenuTarget) => {
     event.stopPropagation();
     event.preventDefault();
+    setLinkCopied(false);
     setMenuState({
       target,
       anchorEl: event.currentTarget,
@@ -54,12 +65,30 @@ export function useMusicItemContextMenu(locale: string) {
   const openFromContextMenu = useCallback((event: React.MouseEvent, target: MusicItemMenuTarget) => {
     event.preventDefault();
     event.stopPropagation();
+    setLinkCopied(false);
     setMenuState({
       target,
       anchorEl: null,
       anchorPosition: { top: event.clientY, left: event.clientX },
     });
   }, []);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!menuState) {
+      return;
+    }
+    const sharePath = getSharePageHref(locale, menuState.target.kind, menuState.target.id);
+    const url = `${window.location.origin}${sharePath}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      window.setTimeout(() => {
+        closeMenu();
+      }, 700);
+    } catch {
+      // Keep menu open if copy fails
+    }
+  }, [menuState, locale, closeMenu]);
 
   const handleDuplicate = useCallback(async () => {
     if (!menuState) {
@@ -79,6 +108,23 @@ export function useMusicItemContextMenu(locale: string) {
       // Keep menu open on error
     }
   }, [menuState, duplicateProject, duplicateSong, duplicateAlbum, closeMenu]);
+
+  const handleRenameClick = useCallback(() => {
+    if (!menuState) {
+      return;
+    }
+    const { target, anchorEl, anchorPosition } = menuState;
+    closeMenu();
+    setRenameTarget(target);
+    setRenameAnchor(anchorEl);
+    setRenameAnchorPosition(anchorPosition);
+  }, [menuState, closeMenu]);
+
+  const closeRename = useCallback(() => {
+    setRenameTarget(null);
+    setRenameAnchor(null);
+    setRenameAnchorPosition(null);
+  }, []);
 
   const handleDeleteClick = useCallback(() => {
     if (!menuState) {
@@ -157,11 +203,24 @@ export function useMusicItemContextMenu(locale: string) {
         anchorEl={menuState?.anchorEl ?? null}
         anchorPosition={menuState?.anchorPosition ?? null}
         onClose={closeMenu}
+        onCopyLink={() => {
+          void handleCopyLink();
+        }}
         onDuplicate={() => {
           void handleDuplicate();
         }}
+        onRename={handleRenameClick}
         onDelete={handleDeleteClick}
         duplicating={isDuplicating}
+        linkCopied={linkCopied}
+      />
+      <MusicItemRenamePopover
+        open={Boolean(renameTarget && (renameAnchor ?? renameAnchorPosition))}
+        target={renameTarget}
+        locale={locale}
+        anchorEl={renameAnchor}
+        anchorPosition={renameAnchorPosition}
+        onClose={closeRename}
       />
       <ConfirmPopover
         open={Boolean(pendingDelete && (deleteConfirmAnchor ?? deleteConfirmAnchorPosition))}
@@ -172,7 +231,7 @@ export function useMusicItemContextMenu(locale: string) {
           void handleConfirmDelete();
         }}
         message={pendingDelete ? getDeleteConfirmMessage(pendingDelete) : ''}
-        confirmLabel={t('delete')}
+        confirmLabel={t('context_menu_move_to_trash')}
         cancelLabel={t('cancel')}
         confirmColor="error"
         loading={isDeleting}
@@ -181,9 +240,17 @@ export function useMusicItemContextMenu(locale: string) {
   ), [
     menuState,
     closeMenu,
+    handleCopyLink,
     handleDuplicate,
+    handleRenameClick,
     handleDeleteClick,
     isDuplicating,
+    linkCopied,
+    renameTarget,
+    renameAnchor,
+    renameAnchorPosition,
+    locale,
+    closeRename,
     deleteConfirmAnchor,
     deleteConfirmAnchorPosition,
     pendingDelete,
@@ -199,6 +266,6 @@ export function useMusicItemContextMenu(locale: string) {
     openFromContextMenu,
     closeMenu,
     renderMenus,
-    menuTarget: menuState?.target ?? null,
+    menuTarget: menuState?.target ?? renameTarget ?? null,
   };
 }

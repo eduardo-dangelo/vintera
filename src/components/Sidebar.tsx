@@ -33,6 +33,7 @@ import { useEffect, useState } from 'react';
 import { TransitionGroup } from 'react-transition-group';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { useGetSidebarRecents } from '@/queries/hooks/sidebar';
+import { discreetScrollbarStyles } from '@/utils/discreetScrollbarStyles';
 import { globalTopbarGlassSx } from '@/utils/glassPaperStyles';
 import { BreadcrumbProvider } from './BreadcrumbContext';
 import { GlobalTopbar } from './GlobalTopbar';
@@ -49,6 +50,7 @@ type SidebarItem = {
   key: string;
   href: string;
   label: string;
+  name: string;
   icon: React.ComponentType<{ sx?: object }>;
   kind: MusicItemKind;
   id: number;
@@ -167,6 +169,7 @@ function SidebarSection({
             'height': 20,
             'width': 20,
             'p': 0,
+            'borderRadius': 1,
             'color': 'inherit',
             'bgcolor': 'transparent',
             '&:hover': {
@@ -195,6 +198,7 @@ function SidebarSection({
                 kind: item.kind,
                 id: item.id,
                 href: item.href,
+                name: item.name,
               };
               const actionsOpen = openMenuTarget?.kind === item.kind
                 && openMenuTarget.id === item.id;
@@ -269,9 +273,9 @@ function SidebarSection({
                       data-open={actionsOpen ? 'true' : undefined}
                       sx={{
                         position: 'absolute',
-                        right: 2,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        right: 5,
+                        top: 2,
+                        // transform: 'translateY(-50%)',
                         opacity: 0,
                         pointerEvents: 'none',
                         transition: 'opacity 0.15s ease',
@@ -286,6 +290,7 @@ function SidebarSection({
                           'p': 0.125,
                           'height': 20,
                           'width': 20,
+                          'borderRadius': 1,
                           '&:hover': {
                             color: theme.palette.sidebar.textPrimary,
                             bgcolor: 'rgba(255, 255, 255, 0.08)',
@@ -357,6 +362,7 @@ function mapProjectItems(
     key: `project-${project.id}`,
     href: `/${locale}/projects/${project.id}`,
     label: project.name,
+    name: project.name,
     icon: LibraryMusicIcon,
     kind: 'project' as const,
     id: project.id,
@@ -376,6 +382,7 @@ function mapSongItems(
     key: `song-${song.id}`,
     href: `/${locale}/songs/${song.id}`,
     label: song.projectName ? `${song.title} (${song.projectName})` : song.title,
+    name: song.title,
     icon: MusicNoteIcon,
     kind: 'song' as const,
     id: song.id,
@@ -394,6 +401,7 @@ function mapAlbumItems(
     key: `album-${album.id}`,
     href: `/${locale}/albums/${album.id}`,
     label: `${album.name} (${album.projectName})`,
+    name: album.name,
     icon: AlbumIcon,
     kind: 'album' as const,
     id: album.id,
@@ -437,6 +445,7 @@ export function Sidebar({
       kind: item.kind,
       id: item.id,
       href: item.href,
+      name: item.name,
     });
   };
 
@@ -510,7 +519,16 @@ export function Sidebar({
         <SidebarNewButton locale={locale} />
       </Box>
 
-      <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 1 : 0, overflowY: 'auto', mt: 1.25 }}>
+      <Box
+        sx={theme => ({
+          flexGrow: 1,
+          px: 1.25,
+          py: isMobile ? 1 : 0,
+          overflowY: 'auto',
+          mt: 1.25,
+          ...discreetScrollbarStyles({ onDarkSurface: true })(theme),
+        })}
+      >
         {!isRecentsLoading && projectPreviewItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.projects}
@@ -712,39 +730,13 @@ export function Sidebar({
         <GlobalTopbarContentProvider>
           <Box
             component="main"
-            sx={{
-              'flexGrow': 1,
-              'height': '100vh',
-              'overflow': 'auto',
-              'bgcolor': 'background.default',
-              '&::-webkit-scrollbar': {
-                border: '1px solid red',
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 1000,
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                'background': theme.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.2)'
-                  : 'rgba(0, 0, 0, 0.2)',
-                'borderRadius': '4px',
-                '&:hover': {
-                  background: theme.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.3)'
-                    : 'rgba(0, 0, 0, 0.3)',
-                },
-              },
-              'scrollbarWidth': 'thin',
-              'scrollbarColor': theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.2) transparent'
-                : 'rgba(0, 0, 0, 0.2) transparent',
-              'scrollbarGutter': 'unset',
-            }}
+            sx={theme => ({
+              flexGrow: 1,
+              height: '100vh',
+              overflow: 'auto',
+              bgcolor: 'background.default',
+              ...discreetScrollbarStyles()(theme),
+            })}
           >
             <Box
               sx={{

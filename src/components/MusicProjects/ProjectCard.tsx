@@ -44,6 +44,7 @@ export function ProjectCard({ project, locale, cardSize = 'medium' }: ProjectCar
     kind: 'project' as const,
     id: project.id,
     href: `/${locale}/projects/${project.id}`,
+    name: project.name,
   };
 
   const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);

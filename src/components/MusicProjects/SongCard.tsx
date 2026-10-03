@@ -37,6 +37,7 @@ export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongC
     kind: 'song' as const,
     id: song.id,
     href: getSongDetailHref(locale, song.id, projectId),
+    name: song.title,
   };
 
   const { openFromButton, openFromContextMenu, renderMenus } = useMusicItemContextMenu(locale);

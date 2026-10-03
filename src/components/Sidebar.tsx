@@ -44,6 +44,7 @@ import { MusicCoverImage } from './MusicProjects/MusicCoverImage';
 import { MusicItemActionsButton } from './MusicProjects/MusicItemActionsButton';
 import { SidebarNewButton } from './MusicProjects/SidebarNewButton';
 import { useMusicItemContextMenu } from './MusicProjects/useMusicItemContextMenu';
+import { SidebarRecentsSkeleton } from './SidebarRecentsSkeleton';
 import { TopbarActions } from './TopbarActions';
 
 type SidebarItem = {
@@ -529,6 +530,8 @@ export function Sidebar({
           ...discreetScrollbarStyles({ onDarkSurface: true })(theme),
         })}
       >
+        {isRecentsLoading && <SidebarRecentsSkeleton />}
+
         {!isRecentsLoading && projectPreviewItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.projects}

@@ -4,6 +4,13 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 <!-- Newest first -->
 
+### App sidebar recents skeleton
+- Status: evolving
+- What: Left nav shows a light-on-dark skeleton for Projects/Songs/Albums while sidebar recents are loading.
+- Paths: `src/components/SidebarRecentsSkeleton.tsx`, `src/components/Sidebar.tsx`
+- Invariants: Shown only while `isRecentsLoading`; 3 sections × 5 compact rows; empty sections stay hidden after load
+- Updated: 2026-10-03
+
 ### Project sidebar sections
 - Status: evolving
 - What: Project detail sidebar (below general info) is a metadata-driven list of sections: members, calendar, video, link, text — add via divider +, MoreHoriz for edit/move/hide-or-delete; list animates enter/exit and move.

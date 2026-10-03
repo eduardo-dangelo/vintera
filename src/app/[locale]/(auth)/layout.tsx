@@ -56,6 +56,7 @@ export default async function AuthLayout(props: {
               songs: t('sidebar_songs'),
               albums: t('sidebar_albums'),
               viewAll: t('sidebar_view_all'),
+              viewLess: t('sidebar_view_less'),
             }}
           >
             {props.children}

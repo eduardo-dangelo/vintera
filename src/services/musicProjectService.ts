@@ -96,10 +96,11 @@ export class MusicProjectService {
     };
   }
 
-  static async getRecentProjectsByUserId(userId: string, limit = 5) {
+  static async getRecentProjectsByUserId(userId: string, limit: number | null = 5) {
     const projects = await getAccessibleProjectsForUser(userId);
+    const recent = limit == null ? projects : projects.slice(0, limit);
 
-    return projects.slice(0, limit).map(project => ({
+    return recent.map(project => ({
       id: project.id,
       name: project.name,
       slug: project.slug,

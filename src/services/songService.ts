@@ -91,8 +91,8 @@ export class SongService {
     };
   }
 
-  static async getRecentSongsByUserId(userId: string, limit = 5) {
-    return db
+  static async getRecentSongsByUserId(userId: string, limit: number | null = 5) {
+    const query = db
       .select({
         id: songsSchema.id,
         title: songsSchema.title,
@@ -103,8 +103,9 @@ export class SongService {
       .from(songsSchema)
       .leftJoin(musicProjectsSchema, eq(songsSchema.musicProjectId, musicProjectsSchema.id))
       .where(eq(songsSchema.userId, userId))
-      .orderBy(desc(songsSchema.updatedAt))
-      .limit(limit);
+      .orderBy(desc(songsSchema.updatedAt));
+
+    return limit == null ? query : query.limit(limit);
   }
 
   static async verifyProjectAccess(projectId: number, userId: string) {

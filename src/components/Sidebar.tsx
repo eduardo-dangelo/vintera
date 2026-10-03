@@ -55,11 +55,17 @@ type SidebarItem = {
   coverImageUrl?: string | null;
 };
 
+const SIDEBAR_PREVIEW_LIMIT = 5;
+
 type SidebarSectionProps = {
   title: string;
-  viewAllHref?: string;
-  viewAllLabel?: string;
+  listHref?: string;
+  viewMoreLabel?: string;
+  viewLessLabel?: string;
   items: SidebarItem[];
+  showAll: boolean;
+  canToggleShowAll: boolean;
+  onToggleShowAll: () => void;
   isActive: (href: string) => boolean;
   onItemClick: (href: string) => void;
   onItemHover: (href: string | null) => void;
@@ -70,9 +76,13 @@ type SidebarSectionProps = {
 
 function SidebarSection({
   title,
-  viewAllHref,
-  viewAllLabel,
+  listHref,
+  viewMoreLabel,
+  viewLessLabel,
   items,
+  showAll,
+  canToggleShowAll,
+  onToggleShowAll,
   isActive,
   onItemClick,
   onItemHover,
@@ -117,16 +127,36 @@ function SidebarSection({
           color: theme.palette.sidebar.textSecondary,
         }}
       >
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 500,
-            color: 'inherit',
-            fontSize: '0.6875rem',
-          }}
-        >
-          {title}
-        </Typography>
+        {listHref
+          ? (
+              <Typography
+                component={Link}
+                href={listHref}
+                variant="caption"
+                onMouseEnter={playHoverSound}
+                sx={{
+                  'fontWeight': 500,
+                  'color': 'inherit',
+                  'fontSize': '0.6875rem',
+                  'textDecoration': 'none',
+                  '&:hover': { color: theme.palette.sidebar.textPrimary },
+                }}
+              >
+                {title}
+              </Typography>
+            )
+          : (
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 500,
+                  color: 'inherit',
+                  fontSize: '0.6875rem',
+                }}
+              >
+                {title}
+              </Typography>
+            )}
         <IconButton
           size="small"
           aria-expanded={expanded}
@@ -268,14 +298,12 @@ function SidebarSection({
                 </Collapse>
               );
             })}
-          {expanded && viewAllHref && viewAllLabel && (
+          {expanded && canToggleShowAll && viewMoreLabel && viewLessLabel && (
             <Collapse key="view-more" timeout={200}>
               <ListItem disablePadding sx={{ mb: 0.125 }}>
                 <ListItemButton
-                  component={Link}
-                  href={viewAllHref}
                   onMouseEnter={playHoverSound}
-                  onClick={() => onItemClick(viewAllHref)}
+                  onClick={onToggleShowAll}
                   sx={{
                     ...rowSx(false),
                     ...{
@@ -286,7 +314,7 @@ function SidebarSection({
                   }}
                 >
                   <ListItemText
-                    primary={`... ${viewAllLabel}`}
+                    primary={`... ${showAll ? viewLessLabel : viewMoreLabel}`}
                     primaryTypographyProps={{
                       fontSize: '0.75rem',
                       fontWeight: 400,
@@ -313,8 +341,64 @@ type SidebarProps = {
     songs: string;
     albums: string;
     viewAll: string;
+    viewLess: string;
   };
 };
+
+function mapProjectItems(
+  projects: Array<{
+    id: number;
+    name: string;
+    coverImageUrl?: string | null;
+  }> | undefined,
+  locale: string,
+): SidebarItem[] {
+  return projects?.map(project => ({
+    key: `project-${project.id}`,
+    href: `/${locale}/projects/${project.id}`,
+    label: project.name,
+    icon: LibraryMusicIcon,
+    kind: 'project' as const,
+    id: project.id,
+    coverImageUrl: project.coverImageUrl,
+  })) ?? [];
+}
+
+function mapSongItems(
+  songs: Array<{
+    id: number;
+    title: string;
+    projectName: string | null;
+  }> | undefined,
+  locale: string,
+): SidebarItem[] {
+  return songs?.map(song => ({
+    key: `song-${song.id}`,
+    href: `/${locale}/songs/${song.id}`,
+    label: song.projectName ? `${song.title} (${song.projectName})` : song.title,
+    icon: MusicNoteIcon,
+    kind: 'song' as const,
+    id: song.id,
+  })) ?? [];
+}
+
+function mapAlbumItems(
+  albums: Array<{
+    id: number;
+    name: string;
+    projectName: string;
+  }> | undefined,
+  locale: string,
+): SidebarItem[] {
+  return albums?.map(album => ({
+    key: `album-${album.id}`,
+    href: `/${locale}/albums/${album.id}`,
+    label: `${album.name} (${album.projectName})`,
+    icon: AlbumIcon,
+    kind: 'album' as const,
+    id: album.id,
+  })) ?? [];
+}
 
 export function Sidebar({
   children,
@@ -324,13 +408,23 @@ export function Sidebar({
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [clickedHref, setClickedHref] = useState<string | null>(null);
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  const [showAllSongs, setShowAllSongs] = useState(false);
+  const [showAllAlbums, setShowAllAlbums] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const pathname = usePathname();
   const { playHoverSound } = useHoverSound();
 
   const locale = pathname.match(/^\/([a-z]{2})\//)?.[1] ?? 'en';
-  const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale);
+  const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale, {
+    limit: SIDEBAR_PREVIEW_LIMIT,
+  });
+  const needsAllRecents = showAllProjects || showAllSongs || showAllAlbums;
+  const { data: allRecentsData } = useGetSidebarRecents(locale, {
+    limit: 'all',
+    enabled: needsAllRecents,
+  });
   const {
     openFromButton,
     openFromContextMenu,
@@ -372,33 +466,23 @@ export function Sidebar({
     setClickedHref(null);
   }, [pathname]);
 
-  const projectItems: SidebarItem[] = recentsData?.projects.map(project => ({
-    key: `project-${project.id}`,
-    href: `/${locale}/projects/${project.id}`,
-    label: project.name,
-    icon: LibraryMusicIcon,
-    kind: 'project' as const,
-    id: project.id,
-    coverImageUrl: project.coverImageUrl,
-  })) ?? [];
+  const projectPreviewItems = mapProjectItems(recentsData?.projects, locale);
+  const songPreviewItems = mapSongItems(recentsData?.songs, locale);
+  const albumPreviewItems = mapAlbumItems(recentsData?.albums, locale);
 
-  const songItems: SidebarItem[] = recentsData?.songs.map(song => ({
-    key: `song-${song.id}`,
-    href: `/${locale}/songs/${song.id}`,
-    label: song.projectName ? `${song.title} (${song.projectName})` : song.title,
-    icon: MusicNoteIcon,
-    kind: 'song' as const,
-    id: song.id,
-  })) ?? [];
+  const projectAllItems = mapProjectItems(allRecentsData?.projects, locale);
+  const songAllItems = mapSongItems(allRecentsData?.songs, locale);
+  const albumAllItems = mapAlbumItems(allRecentsData?.albums, locale);
 
-  const albumItems: SidebarItem[] = recentsData?.albums.map(album => ({
-    key: `album-${album.id}`,
-    href: `/${locale}/albums/${album.id}`,
-    label: `${album.name} (${album.projectName})`,
-    icon: AlbumIcon,
-    kind: 'album' as const,
-    id: album.id,
-  })) ?? [];
+  const projectItems = showAllProjects && projectAllItems.length > 0
+    ? projectAllItems
+    : projectPreviewItems;
+  const songItems = showAllSongs && songAllItems.length > 0
+    ? songAllItems
+    : songPreviewItems;
+  const albumItems = showAllAlbums && albumAllItems.length > 0
+    ? albumAllItems
+    : albumPreviewItems;
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -427,12 +511,18 @@ export function Sidebar({
       </Box>
 
       <Box sx={{ flexGrow: 1, px: 1.25, py: isMobile ? 1 : 0, overflowY: 'auto', mt: 1.25 }}>
-        {!isRecentsLoading && projectItems.length > 0 && (
+        {!isRecentsLoading && projectPreviewItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.projects}
-            viewAllHref={`/${locale}/projects`}
-            viewAllLabel={sectionLabels.viewAll}
+            listHref={`/${locale}/projects`}
+            viewMoreLabel={sectionLabels.viewAll}
+            viewLessLabel={sectionLabels.viewLess}
             items={projectItems}
+            showAll={showAllProjects}
+            canToggleShowAll={
+              projectPreviewItems.length >= SIDEBAR_PREVIEW_LIMIT || showAllProjects
+            }
+            onToggleShowAll={() => setShowAllProjects(prev => !prev)}
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}
@@ -442,12 +532,18 @@ export function Sidebar({
           />
         )}
 
-        {!isRecentsLoading && songItems.length > 0 && (
+        {!isRecentsLoading && songPreviewItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.songs}
-            viewAllHref={`/${locale}/songs`}
-            viewAllLabel={sectionLabels.viewAll}
+            listHref={`/${locale}/songs`}
+            viewMoreLabel={sectionLabels.viewAll}
+            viewLessLabel={sectionLabels.viewLess}
             items={songItems}
+            showAll={showAllSongs}
+            canToggleShowAll={
+              songPreviewItems.length >= SIDEBAR_PREVIEW_LIMIT || showAllSongs
+            }
+            onToggleShowAll={() => setShowAllSongs(prev => !prev)}
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}
@@ -457,12 +553,18 @@ export function Sidebar({
           />
         )}
 
-        {!isRecentsLoading && albumItems.length > 0 && (
+        {!isRecentsLoading && albumPreviewItems.length > 0 && (
           <SidebarSection
             title={sectionLabels.albums}
-            viewAllHref={`/${locale}/albums`}
-            viewAllLabel={sectionLabels.viewAll}
+            listHref={`/${locale}/albums`}
+            viewMoreLabel={sectionLabels.viewAll}
+            viewLessLabel={sectionLabels.viewLess}
             items={albumItems}
+            showAll={showAllAlbums}
+            canToggleShowAll={
+              albumPreviewItems.length >= SIDEBAR_PREVIEW_LIMIT || showAllAlbums
+            }
+            onToggleShowAll={() => setShowAllAlbums(prev => !prev)}
             isActive={isActive}
             onItemClick={setClickedHref}
             onItemHover={() => {}}

@@ -28,7 +28,7 @@ export type SidebarRecents = {
 };
 
 export class SidebarService {
-  static async getRecents(userId: string, limit = 5): Promise<SidebarRecents> {
+  static async getRecents(userId: string, limit: number | null = 5): Promise<SidebarRecents> {
     const [projects, songs, albums] = await Promise.all([
       MusicProjectService.getRecentProjectsByUserId(userId, limit),
       SongService.getRecentSongsByUserId(userId, limit),

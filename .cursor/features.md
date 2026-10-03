@@ -6,7 +6,7 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 ### Sidebar section View more
 - Status: evolving
-- What: Each sidebar recents section has a header chevron (expand/collapse via TransitionGroup + Collapse), a hover MoreHoriz that opens Duplicate/Delete, and a View more row linking to the full list.
-- Paths: `src/components/Sidebar.tsx`, `src/components/MusicProjects/useMusicItemContextMenu.tsx`, `src/components/MusicProjects/MusicItemContextMenuPopover.tsx`, `src/services/{musicProject,song,album}Service.ts`
-- Invariants: Section title is not a link; chevron toggles expand/collapse; hover `⋯` opens shared menu with Duplicate + Delete; shallow duplicate via POST `…/duplicate`; View more is last list row; same list hrefs (`/{locale}/projects|songs|albums`)
-- Updated: 2026-09-30
+- What: Each sidebar recents section has a header chevron (collapse body), a title link to the list page, hover MoreHoriz (Duplicate/Delete), and View more/less that expands the list in place (preview 5 vs all via sidebar recents `limit`).
+- Paths: `src/components/Sidebar.tsx`, `src/services/sidebarService.ts`, `src/app/[locale]/api/sidebar/recents/route.ts`, `src/queries/hooks/sidebar/useGetSidebarRecents.ts`
+- Invariants: Title navigates to list page; View more/less does not navigate; chevron toggles section body; hover `⋯` opens Duplicate + Delete; shallow duplicate via POST `…/duplicate`
+- Updated: 2026-10-03

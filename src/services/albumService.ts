@@ -85,8 +85,8 @@ export class AlbumService {
     };
   }
 
-  static async getRecentAlbumsByUserId(userId: string, limit = 5) {
-    return db
+  static async getRecentAlbumsByUserId(userId: string, limit: number | null = 5) {
+    const query = db
       .select({
         id: albumsSchema.id,
         name: albumsSchema.name,
@@ -97,8 +97,9 @@ export class AlbumService {
       .from(albumsSchema)
       .innerJoin(musicProjectsSchema, eq(albumsSchema.musicProjectId, musicProjectsSchema.id))
       .where(eq(musicProjectsSchema.userId, userId))
-      .orderBy(desc(albumsSchema.updatedAt))
-      .limit(limit);
+      .orderBy(desc(albumsSchema.updatedAt));
+
+    return limit == null ? query : query.limit(limit);
   }
 
   static async verifyProjectAccess(projectId: number, userId: string) {

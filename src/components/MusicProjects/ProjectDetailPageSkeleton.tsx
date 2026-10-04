@@ -5,7 +5,6 @@ import {
   Divider,
   Grid,
   Skeleton,
-  useTheme,
 } from '@mui/material';
 import { MusicDetailHeaderSkeleton } from '@/components/MusicProjects/MusicDetailHeaderSkeleton';
 import { ProjectDetailCalendarSkeleton } from '@/components/MusicProjects/ProjectDetailCalendarSkeleton';
@@ -17,8 +16,6 @@ const MEMBER_AVATAR_COUNT = 4;
 const EXTERNAL_LINK_ROW_COUNT = 2;
 
 function ProjectDetailSidebarSkeleton() {
-  const theme = useTheme();
-
   return (
     <Box
       sx={{
@@ -26,7 +23,6 @@ function ProjectDetailSidebarSkeleton() {
         top: 24,
         p: 3,
         borderRadius: 4,
-        background: `linear-gradient(160deg, ${theme.palette.action.hover} 0%, transparent 60%)`,
         border: '1px solid',
         borderColor: 'divider',
       }}

@@ -256,7 +256,6 @@ export function ProjectDetailSidebar({
           top: 24,
           p: 3,
           borderRadius: 4,
-          background: `linear-gradient(160deg, ${accent}33 0%, transparent 60%)`,
           border: '1px solid',
           borderColor: 'divider',
         }}

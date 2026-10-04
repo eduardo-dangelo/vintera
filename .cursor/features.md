@@ -15,8 +15,8 @@ Status: `locked` = must not regress · `evolving` = still iterating
 - Status: evolving
 - What: Project detail sidebar (below general info) is a metadata-driven list of sections: members, calendar, video, link, text — add via divider +, MoreHoriz for edit/move/hide-or-delete; list animates enter/exit and move.
 - Paths: `src/components/MusicProjects/ProjectDetailSidebar.tsx`, `src/utils/projectSidebarSections.ts`, `src/utils/flipListSwap.ts`, `src/utils/musicProjectMetadata.ts`
-- Invariants: Members/calendar hide-only; video/link/text deletable; untitled content sections show no kind label; create form one shared title + URL-only rows for video/link; divider + menu uses glass MenuItems (Sidebar New pattern); Collapse enter/exit; FLIP move up/down (skipped when reduced-motion); legacy `externalLinks` migrate on read
-- Updated: 2026-10-03
+- Invariants: Members/calendar hide-only; video/link/text deletable; untitled content sections show no kind label; create form one shared title + URL-only rows for video/link; divider + menu uses glass MenuItems (Sidebar New pattern); no project-color gradient on sidebar container; Collapse enter/exit; FLIP move up/down (skipped when reduced-motion); legacy `externalLinks` migrate on read
+- Updated: 2026-10-04
 
 ### Project general info inline field edit
 - Status: evolving

@@ -171,6 +171,24 @@ export const calendarEventsSchema = pgTable('calendar_events', {
     .notNull(),
 });
 
+/** Secret ICS subscribe feed for a music project calendar (one token per project). */
+export const calendarFeedsSchema = pgTable('calendar_feeds', {
+  id: serial('id').primaryKey(),
+  token: text('token').notNull(),
+  musicProjectId: integer('music_project_id')
+    .references(() => musicProjectsSchema.id, { onDelete: 'cascade' })
+    .notNull(),
+  createdByUserId: text('created_by_user_id').references(() => usersSchema.id).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, table => [
+  uniqueIndex('calendar_feeds_token_idx').on(table.token),
+  uniqueIndex('calendar_feeds_music_project_id_idx').on(table.musicProjectId),
+]);
+
 export const financeEntriesSchema = pgTable('finance_entries', {
   id: serial('id').primaryKey(),
   assetId: integer('asset_id').references(() => assetsSchema.id).notNull(),
@@ -439,6 +457,18 @@ export const musicProjectsRelations = relations(musicProjectsSchema, ({ one, man
   songs: many(songsSchema),
   members: many(musicProjectMembersSchema),
   calendarEvents: many(calendarEventsSchema),
+  calendarFeeds: many(calendarFeedsSchema),
+}));
+
+export const calendarFeedsRelations = relations(calendarFeedsSchema, ({ one }) => ({
+  musicProject: one(musicProjectsSchema, {
+    fields: [calendarFeedsSchema.musicProjectId],
+    references: [musicProjectsSchema.id],
+  }),
+  createdBy: one(usersSchema, {
+    fields: [calendarFeedsSchema.createdByUserId],
+    references: [usersSchema.id],
+  }),
 }));
 
 export const albumsRelations = relations(albumsSchema, ({ one, many }) => ({

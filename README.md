@@ -388,6 +388,10 @@ To run Storybook tests in headless mode, you can use the following command:
 npm run storybook:test
 ```
 
+### Calendar subscribe (ICS)
+
+Project calendars can be subscribed from Google Calendar, Apple Calendar, or Outlook via a secret ICS feed URL (`/api/calendar-feeds/{token}`). Create and edit events in Vintera; external apps pull updates on their own schedule (Google may take several hours). Use **Subscribe** on the project calendar section to copy or rotate the link.
+
 ### Cron jobs and event reminders
 
 Calendar event reminders (e.g. "10 minutes before") are created by a cron job that runs every minute. The job is defined in `vercel.json` and calls `GET /api/cron/check-event-reminders`.

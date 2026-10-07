@@ -2,11 +2,18 @@
 
 import type { CalendarEvent } from '@/components/Calendar/types';
 import type { CalendarEvent as CalendarEventEntity } from '@/entities';
-import { CalendarMonth, ChevronLeft, ChevronRight, EventNote } from '@mui/icons-material';
+import {
+  CalendarMonth,
+  ChevronLeft,
+  ChevronRight,
+  EventNote,
+  Link as LinkIcon,
+} from '@mui/icons-material';
 import {
   Box,
   ButtonBase,
   Divider,
+  IconButton,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -28,6 +35,7 @@ import { MonthPickerPopover } from '@/components/Calendar/MonthPickerPopover';
 import { MonthView } from '@/components/Calendar/views/MonthView';
 import { ScheduleView } from '@/components/Calendar/views/ScheduleView';
 import { YearPickerPopover } from '@/components/Calendar/YearPickerPopover';
+import { CalendarSubscribePopover } from '@/components/MusicProjects/CalendarSubscribePopover';
 import { ProjectDetailCalendarSkeleton } from '@/components/MusicProjects/ProjectDetailCalendarSkeleton';
 import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
 import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
@@ -178,6 +186,7 @@ export function ProjectDetailCalendarSection({
   const [eventDetailsEvent, setEventDetailsEvent] = useState<CalendarEvent | null>(null);
   const [editPopoverAnchor, setEditPopoverAnchor] = useState<HTMLElement | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [subscribeAnchor, setSubscribeAnchor] = useState<HTMLElement | null>(null);
 
   const upcomingEvents = useMemo(() => getUpcomingEvents(events), [events]);
   const nextEvent = upcomingEvents[0] ?? null;
@@ -232,8 +241,8 @@ export function ProjectDetailCalendarSection({
           alignItems: 'center',
           justifyContent: hideChrome ? 'flex-end' : 'space-between',
           gap: 1,
-          mb: canUseScheduleView || !hideChrome ? 1.5 : 0,
-          minHeight: canUseScheduleView ? 32 : 0,
+          mb: 1.5,
+          minHeight: 32,
         }}
       >
         {!hideChrome && (
@@ -241,26 +250,40 @@ export function ProjectDetailCalendarSection({
             {t('calendar')}
           </Typography>
         )}
-        {canUseScheduleView && (
-          <ToggleButtonGroup
-            exclusive
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <IconButton
             size="small"
-            value={displaySectionView}
-            onChange={(_, value: SectionViewMode | null) => {
-              if (value != null) {
-                setSectionView(value);
-              }
+            aria-label={t('calendar_subscribe')}
+            onClick={e => setSubscribeAnchor(e.currentTarget)}
+            sx={{
+              'borderRadius': 1,
+              'color': 'text.secondary',
+              '&:hover': { color: 'primary.main', bgcolor: 'action.hover' },
             }}
-            sx={buttonGroupSx}
           >
-            <ToggleButton value="calendar" aria-label={t('calendar_view_month')}>
-              <CalendarMonth fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="upcoming" aria-label={t('calendar_view_upcoming')}>
-              <EventNote fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        )}
+            <LinkIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+          {canUseScheduleView && (
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              value={displaySectionView}
+              onChange={(_, value: SectionViewMode | null) => {
+                if (value != null) {
+                  setSectionView(value);
+                }
+              }}
+              sx={buttonGroupSx}
+            >
+              <ToggleButton value="calendar" aria-label={t('calendar_view_month')}>
+                <CalendarMonth fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="upcoming" aria-label={t('calendar_view_upcoming')}>
+                <EventNote fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
+        </Box>
       </Box>
 
       {isLoading && (
@@ -511,6 +534,15 @@ export function ProjectDetailCalendarSection({
           }}
         />
       )}
+
+      <CalendarSubscribePopover
+        open={subscribeAnchor != null}
+        anchorEl={subscribeAnchor}
+        locale={locale}
+        projectId={projectId}
+        canRotate={!readOnly}
+        onClose={() => setSubscribeAnchor(null)}
+      />
     </Box>
   );
 }

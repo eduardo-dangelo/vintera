@@ -4,6 +4,13 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 <!-- Newest first -->
 
+### Project calendar ICS subscribe
+- Status: evolving
+- What: Project calendars expose a secret ICS feed URL so Google/Apple/Outlook can subscribe (one-way export from Vintera).
+- Paths: `src/services/calendarFeedService.ts`, `src/app/api/calendar-feeds/[token]/route.ts`, `src/components/MusicProjects/CalendarSubscribePopover.tsx`, `src/utils/icsCalendarFeed.ts`
+- Invariants: One token per project; unauthenticated feed at `/api/calendar-feeds/{token}` (Arcjet skipped); view+ can copy; edit+ can rotate; Vintera remains source of truth
+- Updated: 2026-10-06
+
 ### App sidebar recents skeleton
 - Status: evolving
 - What: Left nav shows a light-on-dark skeleton for Projects/Songs/Albums while sidebar recents are loading.

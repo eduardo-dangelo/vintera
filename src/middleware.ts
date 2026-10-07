@@ -69,6 +69,17 @@ const aj = arcjet.withRule(
 
 // Wrap in clerkMiddleware so auth() works in route handlers - Clerk requires it to run for all routes using auth()
 export default clerkMiddleware(async (auth, request: NextRequest) => {
+  // Cron routes: no auth, no i18n (secured by CRON_SECRET in the route)
+  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
+    return NextResponse.next();
+  }
+
+  // Public ICS calendar feeds (secret token in URL; fetched by Google/Apple/Outlook).
+  // Skip Arcjet bot blocking — calendar subscribers are non-browser clients.
+  if (request.nextUrl.pathname.startsWith('/api/calendar-feeds/')) {
+    return NextResponse.next();
+  }
+
   // Verify the request with Arcjet
   if (process.env.ARCJET_KEY) {
     const decision = await aj.protect(request);
@@ -76,11 +87,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     if (decision.isDenied()) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-  }
-
-  // Cron routes: no auth, no i18n (secured by CRON_SECRET in the route)
-  if (request.nextUrl.pathname.startsWith('/api/cron/')) {
-    return NextResponse.next();
   }
 
   // Protected API routes: require auth

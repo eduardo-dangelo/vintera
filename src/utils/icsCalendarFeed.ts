@@ -1,3 +1,5 @@
+import { richTextToPlainText } from '@/utils/sanitizeRichTextHtml';
+
 export type IcsFeedEvent = {
   id: number;
   name: string;
@@ -107,8 +109,9 @@ export function buildIcsCalendar({ calendarName, events }: BuildIcsCalendarInput
       lines.push(`DTEND:${formatIcsUtcDateTime(event.end)}`);
     }
     lines.push(`SUMMARY:${escapeIcsText(event.name)}`);
-    if (event.description) {
-      lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`);
+    const descriptionPlain = richTextToPlainText(event.description);
+    if (descriptionPlain) {
+      lines.push(`DESCRIPTION:${escapeIcsText(descriptionPlain)}`);
     }
     if (event.location) {
       lines.push(`LOCATION:${escapeIcsText(event.location)}`);

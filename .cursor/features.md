@@ -4,6 +4,13 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 <!-- Newest first -->
 
+### Calendar event form (rich text + inline reminders)
+- Status: evolving
+- What: Create/edit event form uses rich text for description; reminder rows sit inline on the form (not a nested popover).
+- Paths: `src/components/Calendar/CreateEventForm.tsx`, `src/components/Calendar/EventDetailsPopover.tsx`, `src/utils/sanitizeRichTextHtml.ts`
+- Invariants: Description sanitized HTML on save; details/ICS render or plain-text export accordingly; max 5 reminder rows; AUTO tax/MOT markers stay hidden in details
+- Updated: 2026-10-07
+
 ### Project calendar ICS subscribe
 - Status: evolving
 - What: Project calendars expose a secret ICS feed URL so Google/Apple/Outlook can subscribe (one-way export from Vintera).

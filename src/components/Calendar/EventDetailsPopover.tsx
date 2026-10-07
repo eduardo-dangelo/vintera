@@ -9,8 +9,13 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { AssetCard } from '@/components/Assets/AssetCard';
 import { Popover } from '@/components/common/Popover';
+import { RichTextContent } from '@/components/RichTextEditor/RichTextContent';
 import { Asset } from '@/entities';
 import { glassPaperSx } from '@/utils/glassPaperStyles';
+import {
+  isRichTextEmpty,
+  richTextToPlainText,
+} from '@/utils/sanitizeRichTextHtml';
 import { COLOR_MAP } from './constants';
 
 const POPOVER_WIDTH = 320;
@@ -43,10 +48,14 @@ function isTaxReminderEvent(event: CalendarEvent): boolean {
 
 function hasUserVisibleDescription(event: CalendarEvent): boolean {
   const d = event.description?.trim();
-  if (!d) {
+  if (!d || isRichTextEmpty(d)) {
     return false;
   }
-  return d !== TAX_REMINDER_MARKER && d !== MOT_REMINDER_MARKER;
+  const plain = richTextToPlainText(d);
+  if (!plain) {
+    return false;
+  }
+  return plain !== TAX_REMINDER_MARKER && plain !== MOT_REMINDER_MARKER;
 }
 
 export function EventDetailsPopover({
@@ -170,12 +179,13 @@ export function EventDetailsPopover({
 
           {event.description && hasUserVisibleDescription(event) && (
             <Box>
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
                 {t('event_description')}
               </Typography>
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                {event.description}
-              </Typography>
+              <RichTextContent
+                value={event.description}
+                accent={eventColor(event.color)}
+              />
             </Box>
           )}
 

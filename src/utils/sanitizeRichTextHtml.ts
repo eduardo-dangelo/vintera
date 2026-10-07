@@ -38,3 +38,27 @@ export function toRichTextEditorContent(value: string | null): string {
     .map(p => `<p>${DOMPurify.sanitize(p, { ALLOWED_TAGS: [] })}</p>`)
     .join('');
 }
+
+/** Plain text for ICS / non-HTML consumers. */
+export function richTextToPlainText(value: string | null | undefined): string {
+  if (!value) {
+    return '';
+  }
+  const sanitized = /<[a-z][\s\S]*>/i.test(value)
+    ? sanitizeRichTextHtml(value)
+    : value;
+  return sanitized
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

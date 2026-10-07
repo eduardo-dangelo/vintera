@@ -43,6 +43,8 @@ type RichTextEditorProps = {
   placeholder?: string;
   accent?: string;
   disabled?: boolean;
+  /** ProseMirror content area min height in px. Default 120. */
+  minHeight?: number;
   linkLabels?: {
     addLink: string;
     linkUrl: string;
@@ -55,6 +57,7 @@ export function RichTextEditor({
   placeholder,
   accent = '#7c3aed',
   disabled = false,
+  minHeight = 120,
   linkLabels = DEFAULT_LINK_LABELS,
 }: RichTextEditorProps) {
   const linkAnchorRef = useRef<HTMLButtonElement>(null);
@@ -169,7 +172,7 @@ export function RichTextEditor({
         '& .ProseMirror': {
           ...richTextContentSx(accent),
           'outline': 'none',
-          'minHeight': 120,
+          'minHeight': minHeight,
           'p': 1.5,
           '& p.is-editor-empty:first-of-type::before': {
             color: 'text.disabled',

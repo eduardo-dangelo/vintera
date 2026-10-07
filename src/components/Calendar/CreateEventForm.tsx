@@ -6,13 +6,13 @@ import {
   Box,
   Button,
   Checkbox,
+  Collapse,
   FormControl,
   FormControlLabel,
   IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
-  Popover,
   Select,
   TextField,
   Typography,
@@ -21,10 +21,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { endOfDay, format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { TransitionGroup } from 'react-transition-group';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
+import { RichTextEditor } from '@/components/RichTextEditor/RichTextEditor';
 import { activityKeys, calendarEventKeys, notificationKeys } from '@/queries/keys';
-import { DEFAULT_EVENT_COLOR, EVENT_COLORS } from './constants';
+import {
+  isRichTextEmpty,
+  normalizeRichTextForSave,
+  sanitizeRichTextHtml,
+  toRichTextEditorContent,
+} from '@/utils/sanitizeRichTextHtml';
+import { COLOR_MAP, DEFAULT_EVENT_COLOR, EVENT_COLORS } from './constants';
 import { TimePickerPopover } from './TimePickerPopover';
 
 export type AssetOption = { id: number; name: string | null };
@@ -118,6 +126,7 @@ export function CreateEventForm({
 }: CreateEventFormProps & { mode?: 'create' | 'edit'; event?: CalendarEvent | null }) {
   const t = useTranslations('Calendar');
   const tAssets = useTranslations('Assets');
+  const tMusic = useTranslations('MusicProjects');
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +144,6 @@ export function CreateEventForm({
   const [startTimeAnchor, setStartTimeAnchor] = useState<HTMLElement | null>(null);
   const [endTimeAnchor, setEndTimeAnchor] = useState<HTMLElement | null>(null);
   const [deleteConfirmAnchor, setDeleteConfirmAnchor] = useState<HTMLElement | null>(null);
-  const [notificationPopoverAnchor, setNotificationPopoverAnchor] = useState<HTMLElement | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [reminderRows, setReminderRows] = useState<ReminderRow[]>([]);
   const isGlobal = !fixedAssetId && !fixedMusicProjectId && (assets?.length ?? 0) > 0;
@@ -163,7 +171,7 @@ export function CreateEventForm({
       setName(event.name ?? '');
       setLocation(event.location ?? '');
       setColor(event.color ?? DEFAULT_EVENT_COLOR);
-      setDescription(event.description ?? '');
+      setDescription(toRichTextEditorContent(event.description));
       setError(null);
       const overrides = event.reminders?.overrides ?? [];
       setReminderRows(
@@ -209,16 +217,6 @@ export function CreateEventForm({
     }
   }, [open, initialDate, isGlobal, assets, mode, event, fixedMusicProjectId]);
   /* eslint-enable react-hooks-extra/no-direct-set-state-in-use-effect */
-
-  useEffect(() => {
-    if (notificationPopoverAnchor && reminderRows.length === 0) {
-      setReminderRows([{
-        id: `new-${Date.now()}`,
-        amount: 1,
-        unit: 'days',
-      }]);
-    }
-  }, [notificationPopoverAnchor]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,11 +264,16 @@ export function CreateEventForm({
           ? { useDefault: false, overrides }
           : null;
 
+      const normalizedDescription = normalizeRichTextForSave(description);
+      const descriptionValue = isRichTextEmpty(normalizedDescription)
+        ? null
+        : normalizedDescription;
+
       const payload = fixedMusicProjectId
         ? {
             musicProjectId: fixedMusicProjectId,
             name: name.trim(),
-            description: description.trim() || null,
+            description: descriptionValue,
             location: location.trim() || null,
             color: color || null,
             start: start.toISOString(),
@@ -280,7 +283,7 @@ export function CreateEventForm({
         : {
             assetId: effectiveAssetId!,
             name: name.trim(),
-            description: description.trim() || null,
+            description: descriptionValue,
             location: location.trim() || null,
             color: color || null,
             start: start.toISOString(),
@@ -355,7 +358,7 @@ export function CreateEventForm({
 
   const isPopover = variant === 'popover';
   const contentGap = isPopover ? 1.5 : 2;
-  const descriptionRows = isPopover ? 2 : 3;
+  const accentHex = COLOR_MAP[color] ?? EVENT_COLORS.find(c => c.value === color)?.hex ?? '#3b82f6';
 
   return (
     <form onSubmit={handleSubmit}>
@@ -581,40 +584,20 @@ export function CreateEventForm({
               onChange={setEndTime}
             />
           </Box>
-          {/* Reminders (relative to event start) - config in popover */}
-          <Button
-            type="button"
-            variant="outlined"
-            size="small"
-            fullWidth
-            startIcon={<AddIcon fontSize="small" />}
-            onClick={e => setNotificationPopoverAnchor(e.currentTarget)}
-            sx={{ textTransform: 'none' }}
-          >
-            {(() => {
-              const validCount = reminderRows.filter(r => r.amount > 0).length;
-              return validCount === 0
-                ? t('reminder_add')
-                : `Notifications (${validCount})`;
-            })()}
-          </Button>
-          <Popover
-            open={Boolean(notificationPopoverAnchor)}
-            anchorEl={notificationPopoverAnchor}
-            onClose={() => setNotificationPopoverAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          >
-            <Box sx={{ p: 2 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {reminderRows.map(row => (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+              {t('reminders_section')}
+            </Typography>
+            <TransitionGroup component={null}>
+              {reminderRows.map(row => (
+                <Collapse key={row.id} timeout={250}>
                   <Box
-                    key={row.id}
                     sx={{
                       display: 'flex',
                       flexWrap: 'wrap',
                       alignItems: 'center',
                       gap: 1,
+                      py: 0.25,
                     }}
                   >
                     <TextField
@@ -646,35 +629,49 @@ export function CreateEventForm({
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>
-                ))}
-                {reminderRows.length < 5 && (
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AddIcon fontSize="small" />}
-                    onClick={() => setReminderRows(prev => [...prev, {
-                      id: `new-${Date.now()}`,
-                      amount: 1,
-                      unit: 'days',
-                    }])}
-                  >
-                    {t('reminder_add')}
-                  </Button>
-                )}
-              </Box>
-            </Box>
-          </Popover>
-          <TextField
-            fullWidth
-            size="small"
-            label={t('event_description')}
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            multiline
-            minRows={descriptionRows}
-            maxRows={12}
-          />
+                </Collapse>
+              ))}
+            </TransitionGroup>
+            {reminderRows.length < 5 && (
+              <Button
+                type="button"
+                variant="outlined"
+                size="small"
+                startIcon={<AddIcon fontSize="small" />}
+                onClick={() => setReminderRows(prev => [...prev, {
+                  id: `new-${Date.now()}`,
+                  amount: 1,
+                  unit: 'days',
+                }])}
+                sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
+              >
+                {t('reminder_add')}
+              </Button>
+            )}
+          </Box>
+          <Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 0.75, fontWeight: 600 }}
+            >
+              {t('event_description')}
+            </Typography>
+            <RichTextEditor
+              value={description}
+              onChange={(html) => {
+                setDescription(sanitizeRichTextHtml(html));
+              }}
+              placeholder={t('event_description')}
+              accent={accentHex}
+              disabled={loading || deleting}
+              minHeight={56}
+              linkLabels={{
+                addLink: tMusic('add_link'),
+                linkUrl: tMusic('link_url'),
+              }}
+            />
+          </Box>
           {error && (
             <Typography variant="body2" color="error">
               {error}

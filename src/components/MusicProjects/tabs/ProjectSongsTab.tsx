@@ -19,6 +19,10 @@ type ProjectSongsTabProps = {
   project: ProjectTabProject;
   songs: MusicProjectDetail['songs'];
   albums: MusicProjectDetail['albums'];
+  /** Hide the section heading when chrome is provided by a parent section. */
+  hideTitle?: boolean;
+  /** Render shell even when there are no songs. */
+  showWhenEmpty?: boolean;
 };
 
 export function ProjectSongsTab({
@@ -27,6 +31,8 @@ export function ProjectSongsTab({
   project,
   songs,
   albums,
+  hideTitle = false,
+  showWhenEmpty = false,
 }: ProjectSongsTabProps) {
   const t = useTranslations('MusicProjects');
   const { viewMode, cardSize, setViewMode, setCardSize } = useListViewPrefs(locale);
@@ -40,47 +46,63 @@ export function ProjectSongsTab({
     });
   }, [songs, allSongs, projectId, project, albums]);
 
-  if (songs.length === 0) {
+  if (songs.length === 0 && !showWhenEmpty) {
     return null;
   }
 
+  const showHeader = !hideTitle || songs.length > 0;
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {t('songs')}
-        </Typography>
-        <ListViewControls
-          viewMode={viewMode}
-          cardSize={cardSize}
-          onViewModeChange={setViewMode}
-          onCardSizeChange={setCardSize}
-        />
-      </Box>
-      {viewMode === 'list'
-        ? (
-            <SongListView
-              songs={songListItems}
-              locale={locale}
-              projectId={projectId}
-            />
-          )
-        : (
-            <MusicFolderGrid
-              cardSize={cardSize}
-              items={songListItems.map(song => ({
-                id: song.id,
-                content: (
-                  <SongCard
-                    song={song}
-                    locale={locale}
-                    cardSize={cardSize}
-                    projectId={projectId}
-                  />
-                ),
-              }))}
-            />
+      {showHeader && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          {!hideTitle && (
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {t('songs')}
+            </Typography>
           )}
+          {songs.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: hideTitle ? 'auto' : 0 }}>
+              <ListViewControls
+                viewMode={viewMode}
+                cardSize={cardSize}
+                onViewModeChange={setViewMode}
+                onCardSizeChange={setCardSize}
+              />
+            </Box>
+          )}
+        </Box>
+      )}
+      {songs.length === 0
+        ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+              {t('no_songs')}
+            </Typography>
+          )
+        : viewMode === 'list'
+          ? (
+              <SongListView
+                songs={songListItems}
+                locale={locale}
+                projectId={projectId}
+              />
+            )
+          : (
+              <MusicFolderGrid
+                cardSize={cardSize}
+                items={songListItems.map(song => ({
+                  id: song.id,
+                  content: (
+                    <SongCard
+                      song={song}
+                      locale={locale}
+                      cardSize={cardSize}
+                      projectId={projectId}
+                    />
+                  ),
+                }))}
+              />
+            )}
     </Box>
   );
 }

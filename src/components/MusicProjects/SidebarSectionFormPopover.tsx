@@ -89,15 +89,17 @@ export function SidebarSectionFormPopover({
   const allowMultiple = isMedia && mode === 'create';
 
   useEffect(() => {
-    if (open) {
-      setLocalBody(draft.body);
-      const raf = window.requestAnimationFrame(() => {
-        titleInputRef.current?.focus();
-      });
-      return () => window.cancelAnimationFrame(raf);
+    if (!open) {
+      return undefined;
     }
-    return undefined;
-  }, [open, draft.body]);
+    setLocalBody(draft.body);
+    const raf = window.requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(raf);
+    // Sync + focus only when the popover opens — not on every draft.body keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional open-edge only
+  }, [open]);
 
   const titleKey = mode === 'create'
     ? (

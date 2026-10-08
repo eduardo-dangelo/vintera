@@ -8,8 +8,26 @@ export function richTextContentSx(accent: string): SystemStyleObject<Theme> {
     '& p': { 'm': 0, 'mb': 1, '&:last-child': { mb: 0 } },
     '& h2': { fontSize: '1.125rem', fontWeight: 700, m: 0, mb: 0.75, mt: 0.5 },
     '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mb: 0.5, mt: 0.5 },
-    '& ul, & ol': { pl: 2.5, my: 0.5 },
+    '& ul': { listStyleType: 'disc', pl: 2.5, my: 0.5 },
+    '& ol': { listStyleType: 'decimal', pl: 2.5, my: 0.5 },
     '& li': { mb: 0.25 },
+    '& ul[data-type="taskList"]': {
+      listStyle: 'none',
+      pl: 0,
+    },
+    '& ul[data-type="taskList"] li': {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 0.75,
+    },
+    '& ul[data-type="taskList"] li > label': {
+      flex: '0 0 auto',
+      mt: '0.2rem',
+      userSelect: 'none',
+    },
+    '& ul[data-type="taskList"] li > div': {
+      flex: 1,
+    },
     '& a': { color: accent, textDecoration: 'underline' },
   };
 }

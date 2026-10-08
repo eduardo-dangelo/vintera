@@ -1,4 +1,6 @@
+import type { JSONContent } from '@tiptap/core';
 import type { ExternalLink } from '@/utils/externalLinkEmbed';
+import type { ProjectMainSection } from '@/utils/projectMainSections';
 import type { ProjectSidebarSection } from '@/utils/projectSidebarSections';
 import {
   hasPatternOverlay,
@@ -8,6 +10,8 @@ import {
 } from '@/components/MusicProjects/heroPatternShapes';
 import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
 import { parseExternalLinks } from '@/utils/externalLinkEmbed';
+import { parseMainPage } from '@/utils/projectMainPage';
+import { parseMainSections } from '@/utils/projectMainSections';
 import { parseSidebarSections } from '@/utils/projectSidebarSections';
 
 export type HeroBackgroundKind = 'solid' | 'pattern' | 'gradient' | 'composed' | 'image';
@@ -49,6 +53,10 @@ export type MusicProjectMetadata = {
   /** @deprecated Migrated into sidebarSections on read */
   externalLinks?: ExternalLink[];
   sidebarSections?: ProjectSidebarSection[];
+  /** Ordered main-column sections (albums, songs, video, link, text). */
+  mainSections?: ProjectMainSection[];
+  /** TipTap document for the main column. Wins over mainSections on read. */
+  mainPage?: JSONContent;
 };
 
 const HERO_BACKGROUND_KINDS: HeroBackgroundKind[] = [
@@ -290,6 +298,16 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
     metadata.sidebarSections = sidebarSections;
   }
 
+  const mainSections = parseMainSections(raw.mainSections);
+  if (mainSections != null) {
+    metadata.mainSections = mainSections;
+  }
+
+  const mainPage = parseMainPage(raw.mainPage);
+  if (mainPage) {
+    metadata.mainPage = mainPage;
+  }
+
   return normalizeHeroMetadata(metadata);
 }
 
@@ -314,6 +332,28 @@ export function mergeSidebarSections(
     ...rest,
     sidebarSections: sections,
     externalLinks: [],
+  };
+}
+
+export function mergeMainSections(
+  existing: unknown,
+  sections: ProjectMainSection[],
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  return {
+    ...current,
+    mainSections: sections,
+  };
+}
+
+export function mergeMainPage(
+  existing: unknown,
+  page: JSONContent,
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  return {
+    ...current,
+    mainPage: page,
   };
 }
 

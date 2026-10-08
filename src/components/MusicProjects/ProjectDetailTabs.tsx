@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectTabName } from './tabs/ProjectOverviewTab';
+import type { ProjectTabName } from './tabs/projectTabVisibility';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import {
   Album as AlbumIcon,
@@ -11,9 +11,8 @@ import { Box, Tab, Tabs, useTheme } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
-import { ProjectDetailEmptyState } from './ProjectDetailEmptyState';
+import { ProjectDetailMain } from './ProjectDetailMain';
 import { ProjectAlbumsTab } from './tabs/ProjectAlbumsTab';
-import { ProjectOverviewTab } from './tabs/ProjectOverviewTab';
 import { ProjectSongsTab } from './tabs/ProjectSongsTab';
 import { getVisibleTabs } from './tabs/projectTabVisibility';
 
@@ -101,6 +100,13 @@ export function ProjectDetailTabs({
     [pathname, router, searchParams],
   );
 
+  const navigateToTab = useCallback(
+    (tabName: ProjectTabName) => {
+      updateUrlForTab(tabName);
+    },
+    [updateUrlForTab],
+  );
+
   useEffect(() => {
     if (visibleTabs.length === 0) {
       if (searchParams.has('tab')) {
@@ -124,17 +130,26 @@ export function ProjectDetailTabs({
 
   const activeTab = visibleTabs[currentTabIndex] ?? 'overview';
 
+  const mainProps = {
+    locale,
+    projectId,
+    project,
+    albums,
+    songs,
+    canEdit,
+  } as const;
+
+  if (visibleTabs.length === 0) {
+    return <ProjectDetailMain {...mainProps} />;
+  }
+
   const renderTabContent = (tabName: ProjectTabName) => {
     switch (tabName) {
       case 'overview':
         return (
-          <ProjectOverviewTab
-            locale={locale}
-            projectId={projectId}
-            project={project}
-            albums={albums}
-            songs={songs}
-            onNavigateToTab={updateUrlForTab}
+          <ProjectDetailMain
+            {...mainProps}
+            onNavigateToTab={navigateToTab}
           />
         );
       case 'songs':
@@ -162,44 +177,6 @@ export function ProjectDetailTabs({
         return null;
     }
   };
-
-  if (visibleTabs.length === 0) {
-    if (albums.length === 0 && songs.length === 0) {
-      return (
-        <ProjectDetailEmptyState
-          locale={locale}
-          projectId={projectId}
-          canEdit={canEdit}
-        />
-      );
-    }
-
-    return (
-      <Box>
-        {albums.length > 0 && (
-          <Box sx={{ mb: songs.length > 0 ? 4 : 0 }}>
-            <ProjectAlbumsTab
-              locale={locale}
-              projectId={projectId}
-              project={project}
-              albums={albums}
-              songs={songs}
-              canEdit={canEdit}
-            />
-          </Box>
-        )}
-        {songs.length > 0 && (
-          <ProjectSongsTab
-            locale={locale}
-            projectId={projectId}
-            project={project}
-            songs={songs}
-            albums={albums}
-          />
-        )}
-      </Box>
-    );
-  }
 
   return (
     <Box>

@@ -8,7 +8,7 @@ Status: `locked` = must not regress · `evolving` = still iterating
 - Status: evolving
 - What: Overview and the no-tab layout are one inline TipTap page. Albums, songs, and link embeds are blocks in that page; Songs/Albums tabs stay full lists.
 - Paths: `src/components/MusicProjects/MainPageEditor.tsx`, `src/components/MusicProjects/ProjectDetailMain.tsx`, `src/utils/projectMainPage.ts`
-- Invariants: No empty-project screen; no hover insert bar; top bar stays until lock; song/album/event buttons on the bar; songs and albums lists appear once that content exists and cannot be hidden; bullets, numbers, and checkbox lists visible; markdown shortcuts; paste a URL embeds it; tab bar when >6 albums or songs; members/calendar sidebar-only
+- Invariants: No empty-project screen; no hover insert bar; top bar stays until lock; song/album/event buttons on the bar; songs and albums lists appear once that content exists and cannot be hidden; bullets, numbers, and checkbox lists visible; a new checklist adds a heading 3 titled “✔️ Checklist”, a “N% completed” subtitle, and a faded progress bar as wide as that subtitle; the bar eases when the percentage changes; checklist More menu can hide completed items, and those rows collapse; checkboxes use the project accent; markdown shortcuts; paste a URL embeds it; tab bar when >6 albums or songs; members/calendar sidebar-only
 - Updated: 2026-10-08
 
 ### Calendar event form (rich text + inline reminders)

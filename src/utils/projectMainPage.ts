@@ -265,6 +265,16 @@ function normalizeNode(raw: unknown): JSONContent | null {
     const level = attrs.level === 1 || attrs.level === 2 || attrs.level === 3 ? attrs.level : 2;
     node.attrs = { level };
   }
+  if (raw.type === 'taskList') {
+    const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+    if (attrs.hideCompleted === true) {
+      node.attrs = { hideCompleted: true };
+    }
+  }
+  if (raw.type === 'taskItem') {
+    const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+    node.attrs = { checked: attrs.checked === true };
+  }
   if (content.length > 0) {
     node.content = content;
   }

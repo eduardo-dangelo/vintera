@@ -28,13 +28,14 @@ import {
   Typography,
 } from '@mui/material';
 import Link from '@tiptap/extension-link';
-import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Placeholder from '@tiptap/extension-placeholder';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
+import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjects/mainPage/checklistCommands';
+import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
 import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import {
   ProjectAlbumsNode,
@@ -110,6 +111,7 @@ export function MainPageEditor({
   const createPopovers = useProjectCreatePopovers(locale, projectId);
 
   const placeholder = t('main_page_placeholder');
+  const checklistTitle = t('main_page_checklist_title');
   const extensions = useMemo(() => [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
@@ -126,9 +128,13 @@ export function MainPageEditor({
     ProjectAlbumsNode,
     ProjectSongsNode,
     ProjectEmbedNode,
-    TaskList,
-    TaskItem.configure({ nested: true }),
-  ], [placeholder]);
+    ProjectTaskList,
+    createProjectTaskItem(checklistTitle).extend({
+      addNodeView() {
+        return ReactNodeViewRenderer(ChecklistItemView);
+      },
+    }),
+  ], [checklistTitle, placeholder]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -449,7 +455,7 @@ export function MainPageEditor({
                     size="small"
                     value="task"
                     selected={editor.isActive('taskList')}
-                    onChange={() => editor.chain().focus().toggleTaskList().run()}
+                    onChange={() => toggleChecklist(editor, checklistTitle)}
                     sx={{ border: 'none', p: 0.75 }}
                   >
                     <CheckBoxOutlined sx={{ fontSize: 18 }} />
@@ -510,6 +516,8 @@ export function MainPageEditor({
               'outline': 'none',
               'minHeight': 160,
               '& > * + *': { mt: 1.5 },
+              '& h3:has(+ [data-project-checklist])': { mb: 0, lineHeight: 1.25 },
+              '& [data-project-checklist]': { mt: 0.25 },
               '& h1': { fontSize: '1.5rem', fontWeight: 700, m: 0, mb: 0.75 },
               '& p.is-editor-empty:first-of-type::before, & p.is-empty::before': {
                 color: 'text.disabled',

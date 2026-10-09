@@ -145,10 +145,33 @@ export function MainPageEditor({
     kind: 'song' | 'album';
     anchor: HTMLElement;
   } | null>(null);
-  const listMenuRef = useRef(listMenu);
-  listMenuRef.current = listMenu;
-  const existingMenuRef = useRef(existingMenu);
-  existingMenuRef.current = existingMenu;
+  const [collectionPicker, setCollectionPicker] = useState<{
+    anchorEl: HTMLElement | null;
+    anchorPosition: { top: number; left: number } | null;
+    pos: number;
+  } | null>(null);
+  const collectionPickerRef = useRef(collectionPicker);
+  collectionPickerRef.current = collectionPicker;
+  const holdMenusRef = useRef(false);
+  const dismissPageMenus = () => {
+    setListMenu(null);
+    setExistingMenu(null);
+    setCollectionPicker(null);
+    setInsertMenu(null);
+    setSlash(null);
+  };
+  const onPageMenuClose = (event: unknown, reason: string) => {
+    if (holdMenusRef.current) {
+      return;
+    }
+    const target = typeof event === 'object' && event != null && 'target' in event
+      ? (event as { target: EventTarget | null }).target
+      : null;
+    if (reason === 'backdropClick' && target instanceof Element && target.closest('.MuiMenu-paper, [role="menu"]')) {
+      return;
+    }
+    dismissPageMenus();
+  };
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   lockedRef.current = locked;
@@ -207,6 +230,9 @@ export function MainPageEditor({
   });
 
   function syncSlash(ed: Editor) {
+    if (collectionPickerRef.current || holdMenusRef.current) {
+      return;
+    }
     if (!ed.isEditable) {
       setSlash(null);
       return;
@@ -260,7 +286,7 @@ export function MainPageEditor({
     return items.filter(item => `${item.label} collection songs`.toLowerCase().includes(query));
   }, [includeMusicBlocks, slash, songs.length, t, value]);
 
-  const applySlash = (itemId: SlashItemId) => {
+  const applySlash = (itemId: SlashItemId, anchor?: HTMLElement) => {
     if (!editor || !slash) {
       return;
     }
@@ -280,6 +306,16 @@ export function MainPageEditor({
     }
     const type = PROJECT_SONG_LIST_NODE;
     markPageBlockEntering(slash.from);
+    if (itemId === 'custom') {
+      const nextPicker = {
+        anchorEl: anchor ?? null,
+        anchorPosition: anchor ? null : { top: slash.top, left: slash.left },
+        pos: slash.from,
+      };
+      holdMenusRef.current = true;
+      collectionPickerRef.current = nextPicker;
+      setCollectionPicker(nextPicker);
+    }
     editor.chain().focus().insertContentAt(
       { from: slash.from, to: slash.to },
       {
@@ -292,12 +328,17 @@ export function MainPageEditor({
         },
       },
     ).run();
+    holdMenusRef.current = false;
+    if (itemId === 'custom') {
+      return;
+    }
+    setCollectionPicker(null);
     setSlash(null);
   };
 
   const insertBlockAtCursor = (block: ProseMirrorNode) => {
     if (!editor) {
-      return;
+      return null;
     }
     const stored = cursorRef.current;
     const pos = stored == null
@@ -322,6 +363,7 @@ export function MainPageEditor({
     }
     markPageBlockEntering(insertPos);
     editor.view.dispatch(tr.scrollIntoView());
+    return insertPos;
   };
 
   insertCreatedRef.current = (kind, id) => {
@@ -336,18 +378,46 @@ export function MainPageEditor({
   };
 
   const insertListAtCursor = (mode: 'recent' | 'custom') => {
-    if (mode === 'recent' && pageHasRecentCollection(editor?.getJSON())) {
-      return;
+    if (!editor || (mode === 'recent' && pageHasRecentCollection(editor.getJSON()))) {
+      return null;
     }
-    const type = editor?.schema.nodes[PROJECT_SONG_LIST_NODE];
+    const type = editor.schema.nodes[PROJECT_SONG_LIST_NODE];
     if (!type) {
-      return;
+      return null;
     }
-    insertBlockAtCursor(type.create({
+    return insertBlockAtCursor(type.create({
       mode,
       title: '',
       itemIds: [],
       view: 'row',
+    }));
+  };
+
+  const collectionSongIds = (() => {
+    if (!collectionPicker || !editor) {
+      return [] as number[];
+    }
+    const ids = editor.state.doc.nodeAt(collectionPicker.pos)?.attrs.itemIds;
+    return Array.isArray(ids) ? ids.filter((id): id is number => typeof id === 'number') : [];
+  })();
+
+  const toggleCollectionSong = (songId: number) => {
+    if (!editor || !collectionPicker) {
+      return;
+    }
+    const node = editor.state.doc.nodeAt(collectionPicker.pos);
+    if (!node) {
+      return;
+    }
+    const itemIds = Array.isArray(node.attrs.itemIds)
+      ? node.attrs.itemIds.filter((id): id is number => typeof id === 'number')
+      : [];
+    const next = itemIds.includes(songId)
+      ? itemIds.filter(id => id !== songId)
+      : [...itemIds, songId];
+    editor.view.dispatch(editor.state.tr.setNodeMarkup(collectionPicker.pos, undefined, {
+      ...node.attrs,
+      itemIds: next,
     }));
   };
 
@@ -397,7 +467,7 @@ export function MainPageEditor({
       return false;
     }
     if (event.key === 'Escape') {
-      setSlash(null);
+      dismissPageMenus();
       return true;
     }
     if (event.key === 'ArrowDown') {
@@ -788,14 +858,7 @@ export function MainPageEditor({
       <Menu
         anchorEl={insertMenu?.anchor}
         open={insertMenu != null}
-        onClose={(_event, reason) => {
-          if (reason === 'backdropClick' && (listMenuRef.current || existingMenuRef.current)) {
-            return;
-          }
-          setListMenu(null);
-          setExistingMenu(null);
-          setInsertMenu(null);
-        }}
+        onClose={onPageMenuClose}
         slotProps={getGlassMenuSlotProps({ minWidth: 180 })}
       >
         <MenuItem
@@ -849,7 +912,7 @@ export function MainPageEditor({
       <Menu
         anchorEl={listMenu?.anchor}
         open={listMenu != null}
-        onClose={() => setListMenu(null)}
+        onClose={onPageMenuClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
@@ -870,12 +933,17 @@ export function MainPageEditor({
         </MenuItem>
         <MenuItem
           sx={glassMenuItemSx}
-          onClick={() => {
-            if (listMenu) {
-              insertListAtCursor('custom');
+          onClick={(event) => {
+            const anchorEl = event.currentTarget;
+            holdMenusRef.current = true;
+            const pos = insertListAtCursor('custom');
+            holdMenusRef.current = false;
+            if (pos == null) {
+              return;
             }
-            setListMenu(null);
-            setInsertMenu(null);
+            const nextPicker = { anchorEl, anchorPosition: null, pos };
+            collectionPickerRef.current = nextPicker;
+            setCollectionPicker(nextPicker);
           }}
         >
           <Tune sx={{ fontSize: 16 }} />
@@ -883,9 +951,37 @@ export function MainPageEditor({
         </MenuItem>
       </Menu>
       <Menu
+        anchorEl={collectionPicker?.anchorEl ?? undefined}
+        anchorReference={collectionPicker?.anchorEl ? 'anchorEl' : 'anchorPosition'}
+        anchorPosition={collectionPicker?.anchorPosition ?? undefined}
+        open={collectionPicker != null}
+        onClose={onPageMenuClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={getGlassMenuSlotProps({ minWidth: 220 })}
+      >
+        {songs.length === 0
+          ? (
+              <MenuItem disabled sx={glassMenuItemSx}>
+                {t('no_songs')}
+              </MenuItem>
+            )
+          : songs.map(song => (
+              <MenuItem
+                key={song.id}
+                selected={collectionSongIds.includes(song.id)}
+                sx={glassMenuItemSx}
+                onClick={() => toggleCollectionSong(song.id)}
+              >
+                <LibraryMusic sx={{ fontSize: 16 }} />
+                {song.title}
+              </MenuItem>
+            ))}
+      </Menu>
+      <Menu
         anchorEl={existingMenu?.anchor}
         open={existingMenu != null}
-        onClose={() => setExistingMenu(null)}
+        onClose={onPageMenuClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={getGlassMenuSlotProps({ minWidth: 220 })}
@@ -911,7 +1007,7 @@ export function MainPageEditor({
       </Menu>
       <Menu
         open={Boolean(slash) && slashItems.length > 0}
-        onClose={() => setSlash(null)}
+        onClose={onPageMenuClose}
         anchorReference="anchorPosition"
         anchorPosition={slash ? { top: slash.top, left: slash.left } : undefined}
         slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
@@ -923,7 +1019,7 @@ export function MainPageEditor({
             disabled={item.disabled}
             sx={glassMenuItemSx}
             onMouseDown={event => event.preventDefault()}
-            onClick={() => applySlash(item.id)}
+            onClick={event => applySlash(item.id, event.currentTarget)}
           >
             {item.label}
           </MenuItem>

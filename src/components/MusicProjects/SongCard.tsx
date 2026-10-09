@@ -28,9 +28,16 @@ type SongCardProps = {
   locale: string;
   cardSize?: ListFolderCardSize;
   projectId?: number;
+  hideItemActions?: boolean;
 };
 
-export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongCardProps) {
+export function SongCard({
+  song,
+  locale,
+  cardSize = 'medium',
+  projectId,
+  hideItemActions = false,
+}: SongCardProps) {
   const compact = cardSize === 'small';
 
   const menuTarget = {
@@ -46,7 +53,7 @@ export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongC
     <>
       <Card
         elevation={0}
-        onContextMenu={e => openFromContextMenu(e, menuTarget)}
+        onContextMenu={hideItemActions ? undefined : e => openFromContextMenu(e, menuTarget)}
         sx={{
           height: '100%',
           borderRadius: 3,
@@ -57,16 +64,18 @@ export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongC
           ...getMusicCardHoverSx(),
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-          }}
-        >
-          <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
-        </Box>
+        {!hideItemActions && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 1,
+            }}
+          >
+            <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
+          </Box>
+        )}
         <CardActionArea
           component={Link}
           href={menuTarget.href}
@@ -119,7 +128,7 @@ export function SongCard({ song, locale, cardSize = 'medium', projectId }: SongC
           </CardContent>
         </CardActionArea>
       </Card>
-      {renderMenus()}
+      {!hideItemActions && renderMenus()}
     </>
   );
 }

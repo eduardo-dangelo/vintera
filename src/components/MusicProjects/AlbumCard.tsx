@@ -27,9 +27,10 @@ type AlbumCardProps = {
   album: AlbumListItem;
   locale: string;
   cardSize?: ListFolderCardSize;
+  hideItemActions?: boolean;
 };
 
-export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps) {
+export function AlbumCard({ album, locale, cardSize = 'medium', hideItemActions = false }: AlbumCardProps) {
   const t = useTranslations('MusicProjects');
   const compact = cardSize === 'small';
 
@@ -46,7 +47,7 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
     <>
       <Card
         elevation={0}
-        onContextMenu={e => openFromContextMenu(e, menuTarget)}
+        onContextMenu={hideItemActions ? undefined : e => openFromContextMenu(e, menuTarget)}
         sx={{
           height: '100%',
           borderRadius: 3,
@@ -57,16 +58,18 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
           ...getMusicCardHoverSx(),
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-          }}
-        >
-          <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
-        </Box>
+        {!hideItemActions && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 1,
+            }}
+          >
+            <MusicItemActionsButton target={menuTarget} onOpen={openFromButton} />
+          </Box>
+        )}
         <CardActionArea
           component={Link}
           href={menuTarget.href}
@@ -120,7 +123,7 @@ export function AlbumCard({ album, locale, cardSize = 'medium' }: AlbumCardProps
           </CardContent>
         </CardActionArea>
       </Card>
-      {renderMenus()}
+      {!hideItemActions && renderMenus()}
     </>
   );
 }

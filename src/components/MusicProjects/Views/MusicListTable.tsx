@@ -179,7 +179,7 @@ function MusicListTableRowItem({
           ? e => onOpenContextMenu(e, row.menuTarget!)
           : undefined
       }
-      sx={getMusicListTableRowSx(theme, { showDivider })}
+      sx={getMusicListTableRowSx(theme, { showDivider, showActions: Boolean(row.menuTarget) })}
     >
       <MusicCoverImage
         imageUrl={row.coverImageUrl}

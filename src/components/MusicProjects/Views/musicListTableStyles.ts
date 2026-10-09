@@ -13,6 +13,7 @@ export function getMusicListTableContainerSx(): SxProps<Theme> {
 
 type MusicListTableRowSxOptions = {
   showDivider?: boolean;
+  showActions?: boolean;
 };
 
 export function getMusicListTableRowSx(
@@ -20,10 +21,11 @@ export function getMusicListTableRowSx(
   options?: MusicListTableRowSxOptions,
 ): SxProps<Theme> {
   const showDivider = options?.showDivider ?? true;
+  const showActions = options?.showActions ?? true;
 
   return {
     'display': 'grid',
-    'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr)) 36px`,
+    'gridTemplateColumns': `${MUSIC_LIST_COVER_SIZE}px repeat(5, minmax(0, 1fr))${showActions ? ' 36px' : ''}`,
     'columnGap': 2,
     'alignItems': 'center',
     'py': 1,

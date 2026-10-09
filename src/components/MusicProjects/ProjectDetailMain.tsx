@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainPageEditor } from '@/components/MusicProjects/MainPageEditor';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
 import { mergeMainPage, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
-import { mainPageHasEditableContent, resolveMainPage, withRequiredMusicBlocks } from '@/utils/projectMainPage';
+import { mainPageHasEditableContent, resolveMainPage } from '@/utils/projectMainPage';
 
 const SAVE_DELAY_MS = 500;
 
@@ -50,11 +50,6 @@ export function ProjectDetailMain({
   if (syncedKey !== resolvedKey && !focusedRef.current) {
     setSyncedKey(resolvedKey);
     setDoc(resolved);
-  } else {
-    const ensured = withRequiredMusicBlocks(doc, albums.length, songs.length);
-    if (ensured !== doc) {
-      setDoc(ensured);
-    }
   }
 
   const persist = useCallback((next: JSONContent) => {

@@ -37,23 +37,26 @@ import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjects/mainPage/checklistCommands';
 import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
 import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
+import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import {
-  ProjectAlbumsNode,
-  ProjectEmbedNode,
-  ProjectSongsNode,
-} from '@/components/MusicProjects/mainPage/mainPageNodes';
+  ProjectAlbumListNode,
+  ProjectAlbumNode,
+  ProjectSongListNode,
+  ProjectSongNode,
+} from '@/components/MusicProjects/mainPage/pageMusicBlocks';
 import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreatePopovers';
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
-  mainPageHasNode,
   pastedSingleUrl,
-  PROJECT_ALBUMS_NODE,
-  PROJECT_SONGS_NODE,
+  PROJECT_ALBUM_LIST_NODE,
+  PROJECT_ALBUM_NODE,
+  PROJECT_SONG_LIST_NODE,
+  PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
 
-type SlashKind = 'albums' | 'songs';
+type SlashItemId = 'songList' | 'albumList' | 'recent' | 'custom';
 
 type SlashState = {
   from: number;
@@ -62,6 +65,8 @@ type SlashState = {
   top: number;
   left: number;
   index: number;
+  step: 'pick' | 'mode';
+  listKind: 'song' | 'album' | null;
 };
 
 type MainPageEditorProps = {
@@ -108,12 +113,23 @@ export function MainPageEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [slash, setSlash] = useState<SlashState | null>(null);
+  const [insertMenu, setInsertMenu] = useState<{ kind: 'song' | 'album'; anchor: HTMLElement } | null>(null);
+  const [existingMenu, setExistingMenu] = useState<{
+    kind: 'song' | 'album';
+    top: number;
+    left: number;
+  } | null>(null);
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   lockedRef.current = locked;
   const [, setSelectionTick] = useState(0);
   const editing = canEdit && !locked;
-  const createPopovers = useProjectCreatePopovers(locale, projectId);
+  const cursorRef = useRef<number | null>(null);
+  const insertCreatedRef = useRef<(kind: 'song' | 'album', id: number) => void>(() => {});
+  const createPopovers = useProjectCreatePopovers(locale, projectId, {
+    onSongCreated: id => insertCreatedRef.current('song', id),
+    onAlbumCreated: id => insertCreatedRef.current('album', id),
+  });
 
   const placeholder = placeholderOverride ?? t('main_page_placeholder');
   const checklistTitle = t('main_page_checklist_title');
@@ -130,7 +146,9 @@ export function MainPageEditor({
       showOnlyCurrent: true,
       showOnlyWhenEditable: true,
     }),
-    ...(includeMusicBlocks ? [ProjectAlbumsNode, ProjectSongsNode] : []),
+    ...(includeMusicBlocks
+      ? [ProjectSongNode, ProjectAlbumNode, ProjectSongListNode, ProjectAlbumListNode]
+      : []),
     ProjectEmbedNode,
     ProjectTaskList,
     createProjectTaskItem(checklistTitle).extend({
@@ -175,43 +193,113 @@ export function MainPageEditor({
     }
     const coords = ed.view.coordsAtPos($from.start());
     const query = text.slice(1);
-    setSlash(prev => ({
-      from: $from.before(),
-      to: $from.after(),
-      query,
-      top: coords.bottom + 4,
-      left: coords.left,
-      index: prev?.query === query ? prev.index : 0,
-    }));
+    const from = $from.before();
+    const to = $from.after();
+    setSlash((prev) => {
+      if (prev && prev.step === 'mode' && prev.from === from && prev.to === to) {
+        return { ...prev, top: coords.bottom + 4, left: coords.left };
+      }
+      return {
+        from,
+        to,
+        query,
+        top: coords.bottom + 4,
+        left: coords.left,
+        index: prev?.query === query ? prev.index : 0,
+        step: 'pick',
+        listKind: null,
+      };
+    });
   }
 
   const slashItems = useMemo(() => {
-    if (!includeMusicBlocks) {
+    if (!includeMusicBlocks || !slash) {
       return [];
     }
-    const query = (slash?.query ?? '').toLowerCase();
-    const doc = editor?.getJSON() ?? value;
-    const items: Array<{ id: SlashKind; label: string }> = [];
-    if (albums.length > 0 && !mainPageHasNode(doc, PROJECT_ALBUMS_NODE)) {
-      items.push({ id: 'albums', label: t('albums') });
+    if (slash.step === 'mode') {
+      return [
+        { id: 'recent' as const, label: t('page_list_recent') },
+        { id: 'custom' as const, label: t('page_list_custom') },
+      ];
     }
-    if (songs.length > 0 && !mainPageHasNode(doc, PROJECT_SONGS_NODE)) {
-      items.push({ id: 'songs', label: t('songs') });
+    const query = slash.query.toLowerCase();
+    const items: Array<{ id: SlashItemId; label: string }> = [];
+    if (songs.length > 0) {
+      items.push({ id: 'songList', label: t('page_song_list') });
     }
-    return items.filter(item =>
-      item.id.includes(query) || item.label.toLowerCase().includes(query),
-    );
-  }, [albums.length, editor, includeMusicBlocks, slash?.query, songs.length, t, value]);
+    if (albums.length > 0) {
+      items.push({ id: 'albumList', label: t('page_album_list') });
+    }
+    return items.filter((item) => {
+      const extra = item.id === 'songList' ? 'songs' : 'albums';
+      return `${item.label} ${extra}`.toLowerCase().includes(query);
+    });
+  }, [albums.length, includeMusicBlocks, slash, songs.length, t]);
 
-  const applySlash = (kind: SlashKind) => {
+  const applySlash = (itemId: SlashItemId) => {
     if (!editor || !slash) {
       return;
     }
+    if (itemId === 'songList' || itemId === 'albumList') {
+      setSlash(current => current
+        ? {
+            ...current,
+            step: 'mode',
+            listKind: itemId === 'songList' ? 'song' : 'album',
+            index: 0,
+          }
+        : current);
+      return;
+    }
+    const listKind = slash.listKind;
+    if (!listKind) {
+      return;
+    }
+    const type = listKind === 'song' ? PROJECT_SONG_LIST_NODE : PROJECT_ALBUM_LIST_NODE;
     editor.chain().focus().insertContentAt(
       { from: slash.from, to: slash.to },
-      { type: kind === 'albums' ? PROJECT_ALBUMS_NODE : PROJECT_SONGS_NODE },
+      {
+        type,
+        attrs: {
+          mode: itemId === 'custom' ? 'custom' : 'recent',
+          title: '',
+          itemIds: [],
+          view: 'row',
+        },
+      },
     ).run();
     setSlash(null);
+  };
+
+  insertCreatedRef.current = (kind, id) => {
+    if (!editor) {
+      return;
+    }
+    const typeName = kind === 'song' ? PROJECT_SONG_NODE : PROJECT_ALBUM_NODE;
+    const type = editor.schema.nodes[typeName];
+    if (!type) {
+      return;
+    }
+    const block = type.create({ id, view: 'row' });
+    const stored = cursorRef.current;
+    const pos = stored == null
+      ? editor.state.doc.content.size
+      : Math.max(0, Math.min(stored, editor.state.doc.content.size));
+    const $pos = editor.state.doc.resolve(pos);
+    let tr = editor.state.tr;
+    if ($pos.depth >= 1 && $pos.node(1).isTextblock) {
+      const from = $pos.before(1);
+      const textblock = $pos.node(1);
+      const to = from + textblock.nodeSize;
+      if (textblock.type.name === 'paragraph' && textblock.textContent.trim() === '') {
+        tr = tr.replaceWith(from, to, block);
+      } else {
+        tr = tr.insert(to, block);
+      }
+    } else {
+      tr = tr.insert(pos, block);
+    }
+    editor.view.dispatch(tr.scrollIntoView());
   };
 
   pasteRef.current = (view, event) => {
@@ -485,12 +573,28 @@ export function MainPageEditor({
             {includeMusicBlocks && (
               <>
                 <Tooltip title={t('song_detail_title')}>
-                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('song', event)}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('song_detail_title')}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      cursorRef.current = editor?.state.selection.from ?? null;
+                    }}
+                    onClick={event => setInsertMenu({ kind: 'song', anchor: event.currentTarget })}
+                  >
                     <GradientIcon kind="song" fontSize={18} gradientOnHover aria-hidden />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('album_detail_title')}>
-                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('album', event)}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('album_detail_title')}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      cursorRef.current = editor?.state.selection.from ?? null;
+                    }}
+                    onClick={event => setInsertMenu({ kind: 'album', anchor: event.currentTarget })}
+                  >
                     <GradientIcon kind="album" fontSize={18} gradientOnHover aria-hidden />
                   </IconButton>
                 </Tooltip>
@@ -615,6 +719,61 @@ export function MainPageEditor({
         </Box>
       </Popover>
 
+      <Menu
+        anchorEl={insertMenu?.anchor}
+        open={insertMenu != null}
+        onClose={() => setInsertMenu(null)}
+        slotProps={getGlassMenuSlotProps({ minWidth: 180 })}
+      >
+        <MenuItem
+          sx={glassMenuItemSx}
+          onClick={(event) => {
+            const kind = insertMenu?.kind;
+            setInsertMenu(null);
+            if (kind) {
+              createPopovers.openPopoverFromClick(kind, event);
+            }
+          }}
+        >
+          {insertMenu?.kind === 'album' ? t('new_album') : t('new_song')}
+        </MenuItem>
+        <MenuItem
+          sx={glassMenuItemSx}
+          disabled={insertMenu?.kind === 'album' ? albums.length === 0 : songs.length === 0}
+          onClick={(event) => {
+            const kind = insertMenu?.kind;
+            const rect = event.currentTarget.getBoundingClientRect();
+            setInsertMenu(null);
+            if (kind) {
+              setExistingMenu({ kind, top: rect.top, left: rect.right });
+            }
+          }}
+        >
+          {insertMenu?.kind === 'album' ? t('page_select_album') : t('page_select_song')}
+        </MenuItem>
+      </Menu>
+      <Menu
+        open={existingMenu != null}
+        onClose={() => setExistingMenu(null)}
+        anchorReference="anchorPosition"
+        anchorPosition={existingMenu ? { top: existingMenu.top, left: existingMenu.left } : undefined}
+        slotProps={getGlassMenuSlotProps({ minWidth: 220 })}
+      >
+        {(existingMenu?.kind === 'album' ? albums : songs).map(item => (
+          <MenuItem
+            key={item.id}
+            sx={glassMenuItemSx}
+            onClick={() => {
+              if (existingMenu) {
+                insertCreatedRef.current(existingMenu.kind, item.id);
+              }
+              setExistingMenu(null);
+            }}
+          >
+            {'title' in item ? item.title : item.name}
+          </MenuItem>
+        ))}
+      </Menu>
       <Menu
         open={Boolean(slash) && slashItems.length > 0}
         onClose={() => setSlash(null)}

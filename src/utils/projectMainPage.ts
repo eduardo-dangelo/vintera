@@ -3,9 +3,17 @@ import type { ProjectMainSection } from '@/utils/projectMainSections';
 import { normalizeExternalLinkUrl } from '@/utils/externalLinkEmbed';
 import { richTextToPlainText, sanitizeRichTextHtml } from '@/utils/sanitizeRichTextHtml';
 
+/** Legacy aggregate blocks. Converted to recent lists on read. */
 export const PROJECT_ALBUMS_NODE = 'projectAlbums';
 export const PROJECT_SONGS_NODE = 'projectSongs';
+export const PROJECT_SONG_NODE = 'projectSong';
+export const PROJECT_ALBUM_NODE = 'projectAlbum';
+export const PROJECT_SONG_LIST_NODE = 'projectSongList';
+export const PROJECT_ALBUM_LIST_NODE = 'projectAlbumList';
 export const PROJECT_EMBED_NODE = 'projectEmbed';
+
+export type PageBlockView = 'row' | 'card';
+export type PageListMode = 'recent' | 'custom';
 
 const ALLOWED_NODES = new Set([
   'doc',
@@ -21,8 +29,10 @@ const ALLOWED_NODES = new Set([
   'horizontalRule',
   'hardBreak',
   'text',
-  PROJECT_ALBUMS_NODE,
-  PROJECT_SONGS_NODE,
+  PROJECT_SONG_NODE,
+  PROJECT_ALBUM_NODE,
+  PROJECT_SONG_LIST_NODE,
+  PROJECT_ALBUM_LIST_NODE,
   PROJECT_EMBED_NODE,
 ]);
 
@@ -34,13 +44,20 @@ export function emptyMainPage(): JSONContent {
   return { type: 'doc', content: [{ type: 'paragraph' }] };
 }
 
+export function recentMusicList(type: typeof PROJECT_SONG_LIST_NODE | typeof PROJECT_ALBUM_LIST_NODE): JSONContent {
+  return {
+    type,
+    attrs: { mode: 'recent', title: '', itemIds: [], view: 'row' },
+  };
+}
+
 export function defaultMainPage(albumCount: number, songCount: number): JSONContent {
   const content: JSONContent[] = [];
   if (albumCount > 0) {
-    content.push({ type: PROJECT_ALBUMS_NODE });
+    content.push(recentMusicList(PROJECT_ALBUM_LIST_NODE));
   }
   if (songCount > 0) {
-    content.push({ type: PROJECT_SONGS_NODE });
+    content.push(recentMusicList(PROJECT_SONG_LIST_NODE));
   }
   if (content.length === 0) {
     return emptyMainPage();
@@ -208,9 +225,9 @@ export function mainSectionsToPage(sections: ProjectMainSection[]): JSONContent 
   const content: JSONContent[] = [];
   for (const section of sections) {
     if (section.kind === 'albums') {
-      content.push({ type: PROJECT_ALBUMS_NODE });
+      content.push(recentMusicList(PROJECT_ALBUM_LIST_NODE));
     } else if (section.kind === 'songs') {
-      content.push({ type: PROJECT_SONGS_NODE });
+      content.push(recentMusicList(PROJECT_SONG_LIST_NODE));
     } else if (section.kind === 'video' || section.kind === 'link') {
       const block = embedBlock(section.url, section.title);
       if (block) {
@@ -231,8 +248,56 @@ export function mainSectionsToPage(sections: ProjectMainSection[]): JSONContent 
   return normalized ?? emptyMainPage();
 }
 
+function parsePositiveId(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function parseItemIds(value: unknown): number[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const ids: number[] = [];
+  for (const item of value) {
+    const id = parsePositiveId(item);
+    if (id != null && !ids.includes(id)) {
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
+function parseBlockView(value: unknown): PageBlockView {
+  return value === 'card' ? 'card' : 'row';
+}
+
+function parseListMode(value: unknown): PageListMode {
+  return value === 'custom' ? 'custom' : 'recent';
+}
+
+function musicListNode(type: string, attrs: Record<string, unknown>): JSONContent {
+  const title = typeof attrs.title === 'string' ? attrs.title.trim() : '';
+  return {
+    type,
+    attrs: {
+      mode: parseListMode(attrs.mode),
+      title,
+      itemIds: parseItemIds(attrs.itemIds),
+      view: parseBlockView(attrs.view),
+    },
+  };
+}
+
 function normalizeNode(raw: unknown): JSONContent | null {
-  if (!isRecord(raw) || typeof raw.type !== 'string' || !ALLOWED_NODES.has(raw.type) || raw.type === 'doc') {
+  if (!isRecord(raw) || typeof raw.type !== 'string' || raw.type === 'doc') {
+    return null;
+  }
+  if (raw.type === PROJECT_SONGS_NODE) {
+    return recentMusicList(PROJECT_SONG_LIST_NODE);
+  }
+  if (raw.type === PROJECT_ALBUMS_NODE) {
+    return recentMusicList(PROJECT_ALBUM_LIST_NODE);
+  }
+  if (!ALLOWED_NODES.has(raw.type)) {
     return null;
   }
   if (raw.type === 'text') {
@@ -240,8 +305,16 @@ function normalizeNode(raw: unknown): JSONContent | null {
       ? { type: 'text', text: raw.text, ...(Array.isArray(raw.marks) ? { marks: raw.marks as JSONContent['marks'] } : {}) }
       : null;
   }
-  if (raw.type === PROJECT_ALBUMS_NODE || raw.type === PROJECT_SONGS_NODE) {
-    return { type: raw.type };
+  if (raw.type === PROJECT_SONG_NODE || raw.type === PROJECT_ALBUM_NODE) {
+    const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+    const id = parsePositiveId(attrs.id);
+    if (id == null) {
+      return null;
+    }
+    return { type: raw.type, attrs: { id, view: parseBlockView(attrs.view) } };
+  }
+  if (raw.type === PROJECT_SONG_LIST_NODE || raw.type === PROJECT_ALBUM_LIST_NODE) {
+    return musicListNode(raw.type, isRecord(raw.attrs) ? raw.attrs : {});
   }
   if (raw.type === PROJECT_EMBED_NODE) {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
@@ -285,18 +358,11 @@ export function normalizeMainPage(raw: unknown): JSONContent | null {
   if (!isRecord(raw) || raw.type !== 'doc' || !Array.isArray(raw.content)) {
     return null;
   }
-  const seen = new Set<string>();
   const content: JSONContent[] = [];
   for (const item of raw.content) {
     const node = normalizeNode(item);
     if (!node) {
       continue;
-    }
-    if (node.type === PROJECT_ALBUMS_NODE || node.type === PROJECT_SONGS_NODE) {
-      if (seen.has(node.type)) {
-        continue;
-      }
-      seen.add(node.type);
     }
     content.push(node);
   }
@@ -316,29 +382,8 @@ export function resolveMainPage(
   albumCount: number,
   songCount: number,
 ): JSONContent {
-  const base = mainPage
+  return mainPage
     ?? (mainSections ? mainSectionsToPage(mainSections) : defaultMainPage(albumCount, songCount));
-  return withRequiredMusicBlocks(base, albumCount, songCount);
-}
-
-/** Keep the songs/albums lists on the page once that content exists. */
-export function withRequiredMusicBlocks(
-  doc: JSONContent,
-  albumCount: number,
-  songCount: number,
-): JSONContent {
-  const content = doc.content ?? [];
-  const missing: JSONContent[] = [];
-  if (albumCount > 0 && !content.some(node => node.type === PROJECT_ALBUMS_NODE)) {
-    missing.push({ type: PROJECT_ALBUMS_NODE });
-  }
-  if (songCount > 0 && !content.some(node => node.type === PROJECT_SONGS_NODE)) {
-    missing.push({ type: PROJECT_SONGS_NODE });
-  }
-  if (missing.length === 0) {
-    return doc;
-  }
-  return { type: 'doc', content: [...content, ...missing] };
 }
 
 function walkContent(node: JSONContent, visit: (node: JSONContent) => boolean): boolean {

@@ -11,9 +11,10 @@ type SongListViewProps = {
   songs: SongListItem[];
   locale: string;
   projectId?: number;
+  hideItemActions?: boolean;
 };
 
-export function SongListView({ songs, locale, projectId }: SongListViewProps) {
+export function SongListView({ songs, locale, projectId, hideItemActions = false }: SongListViewProps) {
   const router = useRouter();
 
   return (
@@ -27,12 +28,14 @@ export function SongListView({ songs, locale, projectId }: SongListViewProps) {
           coverType: 'song' as const,
           title: song.title,
           subtitle: `Song • ${song.albumName ?? song.projectName}`,
-          menuTarget: {
-            kind: 'song',
-            id: song.id,
-            href,
-            name: song.title,
-          },
+          menuTarget: hideItemActions
+            ? undefined
+            : {
+                kind: 'song' as const,
+                id: song.id,
+                href,
+                name: song.title,
+              },
           meta: <MusicPeopleAvatarGroup people={song.authors} size={22} />,
           trailing: format(new Date(song.updatedAt), 'MMM d, yyyy'),
           onClick: () => router.push(href),

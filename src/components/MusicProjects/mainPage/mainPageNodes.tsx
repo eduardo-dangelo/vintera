@@ -9,18 +9,16 @@ import {
   ArrowDownward as MoveDownIcon,
   ArrowUpward as MoveUpIcon,
 } from '@mui/icons-material';
-import { Box, Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import { Box, Button, IconButton, Menu, MenuItem } from '@mui/material';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
-import { OverviewAlbumsPreview, OverviewSongsPreview } from '@/components/MusicProjects/tabs/OverviewMusicPreviews';
-import { hasAlbumsTab, hasSongsTab } from '@/components/MusicProjects/tabs/projectTabVisibility';
 import { buildExternalLink } from '@/utils/externalLinkEmbed';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
-import { PROJECT_ALBUMS_NODE, PROJECT_EMBED_NODE, PROJECT_SONGS_NODE } from '@/utils/projectMainPage';
+import { PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
 
 function readPos(getPos: ReactNodeViewProps['getPos']): number | null {
   if (typeof getPos !== 'function') {
@@ -55,24 +53,28 @@ type BlockShellProps = {
   editor: Editor;
   getPos: ReactNodeViewProps['getPos'];
   deleteNode: () => void;
-  /** Embeds can be deleted. Albums and songs stay on the page. */
+  /** Removes this block from the page. Does not delete the songs or albums. */
   allowDelete?: boolean;
+  deleteLabel?: string;
   hidden?: boolean;
-  title?: string;
+  title?: ReactNode;
   viewAllLabel?: string;
   onViewAll?: () => void;
+  extraMenu?: (close: () => void) => ReactNode;
   children: ReactNode;
 };
 
-function BlockShell({
+export function BlockShell({
   editor,
   getPos,
   deleteNode,
   allowDelete = false,
+  deleteLabel,
   hidden = false,
   title,
   viewAllLabel,
   onViewAll,
+  extraMenu,
   children,
 }: BlockShellProps) {
   const t = useTranslations('MusicProjects');
@@ -102,11 +104,7 @@ function BlockShell({
       {(title || canEdit) && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: title ? 1 : 0, minHeight: 28 }}>
           {title
-            ? (
-                <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, minWidth: 0, fontSize: '1.05rem' }}>
-                  {title}
-                </Typography>
-              )
+            ? <Box sx={{ flex: 1, minWidth: 0 }}>{title}</Box>
             : <Box sx={{ flex: 1 }} />}
           {viewAllLabel && onViewAll && (
             <Button
@@ -170,6 +168,10 @@ function BlockShell({
           <MoveDownIcon sx={{ fontSize: 16 }} />
           {t('sidebar_section_move_down')}
         </MenuItem>
+        {extraMenu?.(() => {
+          setMenuAnchor(null);
+          setHovered(false);
+        })}
         {allowDelete && (
           <MenuItem
             sx={{ ...glassMenuItemSx, color: 'error.main' }}
@@ -179,62 +181,11 @@ function BlockShell({
             }}
           >
             <DeleteIcon sx={{ fontSize: 16 }} />
-            {t('delete')}
+            {deleteLabel ?? t('delete')}
           </MenuItem>
         )}
       </Menu>
     </NodeViewWrapper>
-  );
-}
-
-function AlbumsBlockView({ editor, getPos, deleteNode }: ReactNodeViewProps) {
-  const t = useTranslations('MusicProjects');
-  const ctx = useMainPageEditorContext();
-  const albumsHaveTab = hasAlbumsTab(ctx.albums.length);
-  return (
-    <BlockShell
-      editor={editor}
-      getPos={getPos}
-      deleteNode={deleteNode}
-      hidden={ctx.albums.length === 0}
-      title={albumsHaveTab ? t('overview_recent_albums') : t('albums')}
-      viewAllLabel={albumsHaveTab && ctx.onNavigateToTab ? t('overview_view_all') : undefined}
-      onViewAll={ctx.onNavigateToTab ? () => ctx.onNavigateToTab?.('albums') : undefined}
-    >
-      <OverviewAlbumsPreview
-        locale={ctx.locale}
-        project={ctx.project}
-        albums={ctx.albums}
-        songs={ctx.songs}
-        hideChrome
-      />
-    </BlockShell>
-  );
-}
-
-function SongsBlockView({ editor, getPos, deleteNode }: ReactNodeViewProps) {
-  const t = useTranslations('MusicProjects');
-  const ctx = useMainPageEditorContext();
-  const songsHaveTab = hasSongsTab(ctx.songs.length);
-  return (
-    <BlockShell
-      editor={editor}
-      getPos={getPos}
-      deleteNode={deleteNode}
-      hidden={ctx.songs.length === 0}
-      title={songsHaveTab ? t('overview_recent_songs') : t('songs')}
-      viewAllLabel={songsHaveTab && ctx.onNavigateToTab ? t('overview_view_all') : undefined}
-      onViewAll={ctx.onNavigateToTab ? () => ctx.onNavigateToTab?.('songs') : undefined}
-    >
-      <OverviewSongsPreview
-        locale={ctx.locale}
-        projectId={ctx.projectId}
-        project={ctx.project}
-        albums={ctx.albums}
-        songs={ctx.songs}
-        hideChrome
-      />
-    </BlockShell>
   );
 }
 
@@ -252,28 +203,6 @@ function EmbedBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps
     </BlockShell>
   );
 }
-
-function atomNode(name: string, dataAttr: string, view: (props: ReactNodeViewProps) => ReactNode) {
-  return Node.create({
-    name,
-    group: 'block',
-    atom: true,
-    selectable: true,
-    draggable: false,
-    parseHTML() {
-      return [{ tag: `div[${dataAttr}]` }];
-    },
-    renderHTML({ HTMLAttributes }) {
-      return ['div', mergeAttributes(HTMLAttributes, { [dataAttr]: 'true' })];
-    },
-    addNodeView() {
-      return ReactNodeViewRenderer(view);
-    },
-  });
-}
-
-export const ProjectAlbumsNode = atomNode(PROJECT_ALBUMS_NODE, 'data-project-albums', AlbumsBlockView);
-export const ProjectSongsNode = atomNode(PROJECT_SONGS_NODE, 'data-project-songs', SongsBlockView);
 
 export const ProjectEmbedNode = Node.create({
   name: PROJECT_EMBED_NODE,

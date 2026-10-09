@@ -10,9 +10,10 @@ import { MusicListTable } from './MusicListTable';
 type AlbumListViewProps = {
   albums: AlbumListItem[];
   locale: string;
+  hideItemActions?: boolean;
 };
 
-export function AlbumListView({ albums, locale }: AlbumListViewProps) {
+export function AlbumListView({ albums, locale, hideItemActions = false }: AlbumListViewProps) {
   const t = useTranslations('MusicProjects');
   const router = useRouter();
 
@@ -25,12 +26,14 @@ export function AlbumListView({ albums, locale }: AlbumListViewProps) {
         coverType: 'album' as const,
         title: album.name,
         subtitle: `Album • ${album.projectName}`,
-        menuTarget: {
-          kind: 'album',
-          id: album.id,
-          href: `/${locale}/albums/${album.id}`,
-          name: album.name,
-        },
+        menuTarget: hideItemActions
+          ? undefined
+          : {
+              kind: 'album' as const,
+              id: album.id,
+              href: `/${locale}/albums/${album.id}`,
+              name: album.name,
+            },
         statPrimary: (
           <MusicStatBadge
             count={album.songCount}

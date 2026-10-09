@@ -2,7 +2,7 @@
 
 import type { DragEndEvent, Modifier } from '@dnd-kit/core';
 import type { JSONContent } from '@tiptap/core';
-import type { CSSProperties, MouseEvent, ReactElement } from 'react';
+import type { CSSProperties, MouseEvent, ReactElement, ReactNode } from 'react';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import type { ProjectCustomTab } from '@/utils/musicProjectMetadata';
 import {
@@ -74,10 +74,22 @@ type ProjectTabName = 'overview' | 'songs' | 'albums';
 
 const SAVE_DELAY_MS = 500;
 
-const restrictToHorizontalAxis: Modifier = ({ transform }) => ({
-  ...transform,
-  y: 0,
-});
+const CHROME_TRANSITION = '0.2s ease';
+
+const restrictToCustomTabs = (
+  boundaryLeftRef: { current: number | null },
+): Modifier => ({ transform, draggingNodeRect }) => {
+  const next = { ...transform, y: 0 };
+  const boundaryLeft = boundaryLeftRef.current;
+  if (boundaryLeft == null || !draggingNodeRect) {
+    return next;
+  }
+  const minX = boundaryLeft - draggingNodeRect.left;
+  if (next.x < minX) {
+    next.x = minX;
+  }
+  return next;
+};
 
 function pinnedTabIcon(tabId: string) {
   const iconSx = { fontSize: 18 };
@@ -117,6 +129,69 @@ function pickableIcon(icon: ReactElement, onPickIcon?: (anchor: HTMLElement) => 
   );
 }
 
+type DetailTabProps = {
+  label: ReactNode;
+  icon: ReactElement;
+  active: boolean;
+  onSelect: () => void;
+  onDoubleClick?: (event: MouseEvent) => void;
+  showChrome?: boolean;
+};
+
+function DetailTab({
+  label,
+  icon,
+  active,
+  onSelect,
+  onDoubleClick,
+  showChrome = false,
+}: DetailTabProps) {
+  return (
+    <Tab
+      component="div"
+      icon={icon}
+      iconPosition="start"
+      label={label}
+      onClick={onSelect}
+      onDoubleClick={onDoubleClick}
+      sx={{
+        'textTransform': 'none',
+        'fontSize': '0.938rem',
+        'fontWeight': 500,
+        'minHeight': 48,
+        'pr': showChrome ? 5 : 2,
+        'transition': `padding-right ${CHROME_TRANSITION}`,
+        '& .MuiTab-iconWrapper': { mr: 0.75 },
+        ...(active && {
+          'color': 'primary.main',
+          '& .MuiSvgIcon-root': {
+            color: 'primary.main',
+            WebkitTextFillColor: 'currentColor',
+          },
+        }),
+      }}
+    />
+  );
+}
+
+function PinnedTab({
+  label,
+  icon,
+  active,
+  onSelect,
+}: {
+  label: string;
+  icon: ReactElement;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Box sx={{ display: 'inline-flex', position: 'relative', alignItems: 'center' }}>
+      <DetailTab label={label} icon={icon} active={active} onSelect={onSelect} />
+    </Box>
+  );
+}
+
 type SortableTabProps = {
   id: string;
   label: string;
@@ -131,6 +206,7 @@ type SortableTabProps = {
   onCommitRename: (name: string) => void;
   onCancelRename: () => void;
   onRemove: (anchor: HTMLElement) => void;
+  onNode: (node: HTMLElement | null) => void;
   onPickIcon?: (anchor: HTMLElement) => void;
   removeLabel: string;
 };
@@ -149,18 +225,25 @@ function SortableTab({
   onCommitRename,
   onCancelRename,
   onRemove,
+  onNode,
   onPickIcon,
   removeLabel,
 }: SortableTabProps) {
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setSortableNodeRef,
     setActivatorNodeRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ id, disabled: !draggable });
+  const onNodeRef = useRef(onNode);
+  onNodeRef.current = onNode;
+  const setNodeRef = useCallback((node: HTMLElement | null) => {
+    setSortableNodeRef(node);
+    onNodeRef.current(node);
+  }, [setSortableNodeRef]);
   const [hovered, setHovered] = useState(false);
   const [draft, setDraft] = useState(label);
   const [draftSession, setDraftSession] = useState({ editing, label });
@@ -188,15 +271,6 @@ function SortableTab({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  const tabSx = {
-    'textTransform': 'none',
-    'fontSize': '0.938rem',
-    'fontWeight': 500,
-    'minHeight': 48,
-    'pr': showChrome ? 5 : 2,
-    '& .MuiTab-iconWrapper': { mr: 0.75 },
-  } as const;
 
   const nameInput = (
     <Box
@@ -248,94 +322,71 @@ function SortableTab({
       onMouseLeave={() => setHovered(false)}
       sx={{ display: 'inline-flex', position: 'relative', alignItems: 'center' }}
     >
-      {editing
-        ? (
-            <Tab
-              component="div"
-              icon={pickableIcon(icon, onPickIcon)}
-              iconPosition="start"
-              label={nameInput}
-              onClick={onSelect}
-              sx={{
-                ...tabSx,
-                'color': 'primary.main',
-                '& .MuiSvgIcon-root': {
-                  color: 'primary.main',
-                  WebkitTextFillColor: 'currentColor',
-                },
-              }}
-            />
-          )
-        : (
-            <Tab
-              component="div"
-              icon={pickableIcon(icon, onPickIcon)}
-              iconPosition="start"
-              label={label}
-              onClick={onSelect}
-              onDoubleClick={(event: MouseEvent) => {
-                if (!removable) {
-                  return;
-                }
-                event.preventDefault();
-                onStartRename();
-              }}
-              sx={{
-                ...tabSx,
-                ...(active && {
-                  'color': 'primary.main',
-                  '& .MuiSvgIcon-root': {
-                    color: 'primary.main',
-                    WebkitTextFillColor: 'currentColor',
-                  },
-                }),
-              }}
-            />
-          )}
-      {draggable && (
+      <DetailTab
+        label={editing ? nameInput : label}
+        icon={pickableIcon(icon, onPickIcon)}
+        active={editing || active}
+        showChrome={showChrome}
+        onSelect={onSelect}
+        onDoubleClick={editing
+          ? undefined
+          : (event) => {
+              if (!removable) {
+                return;
+              }
+              event.preventDefault();
+              onStartRename();
+            }}
+      />
+      {(draggable || removable) && (
         <Box
-          ref={setActivatorNodeRef}
-          component="span"
-          {...attributes}
-          {...listeners}
-          onClick={event => event.stopPropagation()}
           sx={{
             position: 'absolute',
-            right: removable ? 22 : 4,
+            left: 'calc(100% - 35px)',
             top: '50%',
             transform: 'translateY(-50%)',
             display: 'flex',
-            cursor: 'grab',
+            alignItems: 'center',
+            overflow: 'hidden',
+            width: showChrome ? 40 : 0,
+            minWidth: 0,
             opacity: showChrome ? 1 : 0,
+            transition: `width ${CHROME_TRANSITION}, opacity ${CHROME_TRANSITION}`,
             pointerEvents: showChrome ? 'auto' : 'none',
-            color: 'text.secondary',
           }}
         >
-          <DragIcon sx={{ fontSize: 16 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, gap: 0.25 }}>
+            {draggable && (
+              <Box
+                ref={setActivatorNodeRef}
+                component="span"
+                {...attributes}
+                {...listeners}
+                onClick={event => event.stopPropagation()}
+                sx={{ display: 'flex', cursor: 'grab', color: 'text.secondary' }}
+              >
+                <DragIcon sx={{ fontSize: 16 }} />
+              </Box>
+            )}
+            {removable && (
+              <IconButton
+                size="small"
+                aria-label={removeLabel}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRemove(event.currentTarget);
+                }}
+                sx={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 1,
+                }}
+              >
+                <CloseIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
-      )}
-      {removable && (
-        <IconButton
-          size="small"
-          aria-label={removeLabel}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRemove(event.currentTarget);
-          }}
-          sx={{
-            width: 18,
-            height: 18,
-            position: 'absolute',
-            right: 2,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            opacity: showChrome ? 1 : 0,
-            pointerEvents: showChrome ? 'auto' : 'none',
-            borderRadius: 1,
-          }}
-        >
-          <CloseIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-        </IconButton>
       )}
     </Box>
   );
@@ -378,6 +429,16 @@ export function ProjectDetailTabs({
   const visibleIds = useMemo(
     () => getVisibleTabIds(albums.length, songs.length, customTabs.map(tab => tab.id)),
     [albums.length, customTabs, songs.length],
+  );
+  const customIds = useMemo(
+    () => visibleIds.filter(id => !isPinnedProjectTab(id)),
+    [visibleIds],
+  );
+  const customNodesRef = useRef(new Map<string, HTMLElement>());
+  const customRegionLeftRef = useRef<number | null>(null);
+  const dragModifier = useMemo(
+    () => restrictToCustomTabs(customRegionLeftRef),
+    [],
   );
 
   const updateUrlForTab = useCallback((tabId: string | null) => {
@@ -461,29 +522,37 @@ export function ProjectDetailTabs({
     return tab.name.trim() || t('custom_tab_untitled');
   }, [t]);
 
+  const registerCustomNode = useCallback((id: string, node: HTMLElement | null) => {
+    if (node) {
+      customNodesRef.current.set(id, node);
+    } else {
+      customNodesRef.current.delete(id);
+    }
+  }, []);
+
+  const handleDragStart = () => {
+    const firstId = customTabsRef.current[0]?.id;
+    const node = firstId ? customNodesRef.current.get(firstId) : undefined;
+    customRegionLeftRef.current = node?.getBoundingClientRect().left ?? null;
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    customRegionLeftRef.current = null;
     const { active, over } = event;
     if (!over || active.id === over.id) {
       return;
     }
-    const activeId = String(active.id);
+    const activeDragId = String(active.id);
     const overId = String(over.id);
-    if (isPinnedProjectTab(activeId) || isPinnedProjectTab(overId)) {
+    if (isPinnedProjectTab(activeDragId) || isPinnedProjectTab(overId)) {
       return;
     }
-    const oldIndex = visibleIds.indexOf(activeId);
-    const newIndex = visibleIds.indexOf(overId);
-    const firstCustom = visibleIds.findIndex(id => !isPinnedProjectTab(id));
-    if (firstCustom === -1 || oldIndex < firstCustom || newIndex < firstCustom) {
+    const oldIndex = customTabsRef.current.findIndex(tab => tab.id === activeDragId);
+    const newIndex = customTabsRef.current.findIndex(tab => tab.id === overId);
+    if (oldIndex < 0 || newIndex < 0) {
       return;
     }
-    const nextIds = arrayMove(visibleIds, oldIndex, newIndex);
-    const byId = new Map(customTabsRef.current.map(tab => [tab.id, tab]));
-    const next = nextIds.flatMap((id) => {
-      const tab = byId.get(id);
-      return tab ? [tab] : [];
-    });
-    persistTabs(next);
+    persistTabs(arrayMove(customTabsRef.current, oldIndex, newIndex));
   };
 
   const addTab = () => {
@@ -620,10 +689,14 @@ export function ProjectDetailTabs({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragCancel={() => {
+            customRegionLeftRef.current = null;
+          }}
           onDragEnd={handleDragEnd}
-          modifiers={[restrictToHorizontalAxis]}
+          modifiers={[dragModifier]}
         >
-          <SortableContext items={visibleIds} strategy={horizontalListSortingStrategy}>
+          <SortableContext items={customIds} strategy={horizontalListSortingStrategy}>
             <Tabs
               value={currentIndex}
               onChange={(_event, nextIndex: number) => {
@@ -654,29 +727,41 @@ export function ProjectDetailTabs({
               }}
             >
               {visibleIds.map((tabId) => {
-                const custom = customTabs.find(tab => tab.id === tabId);
                 const pinned = isPinnedProjectTab(tabId);
+                if (pinned) {
+                  return (
+                    <PinnedTab
+                      key={tabId}
+                      label={tabLabel(tabId)}
+                      icon={pinnedTabIcon(tabId)}
+                      active={tabId === activeId}
+                      onSelect={() => updateUrlForTab(tabId)}
+                    />
+                  );
+                }
+                const custom = customTabs.find(tab => tab.id === tabId);
                 return (
                   <SortableTab
                     key={tabId}
                     id={tabId}
                     label={tabLabel(tabId)}
-                    icon={pinned ? pinnedTabIcon(tabId) : customTabIcon(custom?.icon)}
+                    icon={customTabIcon(custom?.icon)}
                     active={tabId === activeId}
-                    draggable={canEdit && !pinned}
-                    removable={canEdit && !pinned}
+                    draggable={canEdit}
+                    removable={canEdit}
                     editing={editingId === tabId}
                     untitledLabel={t('custom_tab_untitled')}
                     onSelect={() => updateUrlForTab(tabId)}
                     onStartRename={() => {
-                      if (canEdit && !pinned) {
+                      if (canEdit) {
                         setEditingId(tabId);
                       }
                     }}
                     onCommitRename={name => commitRename(tabId, name)}
                     onCancelRename={() => setEditingId(null)}
                     removeLabel={t('delete')}
-                    onPickIcon={canEdit && !pinned
+                    onNode={node => registerCustomNode(tabId, node)}
+                    onPickIcon={canEdit
                       ? (anchor) => {
                           setIconTabId(tabId);
                           setIconAnchor(anchor);

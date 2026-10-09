@@ -9,6 +9,7 @@ export const PROJECT_SONGS_NODE = 'projectSongs';
 export const PROJECT_SONG_NODE = 'projectSong';
 export const PROJECT_ALBUM_NODE = 'projectAlbum';
 export const PROJECT_SONG_LIST_NODE = 'projectSongList';
+export const PROJECT_EVENT_NODE = 'projectEvent';
 export const PROJECT_ALBUM_LIST_NODE = 'projectAlbumList';
 export const PROJECT_EMBED_NODE = 'projectEmbed';
 
@@ -33,6 +34,7 @@ const ALLOWED_NODES = new Set([
   PROJECT_ALBUM_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_ALBUM_LIST_NODE,
+  PROJECT_EVENT_NODE,
   PROJECT_EMBED_NODE,
 ]);
 
@@ -303,6 +305,14 @@ function normalizeNode(raw: unknown): JSONContent | null {
   if (raw.type === PROJECT_ALBUM_NODE) {
     return null;
   }
+  if (raw.type === PROJECT_EVENT_NODE) {
+    const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+    const id = parsePositiveId(attrs.id);
+    if (id == null) {
+      return null;
+    }
+    return { type: raw.type, attrs: { id } };
+  }
   if (raw.type === PROJECT_SONG_NODE) {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
     const id = parsePositiveId(attrs.id);
@@ -427,6 +437,20 @@ export function pageCollections(doc: JSONContent | null | undefined): PageCollec
 
 export function pageHasRecentCollection(doc: JSONContent | null | undefined): boolean {
   return pageCollections(doc).some(collection => collection.mode === 'recent');
+}
+
+export function pageEventIds(doc: JSONContent | null | undefined): number[] {
+  const ids: number[] = [];
+  for (const node of doc?.content ?? []) {
+    if (node.type !== PROJECT_EVENT_NODE) {
+      continue;
+    }
+    const id = isRecord(node.attrs) ? parsePositiveId(node.attrs.id) : null;
+    if (id != null && !ids.includes(id)) {
+      ids.push(id);
+    }
+  }
+  return ids;
 }
 
 export function gatherCollections(pages: Array<JSONContent | null | undefined>): PageCollection[] {

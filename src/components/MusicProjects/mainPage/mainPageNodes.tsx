@@ -212,7 +212,7 @@ export function BlockShell({
             onClick={beginRemove}
           >
             <DeleteIcon sx={{ fontSize: 16 }} />
-            {deleteLabel ?? t('delete')}
+            {deleteLabel ?? t('page_remove')}
           </MenuItem>
         )}
       </Menu>

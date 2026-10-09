@@ -49,16 +49,20 @@ import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainP
 import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import { markPageBlockEntering, PAGE_BLOCK_MOTION_MS, requestPageBlockExit } from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import {
+  ProjectEventNode,
   ProjectSongListNode,
   ProjectSongNode,
 } from '@/components/MusicProjects/mainPage/pageMusicBlocks';
 import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreatePopovers';
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
+import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
+  pageEventIds,
   pageHasRecentCollection,
   pastedSingleUrl,
+  PROJECT_EVENT_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
@@ -66,6 +70,7 @@ import {
 const PAGE_MUSIC_BLOCK_TYPES = new Set([
   PROJECT_SONG_NODE,
   PROJECT_SONG_LIST_NODE,
+  PROJECT_EVENT_NODE,
 ]);
 
 function selectedMusicBlockPos(state: EditorView['state']): number | null {
@@ -127,6 +132,7 @@ export function MainPageEditor({
   onFocusChange,
 }: MainPageEditorProps) {
   const t = useTranslations('MusicProjects');
+  const tCal = useTranslations('Calendar');
   const linkButtonRef = useRef<HTMLButtonElement>(null);
   const pasteRef = useRef<(view: EditorView, event: ClipboardEvent) => boolean>(() => false);
   const keyRef = useRef<(view: EditorView, event: KeyboardEvent) => boolean>(() => false);
@@ -137,6 +143,8 @@ export function MainPageEditor({
   const [linkUrl, setLinkUrl] = useState('');
   const [slash, setSlash] = useState<SlashState | null>(null);
   const [insertMenu, setInsertMenu] = useState<{ kind: 'song' | 'album'; anchor: HTMLElement } | null>(null);
+  const [eventMenu, setEventMenu] = useState<HTMLElement | null>(null);
+  const [existingEventMenu, setExistingEventMenu] = useState<HTMLElement | null>(null);
   const [existingMenu, setExistingMenu] = useState<{
     kind: 'song' | 'album';
     anchor: HTMLElement;
@@ -156,8 +164,10 @@ export function MainPageEditor({
   const dismissPageMenus = () => {
     setListMenu(null);
     setExistingMenu(null);
+    setExistingEventMenu(null);
     setCollectionPicker(null);
     setInsertMenu(null);
+    setEventMenu(null);
     setSlash(null);
   };
   const onPageMenuClose = (event: unknown, reason: string) => {
@@ -179,9 +189,12 @@ export function MainPageEditor({
   const editing = canEdit && !locked;
   const cursorRef = useRef<number | null>(null);
   const insertCreatedRef = useRef<(kind: 'song' | 'album', id: number) => void>(() => {});
+  const insertEventRef = useRef<(eventId: number) => void>(() => {});
+  const freshEventIdsRef = useRef(new Set<number>());
   const createPopovers = useProjectCreatePopovers(locale, projectId, {
     onSongCreated: id => insertCreatedRef.current('song', id),
     onAlbumCreated: id => insertCreatedRef.current('album', id),
+    onEventCreated: id => insertEventRef.current(id),
   });
 
   const placeholder = placeholderOverride ?? t('main_page_placeholder');
@@ -200,7 +213,7 @@ export function MainPageEditor({
       showOnlyWhenEditable: true,
     }),
     ...(includeMusicBlocks
-      ? [ProjectSongNode, ProjectSongListNode]
+      ? [ProjectSongNode, ProjectSongListNode, ProjectEventNode]
       : []),
     ProjectEmbedNode,
     ProjectTaskList,
@@ -228,6 +241,47 @@ export function MainPageEditor({
       syncSlash(ed);
     },
   });
+
+  const { data: projectEvents, isSuccess: eventsLoaded } = useGetCalendarEventsByProject(
+    locale,
+    includeMusicBlocks ? projectId : null,
+  );
+  useEffect(() => {
+    if (!canEdit || !eventsLoaded || !editor) {
+      return;
+    }
+    const byId = new Map((projectEvents ?? []).map(event => [event.id, event]));
+    const ranges: { from: number; to: number }[] = [];
+    editor.state.doc.forEach((node, offset) => {
+      if (node.type.name !== PROJECT_EVENT_NODE) {
+        return;
+      }
+      const id = typeof node.attrs.id === 'number' ? node.attrs.id : null;
+      if (id == null) {
+        ranges.push({ from: offset, to: offset + node.nodeSize });
+        return;
+      }
+      const event = byId.get(id);
+      if (!event) {
+        if (!freshEventIdsRef.current.has(id)) {
+          ranges.push({ from: offset, to: offset + node.nodeSize });
+        }
+        return;
+      }
+      freshEventIdsRef.current.delete(id);
+      if (new Date(event.end).getTime() <= Date.now()) {
+        ranges.push({ from: offset, to: offset + node.nodeSize });
+      }
+    });
+    if (ranges.length === 0) {
+      return;
+    }
+    let tr = editor.state.tr;
+    for (const range of [...ranges].reverse()) {
+      tr = tr.delete(range.from, range.to);
+    }
+    editor.view.dispatch(tr);
+  }, [canEdit, editor, eventsLoaded, projectEvents]);
 
   function syncSlash(ed: Editor) {
     if (collectionPickerRef.current || holdMenusRef.current) {
@@ -365,6 +419,24 @@ export function MainPageEditor({
     editor.view.dispatch(tr.scrollIntoView());
     return insertPos;
   };
+
+  insertEventRef.current = (eventId) => {
+    if (pageEventIds(editor?.getJSON()).includes(eventId)) {
+      return;
+    }
+    freshEventIdsRef.current.add(eventId);
+    const type = editor?.schema.nodes[PROJECT_EVENT_NODE];
+    if (!type) {
+      return;
+    }
+    insertBlockAtCursor(type.create({ id: eventId }));
+  };
+
+  const pageEvents = pageEventIds(value);
+  const upcomingEvents = (projectEvents ?? []).filter(
+    event => new Date(event.end).getTime() > Date.now(),
+  );
+  const addableEvents = upcomingEvents.filter(event => !pageEvents.includes(event.id));
 
   insertCreatedRef.current = (kind, id) => {
     if (kind !== 'song') {
@@ -720,7 +792,15 @@ export function MainPageEditor({
                   </IconButton>
                 </Tooltip>
                 <Tooltip title={t('event_detail_title')}>
-                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('event', event)}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('event_detail_title')}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      cursorRef.current = editor?.state.selection.from ?? null;
+                    }}
+                    onClick={event => setEventMenu(event.currentTarget)}
+                  >
                     <EventNote sx={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -1022,6 +1102,55 @@ export function MainPageEditor({
             onClick={event => applySlash(item.id, event.currentTarget)}
           >
             {item.label}
+          </MenuItem>
+        ))}
+      </Menu>
+      <Menu
+        anchorEl={eventMenu}
+        open={eventMenu != null}
+        onClose={onPageMenuClose}
+        slotProps={getGlassMenuSlotProps({ minWidth: 200 })}
+      >
+        <MenuItem
+          sx={glassMenuItemSx}
+          onClick={(event) => {
+            setExistingEventMenu(null);
+            setEventMenu(null);
+            createPopovers.openPopoverFromClick('event', event);
+          }}
+        >
+          <Add sx={{ fontSize: 16 }} />
+          {tCal('new_event')}
+        </MenuItem>
+        <MenuItem
+          sx={glassMenuItemSx}
+          disabled={addableEvents.length === 0}
+          onClick={event => setExistingEventMenu(event.currentTarget)}
+        >
+          <EventNote sx={{ fontSize: 16 }} />
+          {t('page_select_event')}
+        </MenuItem>
+      </Menu>
+      <Menu
+        anchorEl={existingEventMenu}
+        open={existingEventMenu != null}
+        onClose={onPageMenuClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={getGlassMenuSlotProps({ minWidth: 220 })}
+      >
+        {upcomingEvents.map(event => (
+          <MenuItem
+            key={event.id}
+            disabled={pageEvents.includes(event.id)}
+            sx={glassMenuItemSx}
+            onClick={() => {
+              insertEventRef.current(event.id);
+              dismissPageMenus();
+            }}
+          >
+            <EventNote sx={{ fontSize: 16 }} />
+            {event.name}
           </MenuItem>
         ))}
       </Menu>

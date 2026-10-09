@@ -3,6 +3,8 @@
 import type { Editor } from '@tiptap/core';
 import type { ReactNodeViewProps } from '@tiptap/react';
 import type { ReactNode } from 'react';
+import type { CalendarEvent } from '@/components/Calendar/types';
+import type { CalendarEvent as CalendarEventEntity } from '@/entities';
 import type { SongListItem } from '@/queries/hooks/songs';
 import type { PageBlockView, PageListMode } from '@/utils/projectMainPage';
 import { Album, LibraryMusic, QueueMusic, ViewList, ViewModule } from '@mui/icons-material';
@@ -12,9 +14,11 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TransitionGroup } from 'react-transition-group';
+import { EventDetailsPopover } from '@/components/Calendar/EventDetailsPopover';
 import { AlbumCard } from '@/components/MusicProjects/AlbumCard';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { BlockShell } from '@/components/MusicProjects/mainPage/mainPageNodes';
+import { ProjectNextEventCard } from '@/components/MusicProjects/ProjectDetailCalendarSection';
 import { SongCard } from '@/components/MusicProjects/SongCard';
 import { toAlbumListItem } from '@/components/MusicProjects/tabs/projectAlbumUtils';
 import { toFallbackSongListItem } from '@/components/MusicProjects/tabs/projectSongUtils';
@@ -23,12 +27,14 @@ import { sortByRecent, takeRecent } from '@/components/MusicProjects/tabs/recent
 import { AlbumListView } from '@/components/MusicProjects/Views/AlbumListView';
 import { SongListView } from '@/components/MusicProjects/Views/SongListView';
 import { useAlbums } from '@/queries/hooks/albums';
+import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
 import { useSongs } from '@/queries/hooks/songs';
 import { getButtonGroupSx } from '@/utils/buttonGroupStyles';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
   PROJECT_ALBUM_LIST_NODE,
   PROJECT_ALBUM_NODE,
+  PROJECT_EVENT_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
@@ -420,6 +426,64 @@ function viewSwitchItem(
   );
 }
 
+function toCalendarEvent(event: CalendarEventEntity): CalendarEvent {
+  return {
+    id: event.id,
+    assetId: event.assetId,
+    musicProjectId: event.musicProjectId,
+    userId: event.userId,
+    name: event.name,
+    description: event.description,
+    location: event.location,
+    color: event.color,
+    start: event.start,
+    end: event.end,
+    reminders: event.reminders,
+    createdAt: event.createdAt,
+    updatedAt: event.updatedAt,
+  };
+}
+
+function eventIsDue(event: CalendarEvent): boolean {
+  return new Date(event.end).getTime() <= Date.now();
+}
+
+function EventBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
+  const ctx = useMainPageEditorContext();
+  const id = readItemId(node.attrs.id);
+  const { data, isSuccess } = useGetCalendarEventsByProject(ctx.locale, ctx.projectId);
+  const match = data?.find(event => event.id === id);
+  const event = match ? toCalendarEvent(match) : null;
+  const gone = isSuccess && (event == null || eventIsDue(event));
+  const [detailsAnchor, setDetailsAnchor] = useState<HTMLElement | null>(null);
+
+  return (
+    <>
+      <BlockShell
+        editor={editor}
+        getPos={getPos}
+        deleteNode={deleteNode}
+        allowDelete
+        hidden={gone}
+      >
+        {event && !eventIsDue(event) && (
+          <ProjectNextEventCard
+            event={event}
+            onClick={(_event, anchor) => setDetailsAnchor(anchor)}
+          />
+        )}
+      </BlockShell>
+      <EventDetailsPopover
+        open={detailsAnchor != null}
+        anchorEl={detailsAnchor}
+        event={event}
+        onClose={() => setDetailsAnchor(null)}
+        locale={ctx.locale}
+      />
+    </>
+  );
+}
+
 function SongBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
   const t = useTranslations('MusicProjects');
   const id = readItemId(node.attrs.id);
@@ -690,6 +754,27 @@ function listNode(name: string, dataAttr: string, view: (props: ReactNodeViewPro
 }
 
 export const ProjectSongNode = itemNode(PROJECT_SONG_NODE, 'data-project-song', SongBlockView);
+export const ProjectEventNode = Node.create({
+  name: PROJECT_EVENT_NODE,
+  group: 'block',
+  atom: true,
+  selectable: true,
+  draggable: false,
+  addAttributes() {
+    return {
+      id: { default: null as number | null },
+    };
+  },
+  parseHTML() {
+    return [{ tag: 'div[data-project-event]' }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-project-event': '' })];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(EventBlockView);
+  },
+});
 export const ProjectAlbumNode = itemNode(PROJECT_ALBUM_NODE, 'data-project-album', AlbumBlockView);
 export const ProjectSongListNode = listNode(PROJECT_SONG_LIST_NODE, 'data-project-song-list', SongListBlockView);
 export const ProjectAlbumListNode = listNode(PROJECT_ALBUM_LIST_NODE, 'data-project-album-list', AlbumListBlockView);

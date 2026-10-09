@@ -9,6 +9,7 @@ export type ProjectCreatePopoverType = 'album' | 'song' | 'member' | 'event';
 type CreatePopoverHandlers = {
   onSongCreated?: (songId: number) => void;
   onAlbumCreated?: (albumId: number) => void;
+  onEventCreated?: (eventId: number) => void;
 };
 
 export function useProjectCreatePopovers(
@@ -66,10 +67,10 @@ export function useProjectCreatePopovers(
     [handlePopoverClose, locale, router],
   );
 
-  const handleEventCreated = useCallback(() => {
+  const handleEventCreated = useCallback((event: { id: number }) => {
     handlePopoverClose();
-    router.refresh();
-  }, [handlePopoverClose, router]);
+    handlersRef.current?.onEventCreated?.(event.id);
+  }, [handlePopoverClose]);
 
   return {
     openPopover,

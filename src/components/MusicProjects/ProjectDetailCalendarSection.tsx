@@ -108,7 +108,7 @@ type ProjectNextEventCardProps = {
   onClick: (event: CalendarEvent, anchorEl: HTMLElement) => void;
 };
 
-function ProjectNextEventCard({ event, onClick }: ProjectNextEventCardProps) {
+export function ProjectNextEventCard({ event, onClick }: ProjectNextEventCardProps) {
   const tCal = useTranslations('Calendar');
   const startDate = new Date(event.start);
   const endDate = new Date(event.end);

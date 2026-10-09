@@ -22,8 +22,8 @@ import {
 } from '@dnd-kit/sortable';
 import {
   Add as AddIcon,
-  Album as AlbumIcon,
   Close as CloseIcon,
+  QueueMusic as CollectionIcon,
   Dashboard as DashboardIcon,
   DragIndicator as DragIcon,
   MusicNote as SongIcon,
@@ -59,7 +59,7 @@ import {
   mergeCustomTabs,
   parseMusicProjectMetadata,
 } from '@/utils/musicProjectMetadata';
-import { emptyMainPage } from '@/utils/projectMainPage';
+import { appendAlbumCollections, emptyMainPage, gatherCollections, projectHasCollection, resolveMainPage } from '@/utils/projectMainPage';
 
 type ProjectDetailTabsProps = {
   locale: string;
@@ -97,7 +97,7 @@ function pinnedTabIcon(tabId: string) {
     case 'songs':
       return <SongIcon sx={iconSx} />;
     case 'albums':
-      return <AlbumIcon sx={iconSx} />;
+      return <CollectionIcon sx={iconSx} />;
     default:
       return <DashboardIcon sx={iconSx} />;
   }
@@ -431,9 +431,25 @@ export function ProjectDetailTabs({
   const [iconTabId, setIconTabId] = useState<string | null>(null);
   const [iconAnchor, setIconAnchor] = useState<HTMLElement | null>(null);
 
+  const collectionPages = useMemo(() => {
+    const meta = parseMusicProjectMetadata(project.metadata);
+    const overview = resolveMainPage(meta.mainPage, meta.mainSections, albums.length, songs.length);
+    const withAlbums = meta.collectionsMigratedFromAlbums
+      ? overview
+      : appendAlbumCollections(overview, albums, songs);
+    return [withAlbums, ...(meta.customTabs ?? []).map(tab => tab.page)];
+  }, [albums, project.metadata, songs]);
+  const collections = useMemo(
+    () => gatherCollections(collectionPages),
+    [collectionPages],
+  );
   const visibleIds = useMemo(
-    () => getVisibleTabIds(albums.length, songs.length, customTabs.map(tab => tab.id)),
-    [albums.length, customTabs, songs.length],
+    () => getVisibleTabIds(
+      projectHasCollection(collectionPages),
+      songs.length,
+      customTabs.map(tab => tab.id),
+    ),
+    [collectionPages, customTabs, songs.length],
   );
   const customIds = useMemo(
     () => visibleIds.filter(id => !isPinnedProjectTab(id)),
@@ -661,7 +677,7 @@ export function ProjectDetailTabs({
           project={project}
           albums={albums}
           songs={songs}
-          canEdit={canEdit}
+          collections={collections}
         />
       );
     }
@@ -678,6 +694,7 @@ export function ProjectDetailTabs({
         songs={songs}
         canEdit={canEdit}
         page={activeCustom.page}
+        onNavigateToTab={updateUrlForTab}
         onChange={page => onCustomPageChange(activeCustom.id, page)}
         onFlush={() => persistTabs(customTabsRef.current)}
       />

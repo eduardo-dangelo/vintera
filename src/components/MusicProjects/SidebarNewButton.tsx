@@ -14,7 +14,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useHoverSound } from '@/hooks/useHoverSound';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
-import { CreateAlbumPopover } from './CreateAlbumPopover';
 import { getCreatePopoverAnchorPositionFromClick } from './createMusicPopoverStyles';
 import { CreateProjectPopover } from './CreateProjectPopover';
 import { CreateSongPopover } from './CreateSongPopover';
@@ -24,7 +23,7 @@ type SidebarNewButtonProps = {
   locale: string;
 };
 
-type PopoverType = 'album' | 'project' | 'song' | null;
+type PopoverType = 'project' | 'song' | null;
 
 export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
   const tDashboard = useTranslations('DashboardLayout');
@@ -70,14 +69,7 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
     router.refresh();
   };
 
-  const handleAlbumCreated = (albumId: number) => {
-    handlePopoverClose();
-    router.push(`/${locale}/albums/${albumId}`);
-    router.refresh();
-  };
-
   const menuItems = [
-    { type: 'album' as const, label: tMusic('album_detail_title') },
     { type: 'project' as const, label: tMusic('select_project') },
     { type: 'song' as const, label: tMusic('song_detail_title') },
   ];
@@ -154,13 +146,6 @@ export function SidebarNewButton({ locale }: SidebarNewButtonProps) {
         onClose={handlePopoverClose}
         locale={locale}
         onCreated={handleSongCreated}
-        {...popoverAnchorProps}
-      />
-      <CreateAlbumPopover
-        open={openPopover === 'album'}
-        onClose={handlePopoverClose}
-        locale={locale}
-        onCreated={handleAlbumCreated}
         {...popoverAnchorProps}
       />
     </>

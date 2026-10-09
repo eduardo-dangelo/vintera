@@ -10,7 +10,6 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useCreateSong } from '@/queries/hooks/music-projects/useCreateSong';
-import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
 import { useMusicProjects } from '@/queries/hooks/music-projects/useMusicProjects';
 import { getGlassSelectMenuProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { toTitleCase, toTitleCaseInput } from '@/utils/toTitleCase';
@@ -44,14 +43,10 @@ export function CreateSongPopover({
   const { data: projects } = useMusicProjects(locale);
   const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
   const [title, setTitle] = useState('');
-  const [albumId, setAlbumId] = useState<number | ''>('');
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   const effectiveProjectId = presetProjectId
     ?? (selectedProjectId === '' ? undefined : selectedProjectId);
-
-  const { data: projectData } = useMusicProject(locale, effectiveProjectId ?? 0);
-  const albums = effectiveProjectId ? (projectData?.albums ?? []) : [];
 
   useEffect(() => {
     if (open && presetProjectId) {
@@ -61,7 +56,6 @@ export function CreateSongPopover({
 
   const handleClose = () => {
     setTitle('');
-    setAlbumId('');
     if (!presetProjectId) {
       setSelectedProjectId('');
     }
@@ -76,7 +70,7 @@ export function CreateSongPopover({
     const song = await createSong.mutateAsync({
       projectId: effectiveProjectId,
       title: toTitleCase(title),
-      albumId: effectiveProjectId && albumId !== '' ? albumId : null,
+      albumId: null,
     });
     handleClose();
     onCreated?.(song.id);
@@ -120,31 +114,12 @@ export function CreateSongPopover({
               } else {
                 setSelectedProjectId(raw);
               }
-              setAlbumId('');
             }}
           >
             <MenuItem sx={glassMenuItemSx} value="">{t('project_none')}</MenuItem>
             {projects?.map(project => (
               <MenuItem key={project.id} sx={glassMenuItemSx} value={project.id}>
                 {project.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
-      {effectiveProjectId && albums.length > 0 && (
-        <FormControl fullWidth size="small" sx={createPopoverSelectSx}>
-          <InputLabel>{t('select_album')}</InputLabel>
-          <Select
-            value={albumId}
-            label={t('select_album')}
-            MenuProps={getGlassSelectMenuProps()}
-            onChange={e => setAlbumId(e.target.value as number | '')}
-          >
-            <MenuItem sx={glassMenuItemSx} value="">{t('single')}</MenuItem>
-            {albums.map(album => (
-              <MenuItem key={album.id} sx={glassMenuItemSx} value={album.id}>
-                {album.name}
               </MenuItem>
             ))}
           </Select>

@@ -5,7 +5,7 @@ import type { ReactNodeViewProps } from '@tiptap/react';
 import type { ReactNode } from 'react';
 import type { SongListItem } from '@/queries/hooks/songs';
 import type { PageBlockView, PageListMode } from '@/utils/projectMainPage';
-import { Album, LibraryMusic, ViewList, ViewModule } from '@mui/icons-material';
+import { Album, LibraryMusic, QueueMusic, ViewList, ViewModule } from '@mui/icons-material';
 import { Box, Button, Collapse, Menu, MenuItem, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useTheme } from '@mui/material';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
@@ -472,7 +472,7 @@ function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewPr
   const songs = useSongItems(mode === 'recent' ? 'recent' : 'custom', itemIds);
   const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null);
   const songsHaveTab = hasSongsTab(ctx.songs.length);
-  const fallback = mode === 'recent' ? t('overview_recent_songs') : t('songs');
+  const fallback = mode === 'recent' ? t('overview_recent_songs') : t('page_song_list');
 
   return (
     <>
@@ -483,11 +483,16 @@ function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewPr
         allowDelete
         deleteLabel={t('page_remove_list')}
         title={(
-          <ListTitleField
-            value={title}
-            fallback={fallback}
-            onCommit={next => patchAttrs(editor, getPos, { title: next })}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+            <QueueMusic sx={{ fontSize: 20, color: 'text.secondary', flexShrink: 0 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <ListTitleField
+                value={title}
+                fallback={fallback}
+                onCommit={next => patchAttrs(editor, getPos, { title: next })}
+              />
+            </Box>
+          </Box>
         )}
         viewAllLabel={mode === 'recent' && songsHaveTab && ctx.onNavigateToTab ? t('overview_view_all') : undefined}
         onViewAll={ctx.onNavigateToTab ? () => ctx.onNavigateToTab?.('songs') : undefined}
@@ -556,7 +561,7 @@ function AlbumListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewP
   const itemIds = readItemIds(node.attrs.itemIds);
   const albums = useAlbumItems(mode === 'recent' ? 'recent' : 'custom', itemIds);
   const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null);
-  const albumsHaveTab = hasAlbumsTab(ctx.albums.length);
+  const albumsHaveTab = hasAlbumsTab(ctx.albums.length > 0);
   const fallback = mode === 'recent' ? t('overview_recent_albums') : t('albums');
 
   return (

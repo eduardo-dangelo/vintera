@@ -8,8 +8,8 @@ export function isPinnedProjectTab(id: string): id is ProjectTabName {
   return PINNED_TABS.has(id);
 }
 
-export function hasAlbumsTab(albumCount: number): boolean {
-  return albumCount > 0;
+export function hasAlbumsTab(hasCollections: boolean): boolean {
+  return hasCollections;
 }
 
 export function hasSongsTab(songCount: number): boolean {
@@ -17,20 +17,20 @@ export function hasSongsTab(songCount: number): boolean {
 }
 
 export function hasTabBar(
-  albumCount: number,
+  hasCollections: boolean,
   songCount: number,
   customTabCount = 0,
 ): boolean {
-  return albumCount > 0 || songCount > 0 || customTabCount > 0;
+  return hasCollections || songCount > 0 || customTabCount > 0;
 }
 
-/** Overview, then Songs if any, then Albums if any, then custom tab ids. */
+/** Overview, then Songs if any, then Collections if any, then custom tab ids. */
 export function getVisibleTabIds(
-  albumCount: number,
+  hasCollections: boolean,
   songCount: number,
   customTabIds: readonly string[] = [],
 ): string[] {
-  if (!hasTabBar(albumCount, songCount, customTabIds.length)) {
+  if (!hasTabBar(hasCollections, songCount, customTabIds.length)) {
     return [];
   }
 
@@ -38,7 +38,7 @@ export function getVisibleTabIds(
   if (hasSongsTab(songCount)) {
     tabs.push('songs');
   }
-  if (hasAlbumsTab(albumCount)) {
+  if (hasAlbumsTab(hasCollections)) {
     tabs.push('albums');
   }
   for (const id of customTabIds) {

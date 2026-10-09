@@ -51,11 +51,8 @@ export function recentMusicList(type: typeof PROJECT_SONG_LIST_NODE | typeof PRO
   };
 }
 
-export function defaultMainPage(albumCount: number, songCount: number): JSONContent {
+export function defaultMainPage(_albumCount: number, songCount: number): JSONContent {
   const content: JSONContent[] = [];
-  if (albumCount > 0) {
-    content.push(recentMusicList(PROJECT_ALBUM_LIST_NODE));
-  }
   if (songCount > 0) {
     content.push(recentMusicList(PROJECT_SONG_LIST_NODE));
   }
@@ -224,9 +221,7 @@ function embedBlock(url: string, title?: string): JSONContent | null {
 export function mainSectionsToPage(sections: ProjectMainSection[]): JSONContent {
   const content: JSONContent[] = [];
   for (const section of sections) {
-    if (section.kind === 'albums') {
-      content.push(recentMusicList(PROJECT_ALBUM_LIST_NODE));
-    } else if (section.kind === 'songs') {
+    if (section.kind === 'albums' || section.kind === 'songs') {
       content.push(recentMusicList(PROJECT_SONG_LIST_NODE));
     } else if (section.kind === 'video' || section.kind === 'link') {
       const block = embedBlock(section.url, section.title);
@@ -305,7 +300,10 @@ function normalizeNode(raw: unknown): JSONContent | null {
       ? { type: 'text', text: raw.text, ...(Array.isArray(raw.marks) ? { marks: raw.marks as JSONContent['marks'] } : {}) }
       : null;
   }
-  if (raw.type === PROJECT_SONG_NODE || raw.type === PROJECT_ALBUM_NODE) {
+  if (raw.type === PROJECT_ALBUM_NODE) {
+    return null;
+  }
+  if (raw.type === PROJECT_SONG_NODE) {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
     const id = parsePositiveId(attrs.id);
     if (id == null) {
@@ -366,8 +364,111 @@ export function normalizeMainPage(raw: unknown): JSONContent | null {
     }
     content.push(node);
   }
-  if (content.length === 0) {
+  const collections = collapseCollectionNodes(content);
+  if (collections.length === 0) {
     return emptyMainPage();
+  }
+  return { type: 'doc', content: collections };
+}
+
+function isRecentCollectionNode(node: JSONContent): boolean {
+  return node.type === PROJECT_SONG_LIST_NODE && node.attrs?.mode === 'recent';
+}
+
+/** Drop album blocks. A recent album list becomes one recent collection when the page has none. */
+function collapseCollectionNodes(content: JSONContent[]): JSONContent[] {
+  let hasRecent = content.some(isRecentCollectionNode);
+  const next: JSONContent[] = [];
+  for (const node of content) {
+    if (node.type === PROJECT_ALBUM_NODE) {
+      continue;
+    }
+    if (node.type === PROJECT_ALBUM_LIST_NODE) {
+      if (node.attrs?.mode === 'recent' && !hasRecent) {
+        next.push(recentMusicList(PROJECT_SONG_LIST_NODE));
+        hasRecent = true;
+      }
+      continue;
+    }
+    if (isRecentCollectionNode(node)) {
+      if (hasRecent && next.some(isRecentCollectionNode)) {
+        continue;
+      }
+      hasRecent = true;
+    }
+    next.push(node);
+  }
+  return next;
+}
+
+export type PageCollection = {
+  mode: PageListMode;
+  title: string;
+  itemIds: number[];
+  view: PageBlockView;
+};
+
+export function pageCollections(doc: JSONContent | null | undefined): PageCollection[] {
+  const collections: PageCollection[] = [];
+  for (const node of doc?.content ?? []) {
+    if (node.type !== PROJECT_SONG_LIST_NODE) {
+      continue;
+    }
+    const attrs = isRecord(node.attrs) ? node.attrs : {};
+    collections.push({
+      mode: attrs.mode === 'custom' ? 'custom' : 'recent',
+      title: typeof attrs.title === 'string' ? attrs.title : '',
+      itemIds: parseItemIds(attrs.itemIds),
+      view: parseBlockView(attrs.view),
+    });
+  }
+  return collections;
+}
+
+export function pageHasRecentCollection(doc: JSONContent | null | undefined): boolean {
+  return pageCollections(doc).some(collection => collection.mode === 'recent');
+}
+
+export function gatherCollections(pages: Array<JSONContent | null | undefined>): PageCollection[] {
+  let recent: PageCollection | null = null;
+  const custom: PageCollection[] = [];
+  for (const page of pages) {
+    for (const collection of pageCollections(page)) {
+      if (collection.mode === 'recent') {
+        if (!recent) {
+          recent = collection;
+        }
+      } else {
+        custom.push(collection);
+      }
+    }
+  }
+  return recent ? [recent, ...custom] : custom;
+}
+
+export function projectHasCollection(pages: Array<JSONContent | null | undefined>): boolean {
+  return gatherCollections(pages).length > 0;
+}
+
+export function appendAlbumCollections(
+  page: JSONContent,
+  albums: Array<{ id: number; name: string }>,
+  songs: Array<{ id: number; albumId: number | null }>,
+): JSONContent {
+  if (albums.length === 0) {
+    return page;
+  }
+  const content = [...(page.content ?? [])];
+  for (const album of albums) {
+    content.push({
+      type: PROJECT_SONG_LIST_NODE,
+      attrs: {
+        mode: 'custom',
+        title: album.name,
+        itemIds: songs.filter(song => song.albumId === album.id).map(song => song.id),
+        view: 'row',
+      },
+    });
   }
   return { type: 'doc', content };
 }

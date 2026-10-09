@@ -1,6 +1,7 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/core';
+import type { ProjectTabName } from '@/components/MusicProjects/tabs/projectTabVisibility';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import { useTranslations } from 'next-intl';
 import { MainPageEditor } from '@/components/MusicProjects/MainPageEditor';
@@ -15,6 +16,7 @@ type ProjectCustomTabPageProps = {
   page: JSONContent;
   onChange: (page: JSONContent) => void;
   onFlush: () => void;
+  onNavigateToTab?: (tab: ProjectTabName) => void;
 };
 
 export function ProjectCustomTabPage({
@@ -27,6 +29,7 @@ export function ProjectCustomTabPage({
   page,
   onChange,
   onFlush,
+  onNavigateToTab,
 }: ProjectCustomTabPageProps) {
   const t = useTranslations('MusicProjects');
 
@@ -46,6 +49,7 @@ export function ProjectCustomTabPage({
       albums={albums}
       songs={songs}
       canEdit={canEdit}
+      onNavigateToTab={onNavigateToTab}
       placeholder={t('custom_page_placeholder')}
     />
   );

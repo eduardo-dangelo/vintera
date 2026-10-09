@@ -59,6 +59,8 @@ export type MusicProjectMetadata = {
   mainPage?: JSONContent;
   /** Named pages after the pinned Overview / Songs / Albums tabs. */
   customTabs?: ProjectCustomTab[];
+  /** Existing album rows were copied into overview collections. */
+  collectionsMigratedFromAlbums?: boolean;
 };
 
 export type ProjectCustomTab = {
@@ -325,6 +327,10 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
     metadata.customTabs = customTabs;
   }
 
+  if (raw.collectionsMigratedFromAlbums === true) {
+    metadata.collectionsMigratedFromAlbums = true;
+  }
+
   return normalizeHeroMetadata(metadata);
 }
 
@@ -393,6 +399,18 @@ export function mergeMainSections(
   return {
     ...current,
     mainSections: sections,
+  };
+}
+
+export function mergeCollectionsMigration(
+  existing: unknown,
+  page: JSONContent,
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  return {
+    ...current,
+    mainPage: page,
+    collectionsMigratedFromAlbums: true,
   };
 }
 

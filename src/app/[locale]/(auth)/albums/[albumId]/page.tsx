@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { auth } from '@clerk/nextjs/server';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { AlbumDetailClient } from './AlbumDetailClient';
+import { redirect } from 'next/navigation';
+import { AlbumService } from '@/services/albumService';
 
 type PageProps = {
   params: Promise<{ locale: string; albumId: string }>;
@@ -9,7 +11,7 @@ type PageProps = {
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: 'MusicProjects' });
-  return { title: t('album_detail_title') };
+  return { title: t('tabs_albums') };
 }
 
 export default async function AlbumDetailPage(props: PageProps) {
@@ -17,9 +19,13 @@ export default async function AlbumDetailPage(props: PageProps) {
   setRequestLocale(locale);
 
   const albumId = Number.parseInt(albumIdStr, 10);
-  if (Number.isNaN(albumId)) {
-    return null;
+  const { userId } = await auth();
+  if (userId && !Number.isNaN(albumId)) {
+    const album = await AlbumService.getAlbumByIdForUser(albumId, userId);
+    if (album?.project.id) {
+      redirect(`/${locale}/projects/${album.project.id}?tab=albums`);
+    }
   }
 
-  return <AlbumDetailClient locale={locale} albumId={albumId} />;
+  redirect(`/${locale}/projects`);
 }

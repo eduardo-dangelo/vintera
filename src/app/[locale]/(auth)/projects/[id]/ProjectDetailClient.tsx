@@ -12,6 +12,8 @@ import { ProjectDetailPageSkeleton } from '@/components/MusicProjects/ProjectDet
 import { ProjectDetailSidebar } from '@/components/MusicProjects/ProjectDetailSidebar';
 import { ProjectDetailTabs } from '@/components/MusicProjects/ProjectDetailTabs';
 import { useMusicProject } from '@/queries/hooks/music-projects/useMusicProject';
+import { parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
+import { appendAlbumCollections, gatherCollections, resolveMainPage } from '@/utils/projectMainPage';
 
 type ProjectDetailClientProps = {
   locale: string;
@@ -36,12 +38,9 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
     }
 
     if (albumParam) {
-      const albumId = Number.parseInt(albumParam, 10);
-      if (!Number.isNaN(albumId)) {
-        router.replace(`/${locale}/albums/${albumId}`);
-      }
+      router.replace(`/${locale}/projects/${projectId}?tab=albums`);
     }
-  }, [searchParams, locale, router]);
+  }, [searchParams, locale, projectId, router]);
 
   if (isLoading) {
     return <ProjectDetailPageSkeleton />;
@@ -57,6 +56,13 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
 
   const { project, albums, songs, members, viewerPermission } = data;
   const accent = project.color || '#7c3aed';
+  const meta = parseMusicProjectMetadata(project.metadata);
+  const overview = resolveMainPage(meta.mainPage, meta.mainSections, albums.length, songs.length);
+  const collectionPages = [
+    meta.collectionsMigratedFromAlbums ? overview : appendAlbumCollections(overview, albums, songs),
+    ...(meta.customTabs ?? []).map(tab => tab.page),
+  ];
+  const collectionCount = gatherCollections(collectionPages).length;
   const canEdit = viewerPermission === 'owner'
     || viewerPermission === 'edit'
     || viewerPermission === 'admin';
@@ -70,7 +76,7 @@ export function ProjectDetailClient({ locale, projectId }: ProjectDetailClientPr
         coverImageUrl={project.coverImageUrl}
         titleColor={project.color}
         metadata={project.metadata}
-        albumCount={albums.length}
+        albumCount={collectionCount}
         songCount={songs.length}
         memberCount={members.length}
         readOnly={!canEdit}

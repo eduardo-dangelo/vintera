@@ -6,8 +6,8 @@ import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusic
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainPageEditor } from '@/components/MusicProjects/MainPageEditor';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
-import { mergeMainPage, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
-import { mainPageHasEditableContent, resolveMainPage } from '@/utils/projectMainPage';
+import { mergeCollectionsMigration, mergeMainPage, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
+import { appendAlbumCollections, mainPageHasEditableContent, resolveMainPage } from '@/utils/projectMainPage';
 
 const SAVE_DELAY_MS = 500;
 
@@ -47,7 +47,23 @@ export function ProjectDetailMain({
   docRef.current = doc;
   const ackedKeyRef = useRef(resolvedKey);
   const seenUpdatedAtRef = useRef(project.updatedAt);
+  const migratedKeyRef = useRef<string | null>(null);
+  const migrationSavedRef = useRef<string | null>(null);
   const docKey = JSON.stringify(doc);
+  const parsedMeta = parseMusicProjectMetadata(project.metadata);
+  const migrationKey = `${projectId}:${albums.map(album => album.id).join(',')}`;
+
+  if (
+    canEdit
+    && !parsedMeta.collectionsMigratedFromAlbums
+    && migratedKeyRef.current !== migrationKey
+  ) {
+    migratedKeyRef.current = migrationKey;
+    const next = appendAlbumCollections(doc, albums, songs);
+    if (JSON.stringify(next) !== docKey) {
+      setDoc(next);
+    }
+  }
 
   if (docKey === resolvedKey) {
     ackedKeyRef.current = resolvedKey;
@@ -64,24 +80,46 @@ export function ProjectDetailMain({
     setDoc(resolved);
   }
 
+  const persistMetadata = useCallback((next: JSONContent) => {
+    const alreadyMigrated = parseMusicProjectMetadata(metadataRef.current).collectionsMigratedFromAlbums
+      || migratedKeyRef.current != null;
+    const merge = alreadyMigrated ? mergeCollectionsMigration : mergeMainPage;
+    return updateProject.mutateAsync({
+      projectId,
+      data: { metadata: merge(metadataRef.current, next) },
+    });
+  }, [projectId, updateProject]);
+
   const persist = useCallback((next: JSONContent) => {
     if (saveTimer.current != null) {
       window.clearTimeout(saveTimer.current);
     }
     saveTimer.current = window.setTimeout(() => {
       saveTimer.current = null;
-      void updateProject.mutateAsync({
-        projectId,
-        data: { metadata: mergeMainPage(metadataRef.current, next) },
-      });
+      void persistMetadata(next);
     }, SAVE_DELAY_MS);
-  }, [projectId, updateProject]);
+  }, [persistMetadata]);
 
   useEffect(() => () => {
     if (saveTimer.current != null) {
       window.clearTimeout(saveTimer.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (!canEdit || migrationSavedRef.current === migrationKey) {
+      return;
+    }
+    if (parseMusicProjectMetadata(metadataRef.current).collectionsMigratedFromAlbums) {
+      migrationSavedRef.current = migrationKey;
+      return;
+    }
+    if (migratedKeyRef.current !== migrationKey) {
+      return;
+    }
+    migrationSavedRef.current = migrationKey;
+    void persistMetadata(docRef.current);
+  }, [canEdit, migrationKey, persistMetadata]);
 
   const handleFocusChange = useCallback((isFocused: boolean) => {
     focusedRef.current = isFocused;
@@ -91,12 +129,9 @@ export function ProjectDetailMain({
     if (saveTimer.current != null) {
       window.clearTimeout(saveTimer.current);
       saveTimer.current = null;
-      void updateProject.mutateAsync({
-        projectId,
-        data: { metadata: mergeMainPage(metadataRef.current, docRef.current) },
-      });
+      void persistMetadata(docRef.current);
     }
-  }, [canEdit, projectId, updateProject]);
+  }, [canEdit, persistMetadata]);
 
   return (
     <MainPageEditor

@@ -81,7 +81,6 @@ export function ProjectDetailNewButton({ locale, projectId, appTheme }: ProjectD
 
   const menuItems: MenuEntry[] = [
     { type: 'song', label: tMusic('song_detail_title'), iconKind: 'song' },
-    { type: 'album', label: tMusic('album_detail_title'), iconKind: 'album' },
     { type: 'member', label: tMusic('member_detail_title'), iconKind: 'member' },
     { type: 'event', label: tMusic('event_detail_title') },
   ];

@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import type { MusicItemKind, MusicItemMenuTarget } from './MusicProjects/musicItemMenuTypes';
 import { SignOutButton } from '@clerk/nextjs';
 import {
-  Album as AlbumIcon,
   ExpandMore as ExpandMoreIcon,
   LibraryMusic as LibraryMusicIcon,
   Logout as LogoutIcon,
@@ -390,25 +389,6 @@ function mapSongItems(
   })) ?? [];
 }
 
-function mapAlbumItems(
-  albums: Array<{
-    id: number;
-    name: string;
-    projectName: string;
-  }> | undefined,
-  locale: string,
-): SidebarItem[] {
-  return albums?.map(album => ({
-    key: `album-${album.id}`,
-    href: `/${locale}/albums/${album.id}`,
-    label: `${album.name} (${album.projectName})`,
-    name: album.name,
-    icon: AlbumIcon,
-    kind: 'album' as const,
-    id: album.id,
-  })) ?? [];
-}
-
 export function Sidebar({
   children,
   drawerWidth,
@@ -419,7 +399,6 @@ export function Sidebar({
   const [clickedHref, setClickedHref] = useState<string | null>(null);
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [showAllSongs, setShowAllSongs] = useState(false);
-  const [showAllAlbums, setShowAllAlbums] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   const pathname = usePathname();
@@ -429,7 +408,7 @@ export function Sidebar({
   const { data: recentsData, isPending: isRecentsLoading } = useGetSidebarRecents(locale, {
     limit: SIDEBAR_PREVIEW_LIMIT,
   });
-  const needsAllRecents = showAllProjects || showAllSongs || showAllAlbums;
+  const needsAllRecents = showAllProjects || showAllSongs;
   const { data: allRecentsData } = useGetSidebarRecents(locale, {
     limit: 'all',
     enabled: needsAllRecents,
@@ -478,11 +457,9 @@ export function Sidebar({
 
   const projectPreviewItems = mapProjectItems(recentsData?.projects, locale);
   const songPreviewItems = mapSongItems(recentsData?.songs, locale);
-  const albumPreviewItems = mapAlbumItems(recentsData?.albums, locale);
 
   const projectAllItems = mapProjectItems(allRecentsData?.projects, locale);
   const songAllItems = mapSongItems(allRecentsData?.songs, locale);
-  const albumAllItems = mapAlbumItems(allRecentsData?.albums, locale);
 
   const projectItems = showAllProjects && projectAllItems.length > 0
     ? projectAllItems
@@ -490,9 +467,6 @@ export function Sidebar({
   const songItems = showAllSongs && songAllItems.length > 0
     ? songAllItems
     : songPreviewItems;
-  const albumItems = showAllAlbums && albumAllItems.length > 0
-    ? albumAllItems
-    : albumPreviewItems;
 
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -574,26 +548,6 @@ export function Sidebar({
           />
         )}
 
-        {!isRecentsLoading && albumPreviewItems.length > 0 && (
-          <SidebarSection
-            title={sectionLabels.albums}
-            listHref={`/${locale}/albums`}
-            viewMoreLabel={sectionLabels.viewAll}
-            viewLessLabel={sectionLabels.viewLess}
-            items={albumItems}
-            showAll={showAllAlbums}
-            canToggleShowAll={
-              albumPreviewItems.length >= SIDEBAR_PREVIEW_LIMIT || showAllAlbums
-            }
-            onToggleShowAll={() => setShowAllAlbums(prev => !prev)}
-            isActive={isActive}
-            onItemClick={setClickedHref}
-            onItemHover={() => {}}
-            onItemContextMenu={handleItemContextMenu}
-            onOpenActions={openFromButton}
-            openMenuTarget={openMenuTarget}
-          />
-        )}
       </Box>
 
       <Box>

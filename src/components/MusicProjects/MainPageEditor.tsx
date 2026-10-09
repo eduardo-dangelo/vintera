@@ -144,8 +144,7 @@ export function MainPageEditor({
   const [insertMenu, setInsertMenu] = useState<{ kind: 'song' | 'album'; anchor: HTMLElement } | null>(null);
   const [existingMenu, setExistingMenu] = useState<{
     kind: 'song' | 'album';
-    top: number;
-    left: number;
+    anchor: HTMLElement;
   } | null>(null);
   const [listMenu, setListMenu] = useState<{
     kind: 'song' | 'album';
@@ -153,6 +152,8 @@ export function MainPageEditor({
   } | null>(null);
   const listMenuRef = useRef(listMenu);
   listMenuRef.current = listMenu;
+  const existingMenuRef = useRef(existingMenu);
+  existingMenuRef.current = existingMenu;
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   lockedRef.current = locked;
@@ -809,10 +810,11 @@ export function MainPageEditor({
         anchorEl={insertMenu?.anchor}
         open={insertMenu != null}
         onClose={(_event, reason) => {
-          if (reason === 'backdropClick' && listMenuRef.current) {
+          if (reason === 'backdropClick' && (listMenuRef.current || existingMenuRef.current)) {
             return;
           }
           setListMenu(null);
+          setExistingMenu(null);
           setInsertMenu(null);
         }}
         slotProps={getGlassMenuSlotProps({ minWidth: 180 })}
@@ -822,6 +824,7 @@ export function MainPageEditor({
           onClick={(event) => {
             const kind = insertMenu?.kind;
             setListMenu(null);
+            setExistingMenu(null);
             setInsertMenu(null);
             if (kind) {
               createPopovers.openPopoverFromClick(kind, event);
@@ -836,11 +839,9 @@ export function MainPageEditor({
           disabled={insertMenu?.kind === 'album' ? albums.length === 0 : songs.length === 0}
           onClick={(event) => {
             const kind = insertMenu?.kind;
-            const rect = event.currentTarget.getBoundingClientRect();
             setListMenu(null);
-            setInsertMenu(null);
             if (kind) {
-              setExistingMenu({ kind, top: rect.top, left: rect.right });
+              setExistingMenu({ kind, anchor: event.currentTarget });
             }
           }}
         >
@@ -854,6 +855,7 @@ export function MainPageEditor({
           disabled={insertMenu?.kind === 'album' ? albums.length === 0 : songs.length === 0}
           onClick={(event) => {
             const kind = insertMenu?.kind;
+            setExistingMenu(null);
             if (kind) {
               setListMenu({ kind, anchor: event.currentTarget });
             }
@@ -901,10 +903,11 @@ export function MainPageEditor({
         </MenuItem>
       </Menu>
       <Menu
+        anchorEl={existingMenu?.anchor}
         open={existingMenu != null}
         onClose={() => setExistingMenu(null)}
-        anchorReference="anchorPosition"
-        anchorPosition={existingMenu ? { top: existingMenu.top, left: existingMenu.left } : undefined}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={getGlassMenuSlotProps({ minWidth: 220 })}
       >
         {(existingMenu?.kind === 'album' ? albums : songs).map(item => (
@@ -916,6 +919,7 @@ export function MainPageEditor({
                 insertCreatedRef.current(existingMenu.kind, item.id);
               }
               setExistingMenu(null);
+              setInsertMenu(null);
             }}
           >
             {existingMenu?.kind === 'album'

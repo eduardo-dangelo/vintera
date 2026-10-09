@@ -41,14 +41,26 @@ export function ProjectDetailMain({
   }, [albums.length, project.metadata, songs.length]);
 
   const resolvedKey = JSON.stringify(resolved);
-  const [syncedKey, setSyncedKey] = useState(resolvedKey);
   const [doc, setDoc] = useState<JSONContent>(resolved);
   const focusedRef = useRef(false);
   const docRef = useRef(doc);
   docRef.current = doc;
+  const ackedKeyRef = useRef(resolvedKey);
+  const seenUpdatedAtRef = useRef(project.updatedAt);
+  const docKey = JSON.stringify(doc);
 
-  if (syncedKey !== resolvedKey && !focusedRef.current) {
-    setSyncedKey(resolvedKey);
+  if (docKey === resolvedKey) {
+    ackedKeyRef.current = resolvedKey;
+    if (project.updatedAt > seenUpdatedAtRef.current) {
+      seenUpdatedAtRef.current = project.updatedAt;
+    }
+  } else if (
+    !focusedRef.current
+    && project.updatedAt >= seenUpdatedAtRef.current
+    && docKey === ackedKeyRef.current
+  ) {
+    ackedKeyRef.current = resolvedKey;
+    seenUpdatedAtRef.current = project.updatedAt;
     setDoc(resolved);
   }
 

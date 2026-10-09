@@ -1,20 +1,28 @@
 'use client';
 
 import type { Editor, JSONContent } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import type { ProjectTabName } from '@/components/MusicProjects/tabs/projectTabVisibility';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
+import Add from '@mui/icons-material/Add';
+import Album from '@mui/icons-material/Album';
 import CheckBoxOutlined from '@mui/icons-material/CheckBoxOutlined';
 import EventNote from '@mui/icons-material/EventNote';
 import FormatBold from '@mui/icons-material/FormatBold';
 import FormatItalic from '@mui/icons-material/FormatItalic';
 import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
 import FormatListNumbered from '@mui/icons-material/FormatListNumbered';
+import History from '@mui/icons-material/History';
+import LibraryMusic from '@mui/icons-material/LibraryMusic';
 import LinkIcon from '@mui/icons-material/Link';
 import LinkOff from '@mui/icons-material/LinkOff';
 import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
+import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
+import QueueMusic from '@mui/icons-material/QueueMusic';
 import TitleIcon from '@mui/icons-material/Title';
+import Tune from '@mui/icons-material/Tune';
 import {
   Box,
   Divider,
@@ -29,6 +37,7 @@ import {
 } from '@mui/material';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { NodeSelection } from '@tiptap/pm/state';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTranslations } from 'next-intl';
@@ -38,6 +47,7 @@ import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjec
 import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
 import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
+import { markPageBlockEntering, PAGE_BLOCK_MOTION_MS, requestPageBlockExit } from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import {
   ProjectAlbumListNode,
   ProjectAlbumNode,
@@ -55,6 +65,24 @@ import {
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
+
+const PAGE_MUSIC_BLOCK_TYPES = new Set([
+  PROJECT_SONG_NODE,
+  PROJECT_ALBUM_NODE,
+  PROJECT_SONG_LIST_NODE,
+  PROJECT_ALBUM_LIST_NODE,
+]);
+
+function selectedMusicBlockPos(state: EditorView['state']): number | null {
+  const { selection } = state;
+  if (!(selection instanceof NodeSelection)) {
+    return null;
+  }
+  if (!PAGE_MUSIC_BLOCK_TYPES.has(selection.node.type.name)) {
+    return null;
+  }
+  return selection.from;
+}
 
 type SlashItemId = 'songList' | 'albumList' | 'recent' | 'custom';
 
@@ -119,6 +147,12 @@ export function MainPageEditor({
     top: number;
     left: number;
   } | null>(null);
+  const [listMenu, setListMenu] = useState<{
+    kind: 'song' | 'album';
+    anchor: HTMLElement;
+  } | null>(null);
+  const listMenuRef = useRef(listMenu);
+  listMenuRef.current = listMenu;
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   lockedRef.current = locked;
@@ -256,6 +290,7 @@ export function MainPageEditor({
       return;
     }
     const type = listKind === 'song' ? PROJECT_SONG_LIST_NODE : PROJECT_ALBUM_LIST_NODE;
+    markPageBlockEntering(slash.from);
     editor.chain().focus().insertContentAt(
       { from: slash.from, to: slash.to },
       {
@@ -271,35 +306,56 @@ export function MainPageEditor({
     setSlash(null);
   };
 
-  insertCreatedRef.current = (kind, id) => {
+  const insertBlockAtCursor = (block: ProseMirrorNode) => {
     if (!editor) {
       return;
     }
-    const typeName = kind === 'song' ? PROJECT_SONG_NODE : PROJECT_ALBUM_NODE;
-    const type = editor.schema.nodes[typeName];
-    if (!type) {
-      return;
-    }
-    const block = type.create({ id, view: 'row' });
     const stored = cursorRef.current;
     const pos = stored == null
       ? editor.state.doc.content.size
       : Math.max(0, Math.min(stored, editor.state.doc.content.size));
     const $pos = editor.state.doc.resolve(pos);
     let tr = editor.state.tr;
+    let insertPos = pos;
     if ($pos.depth >= 1 && $pos.node(1).isTextblock) {
       const from = $pos.before(1);
       const textblock = $pos.node(1);
       const to = from + textblock.nodeSize;
       if (textblock.type.name === 'paragraph' && textblock.textContent.trim() === '') {
+        insertPos = from;
         tr = tr.replaceWith(from, to, block);
       } else {
+        insertPos = to;
         tr = tr.insert(to, block);
       }
     } else {
       tr = tr.insert(pos, block);
     }
+    markPageBlockEntering(insertPos);
     editor.view.dispatch(tr.scrollIntoView());
+  };
+
+  insertCreatedRef.current = (kind, id) => {
+    const typeName = kind === 'song' ? PROJECT_SONG_NODE : PROJECT_ALBUM_NODE;
+    const type = editor?.schema.nodes[typeName];
+    if (!type) {
+      return;
+    }
+    insertBlockAtCursor(type.create({ id, view: 'row' }));
+  };
+
+  const insertListAtCursor = (kind: 'song' | 'album', mode: 'recent' | 'custom') => {
+    const typeName = kind === 'song' ? PROJECT_SONG_LIST_NODE : PROJECT_ALBUM_LIST_NODE;
+    const type = editor?.schema.nodes[typeName];
+    if (!type) {
+      return;
+    }
+    insertBlockAtCursor(type.create({
+      mode,
+      title: '',
+      itemIds: [],
+      view: 'row',
+    }));
   };
 
   pasteRef.current = (view, event) => {
@@ -328,7 +384,22 @@ export function MainPageEditor({
     return true;
   };
 
-  keyRef.current = (_view, event) => {
+  keyRef.current = (view, event) => {
+    if ((event.key === 'Backspace' || event.key === 'Delete') && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      const pos = selectedMusicBlockPos(view.state);
+      if (pos != null) {
+        requestPageBlockExit([pos], () => {
+          const node = view.state.doc.nodeAt(pos);
+          if (!node || !PAGE_MUSIC_BLOCK_TYPES.has(node.type.name)) {
+            return;
+          }
+          view.dispatch(
+            view.state.tr.delete(pos, pos + node.nodeSize).setMeta('pageBlockExit', true),
+          );
+        });
+        return true;
+      }
+    }
     if (!slash || slashItems.length === 0) {
       return false;
     }
@@ -638,6 +709,21 @@ export function MainPageEditor({
               '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mt: 0.25, mb: 0, lineHeight: 1.2 },
               '& h3:has(+ [data-project-checklist])': { mb: 0, mt: 0.25, lineHeight: 1.2 },
               '& [data-project-checklist]': { mt: 0 },
+              '& .MuiCardActionArea-root': { color: 'inherit', textDecoration: 'none' },
+              '@keyframes pageBlockIn': {
+                from: { opacity: 0, transform: 'translateY(-6px)' },
+                to: { opacity: 1, transform: 'none' },
+              },
+              '@keyframes pageBlockOut': {
+                from: { opacity: 1, transform: 'none' },
+                to: { opacity: 0, transform: 'translateY(-6px)' },
+              },
+              '& [data-page-block-motion="in"]': {
+                animation: `pageBlockIn ${PAGE_BLOCK_MOTION_MS}ms ease`,
+              },
+              '& [data-page-block-motion="out"]': {
+                animation: `pageBlockOut ${PAGE_BLOCK_MOTION_MS}ms ease forwards`,
+              },
               '& ul[data-type="taskList"]': { listStyle: 'none', pl: 0, my: 0 },
               '& p.is-editor-empty:first-of-type::before, & p.is-empty::before': {
                 color: 'text.disabled',
@@ -722,19 +808,27 @@ export function MainPageEditor({
       <Menu
         anchorEl={insertMenu?.anchor}
         open={insertMenu != null}
-        onClose={() => setInsertMenu(null)}
+        onClose={(_event, reason) => {
+          if (reason === 'backdropClick' && listMenuRef.current) {
+            return;
+          }
+          setListMenu(null);
+          setInsertMenu(null);
+        }}
         slotProps={getGlassMenuSlotProps({ minWidth: 180 })}
       >
         <MenuItem
           sx={glassMenuItemSx}
           onClick={(event) => {
             const kind = insertMenu?.kind;
+            setListMenu(null);
             setInsertMenu(null);
             if (kind) {
               createPopovers.openPopoverFromClick(kind, event);
             }
           }}
         >
+          <Add sx={{ fontSize: 16 }} />
           {insertMenu?.kind === 'album' ? t('new_album') : t('new_song')}
         </MenuItem>
         <MenuItem
@@ -743,13 +837,67 @@ export function MainPageEditor({
           onClick={(event) => {
             const kind = insertMenu?.kind;
             const rect = event.currentTarget.getBoundingClientRect();
+            setListMenu(null);
             setInsertMenu(null);
             if (kind) {
               setExistingMenu({ kind, top: rect.top, left: rect.right });
             }
           }}
         >
+          {insertMenu?.kind === 'album'
+            ? <Album sx={{ fontSize: 16 }} />
+            : <LibraryMusic sx={{ fontSize: 16 }} />}
           {insertMenu?.kind === 'album' ? t('page_select_album') : t('page_select_song')}
+        </MenuItem>
+        <MenuItem
+          sx={glassMenuItemSx}
+          disabled={insertMenu?.kind === 'album' ? albums.length === 0 : songs.length === 0}
+          onClick={(event) => {
+            const kind = insertMenu?.kind;
+            if (kind) {
+              setListMenu({ kind, anchor: event.currentTarget });
+            }
+          }}
+        >
+          {insertMenu?.kind === 'album'
+            ? <PlaylistAdd sx={{ fontSize: 16 }} />
+            : <QueueMusic sx={{ fontSize: 16 }} />}
+          {insertMenu?.kind === 'album' ? t('page_album_list') : t('page_song_list')}
+        </MenuItem>
+      </Menu>
+      <Menu
+        anchorEl={listMenu?.anchor}
+        open={listMenu != null}
+        onClose={() => setListMenu(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
+      >
+        <MenuItem
+          sx={glassMenuItemSx}
+          onClick={() => {
+            if (listMenu) {
+              insertListAtCursor(listMenu.kind, 'recent');
+            }
+            setListMenu(null);
+            setInsertMenu(null);
+          }}
+        >
+          <History sx={{ fontSize: 16 }} />
+          {t('page_list_recent')}
+        </MenuItem>
+        <MenuItem
+          sx={glassMenuItemSx}
+          onClick={() => {
+            if (listMenu) {
+              insertListAtCursor(listMenu.kind, 'custom');
+            }
+            setListMenu(null);
+            setInsertMenu(null);
+          }}
+        >
+          <Tune sx={{ fontSize: 16 }} />
+          {t('page_list_custom')}
         </MenuItem>
       </Menu>
       <Menu
@@ -770,6 +918,9 @@ export function MainPageEditor({
               setExistingMenu(null);
             }}
           >
+            {existingMenu?.kind === 'album'
+              ? <Album sx={{ fontSize: 16 }} />
+              : <LibraryMusic sx={{ fontSize: 16 }} />}
             {'title' in item ? item.title : item.name}
           </MenuItem>
         ))}

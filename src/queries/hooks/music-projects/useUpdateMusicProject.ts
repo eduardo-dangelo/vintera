@@ -132,7 +132,7 @@ export function useUpdateMusicProject(locale: string) {
       const detailKey = musicProjectKeys.detail(projectId);
       const cached = queryClient.getQueryData<MusicProjectDetail>(detailKey);
 
-      if (cached?.project && response.project) {
+      if (cached?.project && response.project && response.project.updatedAt >= cached.project.updatedAt) {
         queryClient.setQueryData<MusicProjectDetail>(detailKey, {
           ...cached,
           project: { ...cached.project, ...response.project },

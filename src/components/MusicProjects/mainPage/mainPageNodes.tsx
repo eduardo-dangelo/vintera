@@ -13,9 +13,18 @@ import { Box, Button, IconButton, Menu, MenuItem } from '@mui/material';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
+import {
+  clearPageBlockEntering,
+  getPageBlockExitVersion,
+  isPageBlockEntering,
+  isPageBlockExiting,
+  PAGE_BLOCK_MOTION_MS,
+  requestPageBlockExit,
+  subscribePageBlockExit,
+} from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import { buildExternalLink } from '@/utils/externalLinkEmbed';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import { PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
@@ -60,6 +69,7 @@ type BlockShellProps = {
   title?: ReactNode;
   viewAllLabel?: string;
   onViewAll?: () => void;
+  headerActions?: ReactNode;
   extraMenu?: (close: () => void) => ReactNode;
   children: ReactNode;
 };
@@ -67,38 +77,68 @@ type BlockShellProps = {
 export function BlockShell({
   editor,
   getPos,
-  deleteNode,
+  deleteNode: _deleteNode,
   allowDelete = false,
   deleteLabel,
   hidden = false,
   title,
   viewAllLabel,
   onViewAll,
+  headerActions,
   extraMenu,
   children,
 }: BlockShellProps) {
   const t = useTranslations('MusicProjects');
   const { canEdit } = useMainPageEditorContext();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const [hovered, setHovered] = useState(false);
+  useSyncExternalStore(subscribePageBlockExit, getPageBlockExitVersion, getPageBlockExitVersion);
   const pos = readPos(getPos);
+  const exiting = pos != null && isPageBlockExiting(pos);
+  const enteringRef = useRef<boolean | null>(null);
+  if (enteringRef.current == null) {
+    enteringRef.current = pos != null && isPageBlockEntering(pos);
+  }
+  const entering = enteringRef.current === true;
+  useEffect(() => {
+    if (!entering || pos == null) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      clearPageBlockEntering(pos);
+    }, PAGE_BLOCK_MOTION_MS);
+    return () => window.clearTimeout(timer);
+  }, [entering, pos]);
   const index = pos == null ? -1 : editor.state.doc.resolve(pos).index(0);
   const canMoveUp = index > 0;
   const canMoveDown = index >= 0 && index < editor.state.doc.childCount - 1;
-  const showActions = canEdit && (hovered || Boolean(menuAnchor));
 
   if (hidden) {
     return <NodeViewWrapper style={{ display: 'none' }} />;
   }
 
+  const beginRemove = () => {
+    if (pos == null) {
+      return;
+    }
+    setMenuAnchor(null);
+    requestPageBlockExit([pos], () => {
+      const current = readPos(getPos);
+      if (current == null) {
+        return;
+      }
+      const node = editor.state.doc.nodeAt(current);
+      if (!node) {
+        return;
+      }
+      editor.view.dispatch(
+        editor.state.tr.delete(current, current + node.nodeSize).setMeta('pageBlockExit', true),
+      );
+    });
+  };
+
   return (
     <NodeViewWrapper
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => {
-        if (!menuAnchor) {
-          setHovered(false);
-        }
-      }}
+      data-page-block-motion={exiting ? 'out' : entering ? 'in' : undefined}
       style={{ position: 'relative', margin: '0.35rem 0' }}
     >
       {(title || canEdit) && (
@@ -106,6 +146,7 @@ export function BlockShell({
           {title
             ? <Box sx={{ flex: 1, minWidth: 0 }}>{title}</Box>
             : <Box sx={{ flex: 1 }} />}
+          {headerActions}
           {viewAllLabel && onViewAll && (
             <Button
               size="small"
@@ -124,7 +165,6 @@ export function BlockShell({
                 width: 24,
                 height: 24,
                 borderRadius: 1,
-                opacity: showActions ? 1 : 0,
               }}
             >
               <MoreHoriz sx={{ fontSize: 16 }} />
@@ -136,10 +176,7 @@ export function BlockShell({
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
-        onClose={() => {
-          setMenuAnchor(null);
-          setHovered(false);
-        }}
+        onClose={() => setMenuAnchor(null)}
         slotProps={getGlassMenuSlotProps()}
       >
         <MenuItem
@@ -168,17 +205,11 @@ export function BlockShell({
           <MoveDownIcon sx={{ fontSize: 16 }} />
           {t('sidebar_section_move_down')}
         </MenuItem>
-        {extraMenu?.(() => {
-          setMenuAnchor(null);
-          setHovered(false);
-        })}
+        {extraMenu?.(() => setMenuAnchor(null))}
         {allowDelete && (
           <MenuItem
             sx={{ ...glassMenuItemSx, color: 'error.main' }}
-            onClick={() => {
-              setMenuAnchor(null);
-              deleteNode();
-            }}
+            onClick={beginRemove}
           >
             <DeleteIcon sx={{ fontSize: 16 }} />
             {deleteLabel ?? t('delete')}

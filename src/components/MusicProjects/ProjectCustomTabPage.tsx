@@ -46,7 +46,6 @@ export function ProjectCustomTabPage({
       albums={albums}
       songs={songs}
       canEdit={canEdit}
-      includeMusicBlocks={false}
       placeholder={t('custom_page_placeholder')}
     />
   );

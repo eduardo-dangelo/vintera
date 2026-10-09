@@ -416,7 +416,12 @@ export function ProjectDetailTabs({
     [project.metadata],
   );
   const [draftTabs, setDraftTabs] = useState<ProjectCustomTab[] | null>(null);
-  const customTabs = draftTabs ?? serverTabs;
+  if (draftTabs && JSON.stringify(serverTabs) === JSON.stringify(draftTabs)) {
+    setDraftTabs(null);
+  }
+  const customTabs = draftTabs && JSON.stringify(serverTabs) !== JSON.stringify(draftTabs)
+    ? draftTabs
+    : serverTabs;
   const customTabsRef = useRef(customTabs);
   customTabsRef.current = customTabs;
 
@@ -469,7 +474,11 @@ export function ProjectDetailTabs({
       data: { metadata: mergeCustomTabs(metadataRef.current, next) },
     }, {
       onSuccess: () => {
-        if (saveGen.current === gen) {
+        if (saveGen.current !== gen) {
+          return;
+        }
+        const saved = parseMusicProjectMetadata(metadataRef.current).customTabs ?? [];
+        if (JSON.stringify(saved) === JSON.stringify(customTabsRef.current)) {
           setDraftTabs(null);
         }
       },

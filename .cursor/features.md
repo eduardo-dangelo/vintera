@@ -6,10 +6,10 @@ Status: `locked` = must not regress · `evolving` = still iterating
 
 ### Project main sections
 - Status: evolving
-- What: Overview and the no-tab layout are one inline TipTap page. Albums, songs, and link embeds are blocks in that page; Songs/Albums tabs stay full lists.
-- Paths: `src/components/MusicProjects/MainPageEditor.tsx`, `src/components/MusicProjects/ProjectDetailMain.tsx`, `src/utils/projectMainPage.ts`
-- Invariants: No empty-project screen; no hover insert bar; top bar stays until lock; song/album/event buttons on the bar; songs and albums lists appear once that content exists and cannot be hidden; bullets, numbers, and checkbox lists visible; a new checklist adds a heading 3 titled “✔️ Checklist”, a “N% completed” subtitle, and a faded progress bar as wide as that subtitle; the bar eases when the percentage changes; checklist More menu can hide completed items, and those rows collapse; checkboxes use the project accent; markdown shortcuts; paste a URL embeds it; tab bar when >6 albums or songs; members/calendar sidebar-only
-- Updated: 2026-10-08
+- What: Overview and the no-tab layout are one inline TipTap page. Albums, songs, and link embeds are blocks in that page; Songs/Albums tabs stay full lists. Custom tabs are extra TipTap pages after the pinned ones.
+- Paths: `src/components/MusicProjects/MainPageEditor.tsx`, `src/components/MusicProjects/ProjectDetailTabs.tsx`, `src/components/common/IconPickerPopover.tsx`, `src/components/common/appIcons.ts`, `src/utils/musicProjectMetadata.ts`
+- Invariants: No empty-project screen; no hover insert bar; top bar stays until lock; song/album/event buttons on the bar; songs and albums lists appear once that content exists and cannot be hidden; bullets, numbers, and checkbox lists visible; a new checklist adds a heading 3 titled “✔️ Checklist”, a “N% completed” subtitle, and a faded progress bar as wide as that subtitle; page lines, headings, and the checklist sit tightly; the bar eases when the percentage changes; checklist More menu can hide completed items, and those rows collapse; checkboxes use the project accent; markdown shortcuts; paste a URL embeds it; tab bar once a song or album exists (or a custom tab remains); Overview first, then Songs only if there is a song, then Albums only if there is an album; those tabs cannot be renamed, moved, or deleted; custom tabs after them can be created, renamed, reordered, and deleted; add control is an icon button with a tooltip; delete confirm is a glass popover; custom tab icons come from the shared picker; recent songs/albums stay on the overview; members/calendar sidebar-only
+- Updated: 2026-10-09
 
 ### Calendar event form (rich text + inline reminders)
 - Status: evolving
@@ -53,12 +53,12 @@ Status: `locked` = must not regress · `evolving` = still iterating
 - Invariants: Menu order fixed as above; Delete icon uses error color; glass popovers use mode-aware paper alpha (~0.82 light / ~0.78 dark) + 10px blur; rename prefills from `MusicItemMenuTarget.name`; share popover is not opened from this menu
 - Updated: 2026-10-03
 
-### Discreet scrollbar (sidebar + main)
+### Discreet scrollbar
 - Status: evolving
-- What: Thin capsule scrollbar with transparent track on sidebar drawer list and main content scroll area.
-- Paths: `src/utils/discreetScrollbarStyles.ts`, `src/components/Sidebar.tsx`
-- Invariants: ~6px thumb; no red debug border; sidebar uses light-on-dark thumb
-- Updated: 2026-10-03
+- What: Thin capsule scrollbar with a transparent track on every scroll area, via the theme.
+- Paths: `src/utils/discreetScrollbarStyles.ts`, `src/components/ThemeProvider.tsx`, `src/components/Sidebar.tsx`
+- Invariants: ~6px thumb; no red debug border; applied globally through CssBaseline; sidebar list still uses a light-on-dark thumb
+- Updated: 2026-10-09
 
 ### Music item Share + light-card embed
 - Status: evolving

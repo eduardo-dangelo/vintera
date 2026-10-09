@@ -104,7 +104,7 @@ export function ChecklistItemView({ node, editor, getPos }: ReactNodeViewProps) 
       <TransitionGroup component={null}>
         {!collapsed && (
           <Collapse key="item" timeout={CHECKLIST_COLLAPSE_MS}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75, pb: 0.25 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75, pb: 0 }}>
               <Box
                 component="label"
                 contentEditable={false}
@@ -147,7 +147,7 @@ function ChecklistView({ node, editor, getPos }: ReactNodeViewProps) {
         }
       }}
     >
-      <Box contentEditable={false} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+      <Box contentEditable={false} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.5 }}>
         <Box
           sx={{
             display: 'flex',

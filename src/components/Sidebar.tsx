@@ -733,13 +733,12 @@ export function Sidebar({
         <GlobalTopbarContentProvider>
           <Box
             component="main"
-            sx={theme => ({
+            sx={{
               flexGrow: 1,
               height: '100vh',
               overflow: 'auto',
               bgcolor: 'background.default',
-              ...discreetScrollbarStyles()(theme),
-            })}
+            }}
           >
             <Box
               sx={{

@@ -7,6 +7,10 @@
     "sign_in_link": "Se connecter",
     "sign_up_link": "S'inscrire"
   },
+  "Common": {
+    "icon_picker_search": "Rechercher une icône",
+    "icon_picker_empty": "Aucune icône correspondante"
+  },
   "BaseTemplate": {
     "description": "Gestion de projets professionnelle simplifiée avec Vintera",
     "made_with": "Fait avec <author></author>."
@@ -88,6 +92,12 @@
     "tabs_songs": "Chansons",
     "tabs_albums": "Albums",
     "tabs_gallery": "Galerie",
+    "add_tab": "Ajouter un onglet",
+    "custom_tab_untitled": "Sans titre",
+    "custom_page_placeholder": "Écrivez…",
+    "remove_tab_confirm_title": "Supprimer l'onglet ?",
+    "remove_tab_confirm_message": "Voulez-vous vraiment supprimer l'onglet",
+    "remove_tab_data_warning": "Toutes les données de cet onglet seront perdues.",
     "overview_view_all": "Tout voir",
     "overview_empty": "Rien à afficher pour l'instant. Ajoutez des albums ou chansons pour les voir ici.",
     "project_empty_title": "Commencez à construire votre projet",

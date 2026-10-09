@@ -30,3 +30,14 @@ export function discreetScrollbarStyles(options?: {
     };
   };
 }
+
+/** Apply the discreet scrollbar to every element. WebKit pseudos do not inherit. */
+export function getMuiDiscreetScrollbarOverrides() {
+  return {
+    MuiCssBaseline: {
+      styleOverrides: (theme: Theme) => ({
+        '*': discreetScrollbarStyles()(theme),
+      }),
+    },
+  };
+}

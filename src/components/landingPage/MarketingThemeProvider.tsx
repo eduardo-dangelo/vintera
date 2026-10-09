@@ -1,6 +1,7 @@
 'use client';
 
 import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from '@mui/material';
+import { getMuiDiscreetScrollbarOverrides } from '@/utils/discreetScrollbarStyles';
 
 const marketingTheme = createTheme({
   palette: {
@@ -29,6 +30,7 @@ const marketingTheme = createTheme({
     h2: { fontFamily: 'var(--font-oswald), sans-serif', fontWeight: 700 },
     h3: { fontFamily: 'var(--font-oswald), sans-serif', fontWeight: 600 },
   },
+  components: getMuiDiscreetScrollbarOverrides(),
 });
 
 export function MarketingThemeProvider({ children }: { children: React.ReactNode }) {

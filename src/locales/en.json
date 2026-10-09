@@ -7,6 +7,10 @@
     "sign_in_link": "Sign in",
     "sign_up_link": "Sign up"
   },
+  "Common": {
+    "icon_picker_search": "Search icons",
+    "icon_picker_empty": "No matching icons"
+  },
   "BaseTemplate": {
     "description": "Professional project management made simple with Vintera",
     "made_with": "Made with <author></author>."
@@ -88,6 +92,12 @@
     "tabs_songs": "Songs",
     "tabs_albums": "Albums",
     "tabs_gallery": "Gallery",
+    "add_tab": "Add tab",
+    "custom_tab_untitled": "Untitled",
+    "custom_page_placeholder": "Write…",
+    "remove_tab_confirm_title": "Remove tab?",
+    "remove_tab_confirm_message": "Are you sure you want to remove the tab",
+    "remove_tab_data_warning": "All data in this tab will be lost.",
     "overview_view_all": "View all",
     "overview_empty": "Nothing here yet. Add albums or songs to see them on the overview.",
     "project_empty_title": "Start building your project",

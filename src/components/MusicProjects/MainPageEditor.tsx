@@ -75,6 +75,9 @@ type MainPageEditorProps = {
   songs: MusicProjectDetail['songs'];
   canEdit: boolean;
   focusOnMount?: boolean;
+  /** Overview inserts song and album blocks. Custom pages leave this off. */
+  includeMusicBlocks?: boolean;
+  placeholder?: string;
   onNavigateToTab?: (tab: ProjectTabName) => void;
   onFocusChange?: (focused: boolean) => void;
 };
@@ -90,6 +93,8 @@ export function MainPageEditor({
   songs,
   canEdit,
   focusOnMount = false,
+  includeMusicBlocks = true,
+  placeholder: placeholderOverride,
   onNavigateToTab,
   onFocusChange,
 }: MainPageEditorProps) {
@@ -110,7 +115,7 @@ export function MainPageEditor({
   const editing = canEdit && !locked;
   const createPopovers = useProjectCreatePopovers(locale, projectId);
 
-  const placeholder = t('main_page_placeholder');
+  const placeholder = placeholderOverride ?? t('main_page_placeholder');
   const checklistTitle = t('main_page_checklist_title');
   const extensions = useMemo(() => [
     StarterKit.configure({
@@ -125,8 +130,7 @@ export function MainPageEditor({
       showOnlyCurrent: true,
       showOnlyWhenEditable: true,
     }),
-    ProjectAlbumsNode,
-    ProjectSongsNode,
+    ...(includeMusicBlocks ? [ProjectAlbumsNode, ProjectSongsNode] : []),
     ProjectEmbedNode,
     ProjectTaskList,
     createProjectTaskItem(checklistTitle).extend({
@@ -134,7 +138,7 @@ export function MainPageEditor({
         return ReactNodeViewRenderer(ChecklistItemView);
       },
     }),
-  ], [checklistTitle, placeholder]);
+  ], [checklistTitle, includeMusicBlocks, placeholder]);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -182,6 +186,9 @@ export function MainPageEditor({
   }
 
   const slashItems = useMemo(() => {
+    if (!includeMusicBlocks) {
+      return [];
+    }
     const query = (slash?.query ?? '').toLowerCase();
     const doc = editor?.getJSON() ?? value;
     const items: Array<{ id: SlashKind; label: string }> = [];
@@ -194,7 +201,7 @@ export function MainPageEditor({
     return items.filter(item =>
       item.id.includes(query) || item.label.toLowerCase().includes(query),
     );
-  }, [albums.length, editor, slash?.query, songs.length, t, value]);
+  }, [albums.length, editor, includeMusicBlocks, slash?.query, songs.length, t, value]);
 
   const applySlash = (kind: SlashKind) => {
     if (!editor || !slash) {
@@ -475,22 +482,26 @@ export function MainPageEditor({
                 <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
               </>
             )}
-            <Tooltip title={t('song_detail_title')}>
-              <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('song', event)}>
-                <GradientIcon kind="song" fontSize={18} gradientOnHover aria-hidden />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('album_detail_title')}>
-              <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('album', event)}>
-                <GradientIcon kind="album" fontSize={18} gradientOnHover aria-hidden />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title={t('event_detail_title')}>
-              <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('event', event)}>
-                <EventNote sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+            {includeMusicBlocks && (
+              <>
+                <Tooltip title={t('song_detail_title')}>
+                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('song', event)}>
+                    <GradientIcon kind="song" fontSize={18} gradientOnHover aria-hidden />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={t('album_detail_title')}>
+                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('album', event)}>
+                    <GradientIcon kind="album" fontSize={18} gradientOnHover aria-hidden />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title={t('event_detail_title')}>
+                  <IconButton size="small" onClick={event => createPopovers.openPopoverFromClick('event', event)}>
+                    <EventNote sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+              </>
+            )}
             <Tooltip title={locked ? t('main_page_unlock') : t('main_page_lock')}>
               <IconButton
                 size="small"
@@ -515,10 +526,15 @@ export function MainPageEditor({
               ...richTextContentSx(accent),
               'outline': 'none',
               'minHeight': 160,
-              '& > * + *': { mt: 1.5 },
-              '& h3:has(+ [data-project-checklist])': { mb: 0, lineHeight: 1.25 },
-              '& [data-project-checklist]': { mt: 0.25 },
-              '& h1': { fontSize: '1.5rem', fontWeight: 700, m: 0, mb: 0.75 },
+              'lineHeight': 1.4,
+              '& p': { m: 0 },
+              '& > * + *': { mt: 0.5 },
+              '& h1': { fontSize: '1.5rem', fontWeight: 700, m: 0, mb: 0.25, lineHeight: 1.25 },
+              '& h2': { fontSize: '1.125rem', fontWeight: 700, m: 0, mt: 0.5, mb: 0.25, lineHeight: 1.25 },
+              '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mt: 0.25, mb: 0, lineHeight: 1.2 },
+              '& h3:has(+ [data-project-checklist])': { mb: 0, mt: 0.25, lineHeight: 1.2 },
+              '& [data-project-checklist]': { mt: 0 },
+              '& ul[data-type="taskList"]': { listStyle: 'none', pl: 0, my: 0 },
               '& p.is-editor-empty:first-of-type::before, & p.is-empty::before': {
                 color: 'text.disabled',
                 content: 'attr(data-placeholder)',

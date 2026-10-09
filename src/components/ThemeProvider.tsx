@@ -4,6 +4,7 @@ import { createTheme, CssBaseline, ThemeProvider as MUIThemeProvider } from '@mu
 import { usePathname } from 'next/navigation';
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import { useGetUserPreferences, useUpdateUserPreferences } from '@/queries/hooks/users';
+import { getMuiDiscreetScrollbarOverrides } from '@/utils/discreetScrollbarStyles';
 import { getMuiSliderStyleOverrides } from '@/utils/gradientSliderStyles';
 import { getMuiPrimaryGradientOverrides } from '@/utils/primaryGradientStyles';
 
@@ -159,6 +160,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         },
         components: {
           ...getMuiPrimaryGradientOverrides(),
+          ...getMuiDiscreetScrollbarOverrides(),
           MuiSlider: getMuiSliderStyleOverrides(),
         },
       }),

@@ -10,7 +10,7 @@ import {
 } from '@/components/MusicProjects/heroPatternShapes';
 import { DEFAULT_TITLE_FONT_FAMILY } from '@/components/MusicProjects/projectTitleFonts';
 import { parseExternalLinks } from '@/utils/externalLinkEmbed';
-import { parseMainPage } from '@/utils/projectMainPage';
+import { emptyMainPage, parseMainPage } from '@/utils/projectMainPage';
 import { parseMainSections } from '@/utils/projectMainSections';
 import { parseSidebarSections } from '@/utils/projectSidebarSections';
 
@@ -57,7 +57,19 @@ export type MusicProjectMetadata = {
   mainSections?: ProjectMainSection[];
   /** TipTap document for the main column. Wins over mainSections on read. */
   mainPage?: JSONContent;
+  /** Named pages after the pinned Overview / Songs / Albums tabs. */
+  customTabs?: ProjectCustomTab[];
 };
+
+export type ProjectCustomTab = {
+  id: string;
+  name: string;
+  page: JSONContent;
+  /** Id from the shared icon catalog. Unknown ids render the default page icon. */
+  icon?: string;
+};
+
+export const CUSTOM_TAB_NAME_MAX = 80;
 
 const HERO_BACKGROUND_KINDS: HeroBackgroundKind[] = [
   'solid',
@@ -308,7 +320,45 @@ export function parseMusicProjectMetadata(raw: unknown): MusicProjectMetadata {
     metadata.mainPage = mainPage;
   }
 
+  const customTabs = parseCustomTabs(raw.customTabs);
+  if (customTabs) {
+    metadata.customTabs = customTabs;
+  }
+
   return normalizeHeroMetadata(metadata);
+}
+
+const RESERVED_TAB_IDS = new Set(['overview', 'songs', 'albums']);
+
+function parseCustomTabs(raw: unknown): ProjectCustomTab[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+
+  const tabs: ProjectCustomTab[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (!isRecord(item) || typeof item.id !== 'string') {
+      continue;
+    }
+    const id = item.id.trim();
+    if (!id || seen.has(id) || RESERVED_TAB_IDS.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const name = typeof item.name === 'string'
+      ? item.name.trim().slice(0, CUSTOM_TAB_NAME_MAX)
+      : '';
+    const icon = typeof item.icon === 'string' ? item.icon.trim().slice(0, 40) : '';
+    tabs.push({
+      id,
+      name,
+      page: parseMainPage(item.page) ?? emptyMainPage(),
+      ...(icon ? { icon } : {}),
+    });
+  }
+
+  return tabs.length > 0 ? tabs : undefined;
 }
 
 export function mergeExternalLinks(
@@ -354,6 +404,17 @@ export function mergeMainPage(
   return {
     ...current,
     mainPage: page,
+  };
+}
+
+export function mergeCustomTabs(
+  existing: unknown,
+  tabs: ProjectCustomTab[],
+): MusicProjectMetadata {
+  const current = parseMusicProjectMetadata(existing);
+  return {
+    ...current,
+    customTabs: tabs,
   };
 }
 

@@ -430,15 +430,34 @@ export function ProjectDetailTabs({
   const [removeAnchor, setRemoveAnchor] = useState<HTMLElement | null>(null);
   const [iconTabId, setIconTabId] = useState<string | null>(null);
   const [iconAnchor, setIconAnchor] = useState<HTMLElement | null>(null);
+  const [overviewPage, setOverviewPage] = useState<JSONContent | null>(null);
+  const overviewProjectRef = useRef(projectId);
+  if (overviewProjectRef.current !== projectId) {
+    overviewProjectRef.current = projectId;
+    setOverviewPage(null);
+  }
+
+  const handleOverviewPage = useCallback((page: JSONContent | null) => {
+    setOverviewPage((current) => {
+      if (page == null) {
+        return current == null ? current : null;
+      }
+      if (current != null && JSON.stringify(current) === JSON.stringify(page)) {
+        return current;
+      }
+      return page;
+    });
+  }, []);
 
   const collectionPages = useMemo(() => {
     const meta = parseMusicProjectMetadata(project.metadata);
-    const overview = resolveMainPage(meta.mainPage, meta.mainSections, albums.length, songs.length);
-    const withAlbums = meta.collectionsMigratedFromAlbums
+    const overview = overviewPage
+      ?? resolveMainPage(meta.mainPage, meta.mainSections, albums.length, songs.length);
+    const withAlbums = overviewPage != null || meta.collectionsMigratedFromAlbums
       ? overview
       : appendAlbumCollections(overview, albums, songs);
-    return [withAlbums, ...(meta.customTabs ?? []).map(tab => tab.page)];
-  }, [albums, project.metadata, songs]);
+    return [withAlbums, ...customTabs.map(tab => tab.page)];
+  }, [albums, customTabs, overviewPage, project.metadata, songs]);
   const collections = useMemo(
     () => gatherCollections(collectionPages),
     [collectionPages],
@@ -520,12 +539,6 @@ export function ProjectDetailTabs({
   }, []);
 
   useEffect(() => {
-    if (visibleIds.length === 0) {
-      if (searchParams.has('tab')) {
-        updateUrlForTab(null);
-      }
-      return;
-    }
     const tab = searchParams.get('tab');
     if (!tab || !visibleIds.includes(tab)) {
       updateUrlForTab(visibleIds[0] ?? 'overview');
@@ -642,10 +655,6 @@ export function ProjectDetailTabs({
     canEdit,
   } as const;
 
-  if (visibleIds.length === 0) {
-    return <ProjectDetailMain {...mainProps} />;
-  }
-
   const activeCustom = customTabs.find(tab => tab.id === activeId) ?? null;
 
   const renderTabContent = () => {
@@ -656,6 +665,7 @@ export function ProjectDetailTabs({
           <ProjectDetailMain
             {...mainProps}
             onNavigateToTab={updateUrlForTab}
+            onOverviewPage={handleOverviewPage}
           />
         );
       }

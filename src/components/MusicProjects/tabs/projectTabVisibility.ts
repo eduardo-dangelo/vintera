@@ -16,24 +16,12 @@ export function hasSongsTab(songCount: number): boolean {
   return songCount > 0;
 }
 
-export function hasTabBar(
-  hasCollections: boolean,
-  songCount: number,
-  customTabCount = 0,
-): boolean {
-  return hasCollections || songCount > 0 || customTabCount > 0;
-}
-
 /** Overview, then Songs if any, then Collections if any, then custom tab ids. */
 export function getVisibleTabIds(
   hasCollections: boolean,
   songCount: number,
   customTabIds: readonly string[] = [],
 ): string[] {
-  if (!hasTabBar(hasCollections, songCount, customTabIds.length)) {
-    return [];
-  }
-
   const tabs: string[] = ['overview'];
   if (hasSongsTab(songCount)) {
     tabs.push('songs');

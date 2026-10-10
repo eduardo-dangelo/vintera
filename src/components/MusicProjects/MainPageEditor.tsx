@@ -16,7 +16,6 @@ import FormatListNumbered from '@mui/icons-material/FormatListNumbered';
 import History from '@mui/icons-material/History';
 import LibraryMusic from '@mui/icons-material/LibraryMusic';
 import LinkIcon from '@mui/icons-material/Link';
-import LinkOff from '@mui/icons-material/LinkOff';
 import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
 import LockOutlined from '@mui/icons-material/LockOutlined';
 import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
@@ -33,7 +32,6 @@ import {
   TextField,
   ToggleButton,
   Tooltip,
-  Typography,
 } from '@mui/material';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -57,6 +55,7 @@ import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreateP
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
 import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
+import { normalizeExternalLinkUrl } from '@/utils/externalLinkEmbed';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
   pageEventIds,
@@ -635,11 +634,7 @@ export function MainPageEditor({
   };
 
   const openLink = () => {
-    if (!editor) {
-      return;
-    }
-    const existing = editor.getAttributes('link').href as string | undefined;
-    setLinkUrl(existing ?? 'https://');
+    setLinkUrl('https://');
     setLinkOpen(true);
   };
 
@@ -647,12 +642,13 @@ export function MainPageEditor({
     if (!editor) {
       return;
     }
-    const trimmed = linkUrl.trim();
-    if (!trimmed || trimmed === 'https://') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-    } else {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run();
+    const url = normalizeExternalLinkUrl(linkUrl);
+    const type = editor.schema.nodes.projectEmbed;
+    if (!url || !type) {
+      return;
     }
+    insertBlockAtCursor(type.create({ url, title: null }));
+    setLinkUrl('');
     setLinkOpen(false);
   };
 
@@ -767,7 +763,10 @@ export function MainPageEditor({
                   <IconButton
                     ref={linkButtonRef}
                     size="small"
-                    color={editor.isActive('link') ? 'primary' : 'default'}
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      cursorRef.current = editor.state.selection.from;
+                    }}
                     onClick={openLink}
                   >
                     <LinkIcon sx={{ fontSize: 18 }} />
@@ -901,7 +900,6 @@ export function MainPageEditor({
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         slotProps={{ paper: { sx: { p: 2, width: 280 } } }}
       >
-        <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('add_link')}</Typography>
         <TextField
           size="small"
           fullWidth
@@ -914,25 +912,7 @@ export function MainPageEditor({
               applyLink();
             }
           }}
-          sx={{ mb: 1.5 }}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          {editor?.isActive('link') && (
-            <IconButton
-              size="small"
-              aria-label={t('main_page_remove_link')}
-              onClick={() => {
-                editor.chain().focus().extendMarkRange('link').unsetLink().run();
-                setLinkOpen(false);
-              }}
-            >
-              <LinkOff fontSize="small" />
-            </IconButton>
-          )}
-          <IconButton size="small" color="primary" aria-label={t('add_link')} onClick={applyLink}>
-            <LinkIcon fontSize="small" />
-          </IconButton>
-        </Box>
       </Popover>
 
       <Menu

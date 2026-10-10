@@ -19,6 +19,7 @@ type ProjectDetailMainProps = {
   songs: MusicProjectDetail['songs'];
   canEdit: boolean;
   onNavigateToTab?: (tab: ProjectTabName) => void;
+  onOverviewPage?: (page: JSONContent | null) => void;
 };
 
 export function ProjectDetailMain({
@@ -29,6 +30,7 @@ export function ProjectDetailMain({
   songs,
   canEdit,
   onNavigateToTab,
+  onOverviewPage,
 }: ProjectDetailMainProps) {
   const updateProject = useUpdateMusicProject(locale);
   const metadataRef = useRef(project.metadata);
@@ -52,6 +54,8 @@ export function ProjectDetailMain({
   const docKey = JSON.stringify(doc);
   const parsedMeta = parseMusicProjectMetadata(project.metadata);
   const migrationKey = `${projectId}:${albums.map(album => album.id).join(',')}`;
+  const onOverviewPageRef = useRef(onOverviewPage);
+  onOverviewPageRef.current = onOverviewPage;
 
   if (
     canEdit
@@ -99,6 +103,10 @@ export function ProjectDetailMain({
       void persistMetadata(next);
     }, SAVE_DELAY_MS);
   }, [persistMetadata]);
+
+  useEffect(() => {
+    onOverviewPageRef.current?.(docKey === resolvedKey ? null : doc);
+  }, [doc, docKey, resolvedKey]);
 
   useEffect(() => () => {
     if (saveTimer.current != null) {

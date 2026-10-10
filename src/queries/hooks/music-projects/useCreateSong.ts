@@ -1,5 +1,6 @@
 'use client';
 
+import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { albumKeys, musicProjectKeys, sidebarKeys, songKeys } from '@/queries/keys';
@@ -42,9 +43,35 @@ export function useCreateSong(locale: string) {
       const { song } = (await res.json()) as { song: { id: number } };
       return song;
     },
-    onSuccess: (_data, variables) => {
-      if (variables.projectId != null) {
-        queryClient.invalidateQueries({ queryKey: musicProjectKeys.detail(variables.projectId) });
+    onSuccess: (song, variables) => {
+      const createdProjectId = variables.projectId;
+      if (createdProjectId != null) {
+        const detailKey = musicProjectKeys.detail(createdProjectId);
+        const now = new Date().toISOString();
+        queryClient.setQueryData<MusicProjectDetail>(detailKey, (current) => {
+          if (!current || current.songs.some(item => item.id === song.id)) {
+            return current;
+          }
+          return {
+            ...current,
+            songs: [...current.songs, {
+              id: song.id,
+              musicProjectId: createdProjectId,
+              albumId: variables.albumId ?? null,
+              title: variables.title,
+              trackNumber: null,
+              durationSeconds: null,
+              key: null,
+              bpm: null,
+              lyrics: variables.lyrics ?? null,
+              chordsOrTabs: variables.chordsOrTabs ?? null,
+              metadata: null,
+              createdAt: now,
+              updatedAt: now,
+            }],
+          };
+        });
+        queryClient.invalidateQueries({ queryKey: detailKey });
       }
       queryClient.invalidateQueries({ queryKey: musicProjectKeys.lists() });
       queryClient.invalidateQueries({ queryKey: songKeys.list() });

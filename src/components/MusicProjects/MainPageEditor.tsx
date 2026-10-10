@@ -25,6 +25,7 @@ import Tune from '@mui/icons-material/Tune';
 import {
   Box,
   Divider,
+  Fade,
   IconButton,
   Menu,
   MenuItem,
@@ -39,7 +40,7 @@ import { NodeSelection } from '@tiptap/pm/state';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjects/mainPage/checklistCommands';
 import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
@@ -65,6 +66,95 @@ import {
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
+
+const TOOLBAR_IDLE_MS = 500;
+const TOOLBAR_TEXT_GAP = 12;
+
+function textWidth(text: string, style: CSSStyleDeclaration): number {
+  const probe = document.createElement('span');
+  probe.textContent = text;
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.whiteSpace = 'pre';
+  probe.style.font = style.font;
+  probe.style.fontSize = style.fontSize;
+  probe.style.fontFamily = style.fontFamily;
+  probe.style.fontWeight = style.fontWeight;
+  probe.style.letterSpacing = style.letterSpacing;
+  document.body.appendChild(probe);
+  const width = probe.getBoundingClientRect().width;
+  probe.remove();
+  return width;
+}
+
+function toolbarAnchor(
+  view: EditorView,
+  frame: HTMLElement,
+): { top: number; left: number } | null {
+  const pos = view.state.selection.from;
+  let coords: { top: number; bottom: number; right: number };
+  try {
+    coords = view.coordsAtPos(pos);
+  } catch {
+    return null;
+  }
+  let right = coords.right;
+  const { selection } = view.state;
+  if (selection instanceof NodeSelection) {
+    const nodeDom = view.nodeDOM(selection.from);
+    if (nodeDom instanceof HTMLElement) {
+      right = nodeDom.getBoundingClientRect().right;
+    }
+  } else {
+    const $pos = view.state.doc.resolve(pos);
+    const blockDom = $pos.depth > 0 ? view.nodeDOM($pos.before($pos.depth)) : null;
+    if (blockDom instanceof HTMLElement) {
+      const placeholder = blockDom.getAttribute('data-placeholder');
+      const empty = blockDom.classList.contains('is-empty')
+        || blockDom.classList.contains('is-editor-empty');
+      if (empty && placeholder) {
+        const style = getComputedStyle(blockDom);
+        const padLeft = Number.parseFloat(style.paddingLeft) || 0;
+        right = blockDom.getBoundingClientRect().left + padLeft + textWidth(placeholder, style);
+      } else if ($pos.parent.isTextblock) {
+        const lineTop = coords.top;
+        const end = $pos.end();
+        let probe = pos;
+        while (probe < end) {
+          let nextCoords: { top: number; right: number };
+          try {
+            nextCoords = view.coordsAtPos(probe + 1);
+          } catch {
+            break;
+          }
+          if (nextCoords.top > lineTop + 1) {
+            break;
+          }
+          right = Math.max(right, nextCoords.right);
+          probe += 1;
+        }
+      }
+    }
+  }
+  const box = frame.getBoundingClientRect();
+  return {
+    top: coords.top - box.top + (coords.bottom - coords.top) / 2,
+    left: right - box.left + TOOLBAR_TEXT_GAP,
+  };
+}
+
+function isToolbarTypingKey(event: KeyboardEvent): boolean {
+  if (event.isComposing) {
+    return false;
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    return event.key.toLowerCase() === 'v';
+  }
+  return event.key === 'Backspace'
+    || event.key === 'Delete'
+    || event.key === 'Enter'
+    || event.key.length === 1;
+}
 
 const PAGE_MUSIC_BLOCK_TYPES = new Set([
   PROJECT_SONG_NODE,
@@ -184,7 +274,31 @@ export function MainPageEditor({
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   lockedRef.current = locked;
-  const [, setSelectionTick] = useState(0);
+  const [editorFocused, setEditorFocused] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [selectionTick, setSelectionTick] = useState(0);
+  const [barPos, setBarPos] = useState({ top: 0, left: 0 });
+  const frameRef = useRef<HTMLDivElement>(null);
+  const idleTimerRef = useRef<number | null>(null);
+  const markTypingRef = useRef(() => {});
+  markTypingRef.current = () => {
+    setTyping(true);
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = window.setTimeout(() => {
+      idleTimerRef.current = null;
+      setTyping(false);
+    }, TOOLBAR_IDLE_MS);
+  };
+  const revealToolbar = () => {
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+    setTyping(false);
+    setEditorFocused(true);
+  };
   const editing = canEdit && !locked;
   const cursorRef = useRef<number | null>(null);
   const insertCreatedRef = useRef<(kind: 'song' | 'album', id: number) => void>(() => {});
@@ -496,6 +610,7 @@ export function MainPageEditor({
     if (!canEdit || lockedRef.current) {
       return false;
     }
+    markTypingRef.current();
     const url = pastedSingleUrl(event.clipboardData?.getData('text/plain') ?? '');
     if (!url) {
       return false;
@@ -519,6 +634,9 @@ export function MainPageEditor({
   };
 
   keyRef.current = (view, event) => {
+    if (isToolbarTypingKey(event)) {
+      markTypingRef.current();
+    }
     if ((event.key === 'Backspace' || event.key === 'Delete') && !event.metaKey && !event.ctrlKey && !event.altKey) {
       const pos = selectedMusicBlockPos(view.state);
       if (pos != null) {
@@ -585,9 +703,11 @@ export function MainPageEditor({
       return;
     }
     const onFocus = () => {
+      setEditorFocused(true);
       onFocusChange?.(true);
     };
     const onBlur = () => {
+      setEditorFocused(false);
       onFocusChange?.(false);
     };
     editor.on('focus', onFocus);
@@ -604,7 +724,61 @@ export function MainPageEditor({
     }
   }, [focusOnMount, editor]);
 
-  const showBar = canEdit && Boolean(editor);
+  useEffect(() => () => {
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!canEdit) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || frameRef.current?.contains(target)) {
+        return;
+      }
+      if (target instanceof Element && target.closest('.MuiPopover-paper, .MuiMenu-paper, [role="menu"]')) {
+        return;
+      }
+      setEditorFocused(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [canEdit]);
+
+  useLayoutEffect(() => {
+    if (!editor || !frameRef.current) {
+      return;
+    }
+    let view: EditorView;
+    try {
+      view = editor.view;
+    } catch {
+      return;
+    }
+    const next = toolbarAnchor(view, frameRef.current);
+    if (!next) {
+      return;
+    }
+    setBarPos(current => (
+      Math.abs(current.top - next.top) < 0.5 && Math.abs(current.left - next.left) < 0.5
+        ? current
+        : next
+    ));
+  }, [editor, selectionTick]);
+
+  const toolbarMenuOpen = styleAnchor != null
+    || linkOpen
+    || insertMenu != null
+    || eventMenu != null
+    || existingEventMenu != null
+    || existingMenu != null
+    || listMenu != null
+    || collectionPicker != null
+    || createPopovers.openPopover != null;
+  const showBar = canEdit && Boolean(editor) && (toolbarMenuOpen || (editorFocused && !typing));
 
   const activeStyle = !editor
     ? 'paragraph'
@@ -665,166 +839,175 @@ export function MainPageEditor({
 
   return (
     <MainPageEditorContext value={pageContext}>
-      <Box>
-        {showBar && editor && (
-          <Box
-            onMouseDown={(event) => {
-              const target = event.target as HTMLElement;
-              if (target.closest('input, textarea')) {
-                return;
-              }
-              event.preventDefault();
-            }}
-            sx={{
-              position: 'sticky',
-              top: 8,
-              zIndex: 3,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.25,
-              width: 'fit-content',
-              maxWidth: '100%',
-              mb: 1.5,
-              px: 0.75,
-              py: 0.25,
-              borderRadius: 999,
-              border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              boxShadow: 2,
-            }}
-          >
-            {editing && (
-              <>
-                <Tooltip title={t('main_page_style')}>
-                  <IconButton size="small" onClick={event => setStyleAnchor(event.currentTarget)}>
-                    <TitleIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                </Tooltip>
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-                <Tooltip title={t('main_page_bold')}>
-                  <ToggleButton
-                    size="small"
-                    value="bold"
-                    selected={editor.isActive('bold')}
-                    onChange={() => editor.chain().focus().toggleBold().run()}
-                    sx={{ border: 'none', p: 0.75 }}
-                  >
-                    <FormatBold sx={{ fontSize: 18 }} />
-                  </ToggleButton>
-                </Tooltip>
-                <Tooltip title={t('main_page_italic')}>
-                  <ToggleButton
-                    size="small"
-                    value="italic"
-                    selected={editor.isActive('italic')}
-                    onChange={() => editor.chain().focus().toggleItalic().run()}
-                    sx={{ border: 'none', p: 0.75 }}
-                  >
-                    <FormatItalic sx={{ fontSize: 18 }} />
-                  </ToggleButton>
-                </Tooltip>
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-                <Tooltip title={t('main_page_bullet_list')}>
-                  <ToggleButton
-                    size="small"
-                    value="bullet"
-                    selected={editor.isActive('bulletList')}
-                    onChange={() => editor.chain().focus().toggleBulletList().run()}
-                    sx={{ border: 'none', p: 0.75 }}
-                  >
-                    <FormatListBulleted sx={{ fontSize: 18 }} />
-                  </ToggleButton>
-                </Tooltip>
-                <Tooltip title={t('main_page_numbered_list')}>
-                  <ToggleButton
-                    size="small"
-                    value="ordered"
-                    selected={editor.isActive('orderedList')}
-                    onChange={() => editor.chain().focus().toggleOrderedList().run()}
-                    sx={{ border: 'none', p: 0.75 }}
-                  >
-                    <FormatListNumbered sx={{ fontSize: 18 }} />
-                  </ToggleButton>
-                </Tooltip>
-                <Tooltip title={t('main_page_checkbox')}>
-                  <ToggleButton
-                    size="small"
-                    value="task"
-                    selected={editor.isActive('taskList')}
-                    onChange={() => toggleChecklist(editor, checklistTitle)}
-                    sx={{ border: 'none', p: 0.75 }}
-                  >
-                    <CheckBoxOutlined sx={{ fontSize: 18 }} />
-                  </ToggleButton>
-                </Tooltip>
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-                <Tooltip title={t('add_link')}>
-                  <IconButton
-                    ref={linkButtonRef}
-                    size="small"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      cursorRef.current = editor.state.selection.from;
-                    }}
-                    onClick={openLink}
-                  >
-                    <LinkIcon sx={{ fontSize: 18 }} />
-                  </IconButton>
-                </Tooltip>
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-              </>
-            )}
-            {includeMusicBlocks && (
-              <>
-                <Tooltip title={t('song_detail_title')}>
-                  <IconButton
-                    size="small"
-                    aria-label={t('song_detail_title')}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      cursorRef.current = editor?.state.selection.from ?? null;
-                    }}
-                    onClick={event => setInsertMenu({ kind: 'song', anchor: event.currentTarget })}
-                  >
-                    <GradientIcon kind="song" fontSize={18} gradientOnHover aria-hidden />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title={t('event_detail_title')}>
-                  <IconButton
-                    size="small"
-                    aria-label={t('event_detail_title')}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      cursorRef.current = editor?.state.selection.from ?? null;
-                    }}
-                    onClick={event => setEventMenu(event.currentTarget)}
-                  >
-                    <EventNote sx={{ fontSize: 18 }} />
-                  </IconButton>
-                </Tooltip>
-                <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-              </>
-            )}
-            <Tooltip title={locked ? t('main_page_unlock') : t('main_page_lock')}>
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setLocked(current => !current);
-                  setSlash(null);
-                  setStyleAnchor(null);
-                  setLinkOpen(false);
-                }}
-              >
-                {locked
-                  ? <LockOutlined sx={{ fontSize: 18 }} />
-                  : <LockOpenOutlined sx={{ fontSize: 18 }} />}
-              </IconButton>
-            </Tooltip>
-          </Box>
+      <Box ref={frameRef} sx={{ position: 'relative' }}>
+        {editor && (
+          <Fade in={showBar} timeout={PAGE_BLOCK_MOTION_MS}>
+            <Box
+              onMouseDown={(event) => {
+                const target = event.target as HTMLElement;
+                if (target.closest('input, textarea')) {
+                  return;
+                }
+                event.preventDefault();
+              }}
+              sx={{
+                position: 'absolute',
+                left: barPos.left,
+                top: barPos.top,
+                transform: 'translateY(-50%)',
+                zIndex: 3,
+                pointerEvents: showBar ? 'auto' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.25,
+                width: 'fit-content',
+                maxWidth: '100%',
+                px: 0.75,
+                py: 0.25,
+                borderRadius: 999,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+                boxShadow: 2,
+              }}
+            >
+              {editing && (
+                <>
+                  <Tooltip title={t('main_page_style')}>
+                    <IconButton size="small" onClick={event => setStyleAnchor(event.currentTarget)}>
+                      <TitleIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+                  <Tooltip title={t('main_page_bold')}>
+                    <ToggleButton
+                      size="small"
+                      value="bold"
+                      selected={editor.isActive('bold')}
+                      onChange={() => editor.chain().focus().toggleBold().run()}
+                      sx={{ border: 'none', p: 0.75 }}
+                    >
+                      <FormatBold sx={{ fontSize: 18 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title={t('main_page_italic')}>
+                    <ToggleButton
+                      size="small"
+                      value="italic"
+                      selected={editor.isActive('italic')}
+                      onChange={() => editor.chain().focus().toggleItalic().run()}
+                      sx={{ border: 'none', p: 0.75 }}
+                    >
+                      <FormatItalic sx={{ fontSize: 18 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+                  <Tooltip title={t('main_page_bullet_list')}>
+                    <ToggleButton
+                      size="small"
+                      value="bullet"
+                      selected={editor.isActive('bulletList')}
+                      onChange={() => editor.chain().focus().toggleBulletList().run()}
+                      sx={{ border: 'none', p: 0.75 }}
+                    >
+                      <FormatListBulleted sx={{ fontSize: 18 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title={t('main_page_numbered_list')}>
+                    <ToggleButton
+                      size="small"
+                      value="ordered"
+                      selected={editor.isActive('orderedList')}
+                      onChange={() => editor.chain().focus().toggleOrderedList().run()}
+                      sx={{ border: 'none', p: 0.75 }}
+                    >
+                      <FormatListNumbered sx={{ fontSize: 18 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title={t('main_page_checkbox')}>
+                    <ToggleButton
+                      size="small"
+                      value="task"
+                      selected={editor.isActive('taskList')}
+                      onChange={() => toggleChecklist(editor, checklistTitle)}
+                      sx={{ border: 'none', p: 0.75 }}
+                    >
+                      <CheckBoxOutlined sx={{ fontSize: 18 }} />
+                    </ToggleButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+                  <Tooltip title={t('add_link')}>
+                    <IconButton
+                      ref={linkButtonRef}
+                      size="small"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        cursorRef.current = editor.state.selection.from;
+                      }}
+                      onClick={openLink}
+                    >
+                      <LinkIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+                </>
+              )}
+              {includeMusicBlocks && (
+                <>
+                  <Tooltip title={t('song_detail_title')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('song_detail_title')}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        cursorRef.current = editor?.state.selection.from ?? null;
+                      }}
+                      onClick={event => setInsertMenu({ kind: 'song', anchor: event.currentTarget })}
+                    >
+                      <GradientIcon kind="song" fontSize={18} gradientOnHover aria-hidden />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t('event_detail_title')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('event_detail_title')}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        cursorRef.current = editor?.state.selection.from ?? null;
+                      }}
+                      onClick={event => setEventMenu(event.currentTarget)}
+                    >
+                      <EventNote sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+                </>
+              )}
+              <Tooltip title={locked ? t('main_page_unlock') : t('main_page_lock')}>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setLocked(current => !current);
+                    setSlash(null);
+                    setStyleAnchor(null);
+                    setLinkOpen(false);
+                  }}
+                >
+                  {locked
+                    ? <LockOutlined sx={{ fontSize: 18 }} />
+                    : <LockOpenOutlined sx={{ fontSize: 18 }} />}
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Fade>
         )}
 
         <Box
+          onMouseDown={() => {
+            if (canEdit) {
+              revealToolbar();
+            }
+          }}
           sx={{
             '& .ProseMirror': {
               ...richTextContentSx(accent),

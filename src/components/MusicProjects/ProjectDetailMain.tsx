@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainPageEditor } from '@/components/MusicProjects/MainPageEditor';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
 import { mergeCollectionsMigration, mergeMainPage, parseMusicProjectMetadata } from '@/utils/musicProjectMetadata';
-import { appendAlbumCollections, mainPageHasEditableContent, resolveMainPage } from '@/utils/projectMainPage';
+import { appendAlbumCollections, resolveMainPage } from '@/utils/projectMainPage';
 
 const SAVE_DELAY_MS = 500;
 
@@ -158,7 +158,6 @@ export function ProjectDetailMain({
       albums={albums}
       songs={songs}
       canEdit={canEdit}
-      focusOnMount={canEdit && !mainPageHasEditableContent(doc)}
       onNavigateToTab={onNavigateToTab}
     />
   );

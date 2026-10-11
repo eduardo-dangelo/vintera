@@ -8,6 +8,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { ExternalLinkEmbed } from '@/components/MusicProjects/ExternalLinkEmbed';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
+import { MediaSizeFrame } from '@/components/MusicProjects/mainPage/mediaSizeFrame';
 import {
   clearPageBlockEntering,
   getPageBlockExitVersion,
@@ -17,7 +18,7 @@ import {
   subscribePageBlockExit,
 } from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import { buildExternalLink } from '@/utils/externalLinkEmbed';
-import { PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
+import { parseMediaSize, PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
 
 function readPos(getPos: ReactNodeViewProps['getPos']): number | null {
   if (typeof getPos !== 'function') {
@@ -96,7 +97,7 @@ export function BlockShell({
   );
 }
 
-function EmbedBlockView({ node, getPos }: ReactNodeViewProps) {
+function EmbedBlockView({ node, getPos, updateAttributes }: ReactNodeViewProps) {
   const ctx = useMainPageEditorContext();
   const url = typeof node.attrs.url === 'string' ? node.attrs.url : '';
   const title = typeof node.attrs.title === 'string' ? node.attrs.title : undefined;
@@ -104,9 +105,20 @@ function EmbedBlockView({ node, getPos }: ReactNodeViewProps) {
   if (!link) {
     return <NodeViewWrapper style={{ display: 'none' }} />;
   }
+  const player = <ExternalLinkEmbed link={link} accent={ctx.accent} />;
   return (
     <BlockShell getPos={getPos}>
-      <ExternalLinkEmbed link={link} accent={ctx.accent} />
+      {link.kind === 'youtube'
+        ? (
+            <MediaSizeFrame
+              size={parseMediaSize(node.attrs.size)}
+              canResize={ctx.canEdit}
+              onSize={size => updateAttributes({ size })}
+            >
+              {player}
+            </MediaSizeFrame>
+          )
+        : player}
     </BlockShell>
   );
 }
@@ -121,6 +133,7 @@ export const ProjectEmbedNode = Node.create({
     return {
       url: { default: '' },
       title: { default: null as string | null },
+      size: { default: 4 },
     };
   },
   parseHTML() {

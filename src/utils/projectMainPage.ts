@@ -20,6 +20,30 @@ export type PageImage = {
   name: string;
 };
 
+export type MediaSize = 1 | 2 | 3 | 4;
+
+export function parseMediaSize(value: unknown): MediaSize {
+  return value === 1 || value === 2 || value === 3 || value === 4 ? value : 4;
+}
+
+export function mediaSizeWidth(size: MediaSize): string {
+  return `${size * 25}%`;
+}
+
+export function nearestMediaSize(ratio: number): MediaSize {
+  let best: MediaSize = 4;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  const steps: MediaSize[] = [1, 2, 3, 4];
+  for (const step of steps) {
+    const distance = Math.abs(ratio - step * 0.25);
+    if (distance < bestDistance) {
+      best = step;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
 export type PageBlockView = 'row' | 'card';
 export type PageListMode = 'recent' | 'custom';
 
@@ -370,7 +394,11 @@ function normalizeNode(raw: unknown): JSONContent | null {
     if (images.length === 0) {
       return null;
     }
-    return { type: PROJECT_IMAGES_NODE, attrs: { images } };
+    const size = parseMediaSize(attrs.size);
+    return {
+      type: PROJECT_IMAGES_NODE,
+      attrs: attrs.size === size ? { images, size } : { images },
+    };
   }
   if (raw.type === PROJECT_EMBED_NODE) {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
@@ -379,7 +407,11 @@ function normalizeNode(raw: unknown): JSONContent | null {
       return null;
     }
     const title = typeof attrs.title === 'string' && attrs.title.trim() ? attrs.title.trim() : null;
-    return { type: PROJECT_EMBED_NODE, attrs: { url, title } };
+    const size = parseMediaSize(attrs.size);
+    return {
+      type: PROJECT_EMBED_NODE,
+      attrs: attrs.size === size ? { url, title, size } : { url, title },
+    };
   }
   if (raw.type === 'horizontalRule' || raw.type === 'hardBreak') {
     return { type: raw.type };

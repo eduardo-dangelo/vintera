@@ -15,8 +15,9 @@ import { useRef, useState } from 'react';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { BlockShell } from '@/components/MusicProjects/mainPage/mainPageNodes';
+import { MediaSizeFrame } from '@/components/MusicProjects/mainPage/mediaSizeFrame';
 import { acceptedPageImageFiles, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
-import { parsePageImages, PROJECT_IMAGES_NODE } from '@/utils/projectMainPage';
+import { parseMediaSize, parsePageImages, PROJECT_IMAGES_NODE } from '@/utils/projectMainPage';
 
 const navButtonSx = (side: 'left' | 'right') => ({
   'position': 'absolute' as const,
@@ -269,36 +270,42 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
             : (
                 <Box>
                   {images[0] && (
-                    <Box
-                      sx={{
-                        'position': 'relative',
-                        '&:hover [data-image-delete]': { opacity: 1 },
-                      }}
+                    <MediaSizeFrame
+                      size={parseMediaSize(node.attrs.size)}
+                      canResize={canEdit}
+                      onSize={size => updateAttributes({ size })}
                     >
                       <Box
-                        component="img"
-                        src={images[0].url}
-                        alt={images[0].name}
-                        sx={{ display: 'block', width: '100%', height: 'auto', borderRadius: 1 }}
-                      />
-                      {canEdit && (
-                        <IconButton
-                          size="small"
-                          aria-label={t('page_remove')}
-                          data-image-delete=""
-                          data-open={deleteId === images[0].id ? 'true' : 'false'}
-                          onMouseDown={event => event.preventDefault()}
-                          onClick={event => askRemove(event.currentTarget, images[0]?.id ?? '')}
-                          sx={{
-                            ...deleteButtonSx,
-                            'opacity': deleteId === images[0].id ? 1 : 0,
-                            '&[data-open="true"]': { opacity: 1 },
-                          }}
-                        >
-                          <DeleteOutlined fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
+                        sx={{
+                          'position': 'relative',
+                          '&:hover [data-image-delete]': { opacity: 1 },
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={images[0].url}
+                          alt={images[0].name}
+                          sx={{ display: 'block', width: '100%', height: 'auto', borderRadius: 1 }}
+                        />
+                        {canEdit && (
+                          <IconButton
+                            size="small"
+                            aria-label={t('page_remove')}
+                            data-image-delete=""
+                            data-open={deleteId === images[0].id ? 'true' : 'false'}
+                            onMouseDown={event => event.preventDefault()}
+                            onClick={event => askRemove(event.currentTarget, images[0]?.id ?? '')}
+                            sx={{
+                              ...deleteButtonSx,
+                              'opacity': deleteId === images[0].id ? 1 : 0,
+                              '&[data-open="true"]': { opacity: 1 },
+                            }}
+                          >
+                            <DeleteOutlined fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </MediaSizeFrame>
                   )}
                 </Box>
               )}
@@ -392,6 +399,7 @@ export const ProjectImagesNode = Node.create({
       images: { default: [] as PageImage[] },
       pending: { default: 0 },
       batchId: { default: null as string | null },
+      size: { default: 4 },
     };
   },
   parseHTML() {

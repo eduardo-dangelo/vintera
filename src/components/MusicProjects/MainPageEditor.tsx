@@ -14,6 +14,7 @@ import FormatAlignCenter from '@mui/icons-material/FormatAlignCenter';
 import FormatAlignLeft from '@mui/icons-material/FormatAlignLeft';
 import FormatAlignRight from '@mui/icons-material/FormatAlignRight';
 import FormatBold from '@mui/icons-material/FormatBold';
+import FormatColorText from '@mui/icons-material/FormatColorText';
 import FormatItalic from '@mui/icons-material/FormatItalic';
 import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
 import FormatListNumbered from '@mui/icons-material/FormatListNumbered';
@@ -39,15 +40,20 @@ import {
   ToggleButton,
   Tooltip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import Color from '@tiptap/extension-color';
 import Link from '@tiptap/extension-link';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
+import { TextStyle } from '@tiptap/extension-text-style';
 import { NodeSelection } from '@tiptap/pm/state';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useTranslations } from 'next-intl';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { EVENT_COLORS } from '@/components/Calendar/constants';
+import { EventColorPickerPopover } from '@/components/common/EventColorPickerPopover';
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjects/mainPage/checklistCommands';
 import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
@@ -319,6 +325,8 @@ export function MainPageEditor({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const [styleAnchor, setStyleAnchor] = useState<HTMLElement | null>(null);
+  const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+  const theme = useTheme();
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [slash, setSlash] = useState<SlashState | null>(null);
@@ -456,6 +464,8 @@ export function MainPageEditor({
       alignments: ['left', 'center', 'right'],
       defaultAlignment: 'left',
     }),
+    TextStyle,
+    Color,
     ...(includeMusicBlocks
       ? [ProjectSongNode, ProjectSongListNode, ProjectEventNode]
       : []),
@@ -1024,6 +1034,7 @@ export function MainPageEditor({
   }, [editor, selectionTick]);
 
   const toolbarMenuOpen = styleAnchor != null
+    || colorAnchor != null
     || linkOpen
     || insertMenu != null
     || eventMenu != null
@@ -1033,6 +1044,33 @@ export function MainPageEditor({
     || collectionPicker != null
     || createPopovers.openPopover != null;
   const showBar = canEdit && Boolean(editor) && (toolbarMenuOpen || (editorFocused && !typing));
+
+  const themeTextColor = theme.palette.text.primary;
+  const textColorPresets = useMemo(() => [
+    { value: themeTextColor, label: t('main_page_text_color'), hex: themeTextColor },
+    ...EVENT_COLORS.map(color => ({
+      value: color.hex,
+      label: color.label,
+      hex: color.hex,
+    })),
+  ], [t, themeTextColor]);
+  const storedTextColor = editor?.getAttributes('textStyle').color;
+  const textColor = typeof storedTextColor === 'string' && storedTextColor.length > 0
+    ? storedTextColor
+    : themeTextColor;
+
+  const setTextColor = (color: string) => {
+    if (!editor) {
+      return;
+    }
+    const chain = editor.chain().focus();
+    if (color.toLowerCase() === themeTextColor.toLowerCase()) {
+      chain.unsetColor().run();
+    } else {
+      chain.setColor(color).run();
+    }
+    setColorAnchor(null);
+  };
 
   const activeStyle = activePageStyle(editor);
 
@@ -1184,6 +1222,20 @@ export function MainPageEditor({
                     >
                       <FormatItalic sx={{ fontSize: 18 }} />
                     </ToggleButton>
+                  </Tooltip>
+                  <Tooltip title={t('main_page_text_color')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('main_page_text_color')}
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={event => setColorAnchor(event.currentTarget)}
+                      sx={{ borderRadius: 1, p: 0.75 }}
+                    >
+                      <Box sx={{ alignItems: 'center', display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                        <FormatColorText sx={{ fontSize: 18 }} />
+                        <Box sx={{ bgcolor: textColor, borderRadius: 1, height: 3, mt: '-1px', width: 16 }} />
+                      </Box>
+                    </IconButton>
                   </Tooltip>
                   {(['left', 'center', 'right'] as const).map((align) => {
                     const Icon = align === 'left'
@@ -1469,6 +1521,16 @@ export function MainPageEditor({
           </MenuItem>
         ))}
       </Menu>
+
+      <EventColorPickerPopover
+        open={colorAnchor != null}
+        anchorEl={colorAnchor}
+        value={textColor}
+        valueMode="hex"
+        colors={textColorPresets}
+        onChange={setTextColor}
+        onClose={() => setColorAnchor(null)}
+      />
 
       <Popover
         open={linkOpen}

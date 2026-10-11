@@ -76,6 +76,30 @@ const ALLOWED_NODES = new Set([
   PROJECT_IMAGES_NODE,
 ]);
 
+const TEXT_COLOR = /^#[0-9a-f]{6}$/i;
+
+function storedTextMarks(marks: unknown): JSONContent['marks'] {
+  if (!Array.isArray(marks)) {
+    return undefined;
+  }
+  const kept: NonNullable<JSONContent['marks']> = [];
+  for (const mark of marks) {
+    if (!isRecord(mark) || typeof mark.type !== 'string') {
+      continue;
+    }
+    if (mark.type === 'textStyle') {
+      const attrs = isRecord(mark.attrs) ? mark.attrs : {};
+      const color = typeof attrs.color === 'string' ? attrs.color : '';
+      if (TEXT_COLOR.test(color)) {
+        kept.push({ type: 'textStyle', attrs: { color } });
+      }
+      continue;
+    }
+    kept.push(mark as NonNullable<JSONContent['marks']>[number]);
+  }
+  return kept.length > 0 ? kept : undefined;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -368,9 +392,11 @@ function normalizeNode(raw: unknown): JSONContent | null {
     return null;
   }
   if (raw.type === 'text') {
-    return typeof raw.text === 'string' && raw.text.length > 0
-      ? { type: 'text', text: raw.text, ...(Array.isArray(raw.marks) ? { marks: raw.marks as JSONContent['marks'] } : {}) }
-      : null;
+    if (typeof raw.text !== 'string' || raw.text.length === 0) {
+      return null;
+    }
+    const marks = storedTextMarks(raw.marks);
+    return { type: 'text', text: raw.text, ...(marks ? { marks } : {}) };
   }
   if (raw.type === PROJECT_ALBUM_NODE) {
     return null;

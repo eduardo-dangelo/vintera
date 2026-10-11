@@ -405,27 +405,6 @@ function openPicker(event: { currentTarget: HTMLElement }, setPickerPos: (pos: {
   setPickerPos({ top: rect.bottom, left: rect.left });
 }
 
-function viewSwitchItem(
-  view: PageBlockView,
-  onView: (next: PageBlockView) => void,
-  close: () => void,
-  labels: { row: string; card: string },
-) {
-  const next = view === 'row' ? 'card' : 'row';
-  return (
-    <MenuItem
-      sx={glassMenuItemSx}
-      onClick={() => {
-        onView(next);
-        close();
-      }}
-    >
-      {next === 'card' ? <ViewModule sx={{ fontSize: 16 }} /> : <ViewList sx={{ fontSize: 16 }} />}
-      {next === 'card' ? labels.card : labels.row}
-    </MenuItem>
-  );
-}
-
 function toCalendarEvent(event: CalendarEventEntity): CalendarEvent {
   return {
     id: event.id,
@@ -448,7 +427,7 @@ function eventIsDue(event: CalendarEvent): boolean {
   return new Date(event.end).getTime() <= Date.now();
 }
 
-function EventBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
+function EventBlockView({ node, getPos }: ReactNodeViewProps) {
   const ctx = useMainPageEditorContext();
   const id = readItemId(node.attrs.id);
   const { data, isSuccess } = useGetCalendarEventsByProject(ctx.locale, ctx.projectId);
@@ -460,10 +439,7 @@ function EventBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps
   return (
     <>
       <BlockShell
-        editor={editor}
         getPos={getPos}
-        deleteNode={deleteNode}
-        allowDelete
         hidden={gone}
       >
         {event && !eventIsDue(event) && (
@@ -484,49 +460,37 @@ function EventBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps
   );
 }
 
-function SongBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
-  const t = useTranslations('MusicProjects');
+function SongBlockView({ node, getPos }: ReactNodeViewProps) {
   const id = readItemId(node.attrs.id);
-  const view = readView(node.attrs.view);
   const songs = useSongItems('one', id == null ? [] : [id]);
   return (
-    <BlockShell
-      editor={editor}
-      getPos={getPos}
-      deleteNode={deleteNode}
-      allowDelete
-      extraMenu={close => viewSwitchItem(view, next => patchAttrs(editor, getPos, { view: next }), close, {
-        row: t('page_view_row'),
-        card: t('page_view_card'),
-      })}
-    >
-      <SongItems songs={songs} view={view} />
+    <BlockShell getPos={getPos}>
+      <SongItems songs={songs} view="row" />
     </BlockShell>
   );
 }
 
-function AlbumBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
-  const t = useTranslations('MusicProjects');
+function AlbumBlockView({ editor, node, getPos }: ReactNodeViewProps) {
+  const ctx = useMainPageEditorContext();
   const id = readItemId(node.attrs.id);
   const view = readView(node.attrs.view);
   const albums = useAlbumItems('one', id == null ? [] : [id]);
   return (
     <BlockShell
-      editor={editor}
       getPos={getPos}
-      deleteNode={deleteNode}
-      allowDelete
-      extraMenu={close => viewSwitchItem(view, next => patchAttrs(editor, getPos, { view: next }), close, {
-        row: t('page_view_row'),
-        card: t('page_view_card'),
-      })}
+      headerActions={ctx.canEdit && (
+        <ViewModeToggle
+          view={view}
+          onChange={next => patchAttrs(editor, getPos, { view: next })}
+        />
+      )}
     >
       <AlbumItems albums={albums} view={view} />
     </BlockShell>
   );
 }
 
-function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
+function SongListBlockView({ editor, node, getPos }: ReactNodeViewProps) {
   const t = useTranslations('MusicProjects');
   const ctx = useMainPageEditorContext();
   const mode = readMode(node.attrs.mode);
@@ -541,11 +505,7 @@ function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewPr
   return (
     <>
       <BlockShell
-        editor={editor}
         getPos={getPos}
-        deleteNode={deleteNode}
-        allowDelete
-        deleteLabel={t('page_remove_list')}
         title={(
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
             <QueueMusic sx={{ fontSize: 20, color: 'text.secondary', flexShrink: 0 }} />
@@ -561,24 +521,22 @@ function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewPr
         viewAllLabel={mode === 'recent' && songsHaveTab && ctx.onNavigateToTab ? t('overview_view_all') : undefined}
         onViewAll={ctx.onNavigateToTab ? () => ctx.onNavigateToTab?.('songs') : undefined}
         headerActions={ctx.canEdit && (
-          <ViewModeToggle
-            view={view}
-            onChange={next => patchAttrs(editor, getPos, { view: next })}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {mode === 'custom' && songs.length > 0 && (
+              <Button
+                size="small"
+                onClick={event => openPicker(event, setPickerPos)}
+                sx={{ textTransform: 'none', fontWeight: 500 }}
+              >
+                {t('page_select_songs')}
+              </Button>
+            )}
+            <ViewModeToggle
+              view={view}
+              onChange={next => patchAttrs(editor, getPos, { view: next })}
+            />
+          </Box>
         )}
-        extraMenu={mode === 'custom'
-          ? close => (
-            <MenuItem
-              sx={glassMenuItemSx}
-              onClick={(event) => {
-                openPicker(event, setPickerPos);
-                close();
-              }}
-            >
-              {t('page_select_songs')}
-            </MenuItem>
-          )
-          : undefined}
       >
         <SongItems
           songs={songs}
@@ -616,7 +574,7 @@ function SongListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewPr
   );
 }
 
-function AlbumListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewProps) {
+function AlbumListBlockView({ editor, node, getPos }: ReactNodeViewProps) {
   const t = useTranslations('MusicProjects');
   const ctx = useMainPageEditorContext();
   const mode = readMode(node.attrs.mode);
@@ -631,11 +589,7 @@ function AlbumListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewP
   return (
     <>
       <BlockShell
-        editor={editor}
         getPos={getPos}
-        deleteNode={deleteNode}
-        allowDelete
-        deleteLabel={t('page_remove_list')}
         title={(
           <ListTitleField
             value={title}
@@ -646,24 +600,22 @@ function AlbumListBlockView({ editor, node, getPos, deleteNode }: ReactNodeViewP
         viewAllLabel={mode === 'recent' && albumsHaveTab && ctx.onNavigateToTab ? t('overview_view_all') : undefined}
         onViewAll={ctx.onNavigateToTab ? () => ctx.onNavigateToTab?.('albums') : undefined}
         headerActions={ctx.canEdit && (
-          <ViewModeToggle
-            view={view}
-            onChange={next => patchAttrs(editor, getPos, { view: next })}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {mode === 'custom' && albums.length > 0 && (
+              <Button
+                size="small"
+                onClick={event => openPicker(event, setPickerPos)}
+                sx={{ textTransform: 'none', fontWeight: 500 }}
+              >
+                {t('page_select_albums')}
+              </Button>
+            )}
+            <ViewModeToggle
+              view={view}
+              onChange={next => patchAttrs(editor, getPos, { view: next })}
+            />
+          </Box>
         )}
-        extraMenu={mode === 'custom'
-          ? close => (
-            <MenuItem
-              sx={glassMenuItemSx}
-              onClick={(event) => {
-                openPicker(event, setPickerPos);
-                close();
-              }}
-            >
-              {t('page_select_albums')}
-            </MenuItem>
-          )
-          : undefined}
       >
         <AlbumItems
           albums={albums}

@@ -52,6 +52,7 @@ import {
   ProjectSongListNode,
   ProjectSongNode,
 } from '@/components/MusicProjects/mainPage/pageMusicBlocks';
+import { PageRowDragLayer } from '@/components/MusicProjects/mainPage/pageRowDrag';
 import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreatePopovers';
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
@@ -67,7 +68,7 @@ import {
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
 
-const TOOLBAR_IDLE_MS = 500;
+const TOOLBAR_IDLE_MS = 2000;
 const TOOLBAR_TEXT_GAP = 12;
 
 function textWidth(text: string, style: CSSStyleDeclaration): number {
@@ -275,29 +276,58 @@ export function MainPageEditor({
   const lockedRef = useRef(false);
   lockedRef.current = locked;
   const [editorFocused, setEditorFocused] = useState(false);
-  const [typing, setTyping] = useState(false);
+  const [typing, setTyping] = useState(true);
+  const [hoverPaused, setHoverPaused] = useState(false);
   const [selectionTick, setSelectionTick] = useState(0);
   const [barPos, setBarPos] = useState({ top: 0, left: 0 });
   const frameRef = useRef<HTMLDivElement>(null);
   const idleTimerRef = useRef<number | null>(null);
-  const markTypingRef = useRef(() => {});
-  markTypingRef.current = () => {
+  const editorFocusedRef = useRef(false);
+  const toolbarHoldRef = useRef(true);
+  const hoverPausedRef = useRef(false);
+  const pointerDownRef = useRef(false);
+  const startToolbarHoldRef = useRef(() => {});
+  startToolbarHoldRef.current = () => {
+    toolbarHoldRef.current = true;
     setTyping(true);
     if (idleTimerRef.current != null) {
       window.clearTimeout(idleTimerRef.current);
     }
     idleTimerRef.current = window.setTimeout(() => {
       idleTimerRef.current = null;
+      toolbarHoldRef.current = false;
       setTyping(false);
     }, TOOLBAR_IDLE_MS);
+  };
+  const markTypingRef = useRef(() => {});
+  markTypingRef.current = () => {
+    startToolbarHoldRef.current();
+    if (!hoverPausedRef.current) {
+      hoverPausedRef.current = true;
+      setHoverPaused(true);
+    }
   };
   const revealToolbar = () => {
     if (idleTimerRef.current != null) {
       window.clearTimeout(idleTimerRef.current);
       idleTimerRef.current = null;
     }
+    toolbarHoldRef.current = false;
     setTyping(false);
-    setEditorFocused(true);
+  };
+  const resumeRowHover = () => {
+    if (hoverPausedRef.current) {
+      hoverPausedRef.current = false;
+      const prose = frameRef.current?.querySelector('.ProseMirror');
+      if (prose instanceof HTMLElement) {
+        prose.classList.remove('page-hover-paused');
+      }
+      setHoverPaused(false);
+    }
+    if (pointerDownRef.current || !editorFocusedRef.current || !toolbarHoldRef.current) {
+      return;
+    }
+    revealToolbar();
   };
   const editing = canEdit && !locked;
   const cursorRef = useRef<number | null>(null);
@@ -703,10 +733,22 @@ export function MainPageEditor({
       return;
     }
     const onFocus = () => {
+      const alreadyShown = editorFocusedRef.current && !toolbarHoldRef.current;
+      editorFocusedRef.current = true;
       setEditorFocused(true);
       onFocusChange?.(true);
+      if (!alreadyShown) {
+        startToolbarHoldRef.current();
+      }
     };
     const onBlur = () => {
+      editorFocusedRef.current = false;
+      toolbarHoldRef.current = true;
+      if (idleTimerRef.current != null) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      setTyping(true);
       setEditorFocused(false);
       onFocusChange?.(false);
     };
@@ -723,6 +765,22 @@ export function MainPageEditor({
       editor.commands.focus('end');
     }
   }, [focusOnMount, editor]);
+
+  useEffect(() => {
+    const prose = frameRef.current?.querySelector('.ProseMirror');
+    if (!(prose instanceof HTMLElement)) {
+      return;
+    }
+    prose.classList.toggle('page-hover-paused', hoverPaused);
+  }, [editor, hoverPaused]);
+
+  useEffect(() => {
+    const onUp = () => {
+      pointerDownRef.current = false;
+    };
+    window.addEventListener('mouseup', onUp);
+    return () => window.removeEventListener('mouseup', onUp);
+  }, []);
 
   useEffect(() => () => {
     if (idleTimerRef.current != null) {
@@ -742,6 +800,13 @@ export function MainPageEditor({
       if (target instanceof Element && target.closest('.MuiPopover-paper, .MuiMenu-paper, [role="menu"]')) {
         return;
       }
+      editorFocusedRef.current = false;
+      toolbarHoldRef.current = true;
+      if (idleTimerRef.current != null) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      setTyping(true);
       setEditorFocused(false);
     };
     document.addEventListener('pointerdown', onPointerDown);
@@ -839,7 +904,17 @@ export function MainPageEditor({
 
   return (
     <MainPageEditorContext value={pageContext}>
-      <Box ref={frameRef} sx={{ position: 'relative' }}>
+      <Box
+        ref={frameRef}
+        onMouseDown={() => {
+          pointerDownRef.current = true;
+        }}
+        onMouseMove={resumeRowHover}
+        onMouseUp={() => {
+          pointerDownRef.current = false;
+        }}
+        sx={{ position: 'relative' }}
+      >
         {editor && (
           <Fade in={showBar} timeout={PAGE_BLOCK_MOTION_MS}>
             <Box
@@ -1005,7 +1080,7 @@ export function MainPageEditor({
         <Box
           onMouseDown={() => {
             if (canEdit) {
-              revealToolbar();
+              setEditorFocused(true);
             }
           }}
           sx={{
@@ -1020,7 +1095,53 @@ export function MainPageEditor({
               '& h2': { fontSize: '1.125rem', fontWeight: 700, m: 0, mt: 0.5, mb: 0.25, lineHeight: 1.25 },
               '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mt: 0.25, mb: 0, lineHeight: 1.2 },
               '& h3:has(+ [data-project-checklist])': { mb: 0, mt: 0.25, lineHeight: 1.2 },
+              '& > p, & > h1, & > h2, & > h3': {
+                'padding': '2px',
+                'borderRadius': 1,
+                'transition': 'background-color 0.15s ease',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              },
+              '& > ul, & > ol, & [data-project-checklist]': {
+                'padding': '2px',
+                'borderRadius': 1,
+                'transition': 'background-color 0.15s ease',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              },
+              '& > ul:has(li:hover), & > ol:has(li:hover), & [data-project-checklist]:has(li:hover)': {
+                bgcolor: 'transparent',
+              },
+              '& li': {
+                'padding': '2px',
+                'borderRadius': 1,
+                'transition': 'background-color 0.15s ease',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              },
+              '& li:has(li:hover), & li p:hover, & li label:hover, & [data-node-view-content] p:hover': {
+                bgcolor: 'transparent',
+              },
+              '& [data-node-view-wrapper]:not([data-project-checklist]):not(li)': {
+                'padding': '2px',
+                'borderRadius': 1,
+                'transition': 'background-color 0.15s ease',
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+                '&:has(.music-list-table-row:hover, .MuiCard-root:hover)': {
+                  bgcolor: 'transparent',
+                },
+              },
               '& [data-project-checklist]': { mt: 0 },
+              '&.page-hover-paused': {
+                '& > p:hover, & > h1:hover, & > h2:hover, & > h3:hover, & > ul:hover, & > ol:hover, & [data-project-checklist]:hover, & li:hover, & [data-node-view-wrapper]:not([data-project-checklist]):not(li):hover, & .music-list-table-row:hover': {
+                  bgcolor: 'transparent',
+                },
+              },
               '& .MuiCardActionArea-root': { color: 'inherit', textDecoration: 'none' },
               '@keyframes pageBlockIn': {
                 from: { opacity: 0, transform: 'translateY(-6px)' },
@@ -1049,6 +1170,15 @@ export function MainPageEditor({
         >
           <EditorContent editor={editor} />
         </Box>
+        <PageRowDragLayer
+          editor={editor}
+          enabled={editing}
+          frameRef={frameRef}
+          hoverPaused={hoverPaused}
+          hoverPausedRef={hoverPausedRef}
+          label={t('page_drag')}
+          onHoverResume={resumeRowHover}
+        />
       </Box>
 
       <Menu

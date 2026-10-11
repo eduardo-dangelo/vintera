@@ -1,7 +1,7 @@
 'use client';
 
 import type { PointerEvent, ReactNode } from 'react';
-import type { MediaSize } from '@/utils/projectMainPage';
+import type { MediaAlign, MediaSize } from '@/utils/projectMainPage';
 import { Box } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -9,12 +9,13 @@ import { mediaSizeWidth, nearestMediaSize } from '@/utils/projectMainPage';
 
 type MediaSizeFrameProps = {
   size: MediaSize;
+  align: MediaAlign;
   canResize: boolean;
   onSize: (size: MediaSize) => void;
   children: ReactNode;
 };
 
-export function MediaSizeFrame({ size, canResize, onSize, children }: MediaSizeFrameProps) {
+export function MediaSizeFrame({ size, align, canResize, onSize, children }: MediaSizeFrameProps) {
   const t = useTranslations('MusicProjects');
   const columnRef = useRef<HTMLDivElement>(null);
   const dragSizeRef = useRef<MediaSize | null>(null);
@@ -55,12 +56,22 @@ export function MediaSizeFrame({ size, canResize, onSize, children }: MediaSizeF
   };
 
   return (
-    <Box ref={columnRef} sx={{ width: '100%' }}>
+    <Box
+      ref={columnRef}
+      sx={{
+        display: 'flex',
+        justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+        width: '100%',
+      }}
+    >
       <Box
         sx={{
           'position': 'relative',
           'width': mediaSizeWidth(shown),
           'maxWidth': '100%',
+          '@media (prefers-reduced-motion: no-preference)': {
+            transition: 'width 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+          },
           '&:hover [data-media-resize]': { opacity: 1 },
         }}
       >

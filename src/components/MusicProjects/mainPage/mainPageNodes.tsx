@@ -18,7 +18,7 @@ import {
   subscribePageBlockExit,
 } from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import { buildExternalLink } from '@/utils/externalLinkEmbed';
-import { parseMediaSize, PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
+import { parseMediaAlign, parseMediaSize, PROJECT_EMBED_NODE } from '@/utils/projectMainPage';
 
 function readPos(getPos: ReactNodeViewProps['getPos']): number | null {
   if (typeof getPos !== 'function') {
@@ -112,6 +112,7 @@ function EmbedBlockView({ node, getPos, updateAttributes }: ReactNodeViewProps) 
         ? (
             <MediaSizeFrame
               size={parseMediaSize(node.attrs.size)}
+              align={parseMediaAlign(node.attrs.align)}
               canResize={ctx.canEdit}
               onSize={size => updateAttributes({ size })}
             >
@@ -134,6 +135,7 @@ export const ProjectEmbedNode = Node.create({
       url: { default: '' },
       title: { default: null as string | null },
       size: { default: 4 },
+      align: { default: 'left' },
     };
   },
   parseHTML() {

@@ -22,6 +22,12 @@ export type PageImage = {
 
 export type MediaSize = 1 | 2 | 3 | 4;
 
+export type MediaAlign = 'left' | 'center' | 'right';
+
+export function parseMediaAlign(value: unknown): MediaAlign {
+  return value === 'center' || value === 'right' || value === 'left' ? value : 'left';
+}
+
 export function parseMediaSize(value: unknown): MediaSize {
   return value === 1 || value === 2 || value === 3 || value === 4 ? value : 4;
 }
@@ -395,9 +401,14 @@ function normalizeNode(raw: unknown): JSONContent | null {
       return null;
     }
     const size = parseMediaSize(attrs.size);
+    const align = parseMediaAlign(attrs.align);
     return {
       type: PROJECT_IMAGES_NODE,
-      attrs: attrs.size === size ? { images, size } : { images },
+      attrs: {
+        images,
+        ...(attrs.size === size ? { size } : {}),
+        ...(attrs.align === align ? { align } : {}),
+      },
     };
   }
   if (raw.type === PROJECT_EMBED_NODE) {
@@ -408,9 +419,15 @@ function normalizeNode(raw: unknown): JSONContent | null {
     }
     const title = typeof attrs.title === 'string' && attrs.title.trim() ? attrs.title.trim() : null;
     const size = parseMediaSize(attrs.size);
+    const align = parseMediaAlign(attrs.align);
     return {
       type: PROJECT_EMBED_NODE,
-      attrs: attrs.size === size ? { url, title, size } : { url, title },
+      attrs: {
+        url,
+        title,
+        ...(attrs.size === size ? { size } : {}),
+        ...(attrs.align === align ? { align } : {}),
+      },
     };
   }
   if (raw.type === 'horizontalRule' || raw.type === 'hardBreak') {
@@ -421,10 +438,22 @@ function normalizeNode(raw: unknown): JSONContent | null {
     ? raw.content.map(normalizeNode).filter((node): node is JSONContent => node != null)
     : [];
   const node: JSONContent = { type: raw.type };
-  if (raw.type === 'heading') {
+  if (raw.type === 'heading' || raw.type === 'paragraph') {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
-    const level = attrs.level === 1 || attrs.level === 2 || attrs.level === 3 ? attrs.level : 2;
-    node.attrs = { level };
+    const textAlign = parseMediaAlign(attrs.textAlign);
+    const align = attrs.textAlign === textAlign ? { textAlign } : {};
+    if (raw.type === 'heading') {
+      const level = attrs.level === 1 || attrs.level === 2 || attrs.level === 3
+        || attrs.level === 4 || attrs.level === 5 || attrs.level === 6
+        ? attrs.level
+        : 2;
+      node.attrs = { level, ...align };
+    } else if (attrs.textAlign === textAlign || attrs.caption === true) {
+      node.attrs = {
+        ...align,
+        ...(attrs.caption === true ? { caption: true } : {}),
+      };
+    }
   }
   if (raw.type === 'taskList') {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};

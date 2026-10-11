@@ -10,6 +10,9 @@ import Add from '@mui/icons-material/Add';
 import Album from '@mui/icons-material/Album';
 import CheckBoxOutlined from '@mui/icons-material/CheckBoxOutlined';
 import EventNote from '@mui/icons-material/EventNote';
+import FormatAlignCenter from '@mui/icons-material/FormatAlignCenter';
+import FormatAlignLeft from '@mui/icons-material/FormatAlignLeft';
+import FormatAlignRight from '@mui/icons-material/FormatAlignRight';
 import FormatBold from '@mui/icons-material/FormatBold';
 import FormatItalic from '@mui/icons-material/FormatItalic';
 import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
@@ -37,7 +40,9 @@ import {
   Tooltip,
 } from '@mui/material';
 import Link from '@tiptap/extension-link';
+import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
 import { NodeSelection } from '@tiptap/pm/state';
 import { EditorContent, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -61,17 +66,53 @@ import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreateP
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
 import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/useGetCalendarEventsByProject';
-import { normalizeExternalLinkUrl } from '@/utils/externalLinkEmbed';
+import { detectExternalLinkKind, normalizeExternalLinkUrl } from '@/utils/externalLinkEmbed';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
   pageEventIds,
   pageHasRecentCollection,
+  parseMediaAlign,
   pastedSingleUrl,
+  PROJECT_EMBED_NODE,
   PROJECT_EVENT_NODE,
   PROJECT_IMAGES_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
+
+const PAGE_HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
+
+type PageTextStyle = 'paragraph' | 'caption' | `h${(typeof PAGE_HEADING_LEVELS)[number]}`;
+
+const PageParagraph = Paragraph.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      caption: {
+        default: false,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-caption') === 'true',
+        renderHTML: (attributes: { caption?: boolean }) => (
+          attributes.caption ? { 'data-caption': 'true' } : {}
+        ),
+      },
+    };
+  },
+});
+
+function activePageStyle(editor: Editor | null): PageTextStyle {
+  if (!editor) {
+    return 'paragraph';
+  }
+  for (const level of PAGE_HEADING_LEVELS) {
+    if (editor.isActive('heading', { level })) {
+      return `h${level}`;
+    }
+  }
+  if (editor.isActive('paragraph') && editor.getAttributes('paragraph').caption === true) {
+    return 'caption';
+  }
+  return 'paragraph';
+}
 
 const TOOLBAR_IDLE_MS = 2000;
 const TOOLBAR_TEXT_GAP = 12;
@@ -105,10 +146,17 @@ function textWidth(text: string, style: CSSStyleDeclaration): number {
   return width;
 }
 
+type ToolbarAnchor = {
+  top: number;
+  left: number;
+  blockTop: number;
+  blockRight: number;
+};
+
 function toolbarAnchor(
   view: EditorView,
   frame: HTMLElement,
-): { top: number; left: number } | null {
+): ToolbarAnchor | null {
   const pos = view.state.selection.from;
   let coords: { top: number; bottom: number; right: number };
   try {
@@ -116,12 +164,17 @@ function toolbarAnchor(
   } catch {
     return null;
   }
+  let top = coords.top;
+  let bottom = coords.bottom;
   let right = coords.right;
   const { selection } = view.state;
   if (selection instanceof NodeSelection) {
     const nodeDom = view.nodeDOM(selection.from);
     if (nodeDom instanceof HTMLElement) {
-      right = nodeDom.getBoundingClientRect().right;
+      const rect = nodeDom.getBoundingClientRect();
+      top = rect.top;
+      bottom = rect.bottom;
+      right = rect.right;
     }
   } else {
     const $pos = view.state.doc.resolve(pos);
@@ -155,10 +208,28 @@ function toolbarAnchor(
     }
   }
   const box = frame.getBoundingClientRect();
+  const blockTop = top - box.top;
+  const blockRight = right - box.left;
   return {
-    top: coords.top - box.top + (coords.bottom - coords.top) / 2,
-    left: right - box.left + TOOLBAR_TEXT_GAP,
+    top: blockTop + (bottom - top) / 2,
+    left: blockRight + TOOLBAR_TEXT_GAP,
+    blockTop,
+    blockRight,
   };
+}
+
+function selectedMediaAlign(node: ProseMirrorNode): ReturnType<typeof parseMediaAlign> | null {
+  if (node.type.name === PROJECT_IMAGES_NODE) {
+    return parseMediaAlign(node.attrs.align);
+  }
+  if (node.type.name !== PROJECT_EMBED_NODE) {
+    return null;
+  }
+  const url = typeof node.attrs.url === 'string' ? node.attrs.url : '';
+  if (detectExternalLinkKind(url) !== 'youtube') {
+    return null;
+  }
+  return parseMediaAlign(node.attrs.align);
 }
 
 function isToolbarTypingKey(event: KeyboardEvent): boolean {
@@ -298,7 +369,8 @@ export function MainPageEditor({
   const [typing, setTyping] = useState(true);
   const [hoverPaused, setHoverPaused] = useState(false);
   const [selectionTick, setSelectionTick] = useState(0);
-  const [barPos, setBarPos] = useState({ top: 0, left: 0 });
+  const barRef = useRef<HTMLDivElement>(null);
+  const [barPos, setBarPos] = useState({ top: 0, left: 0, above: false });
   const frameRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -366,8 +438,10 @@ export function MainPageEditor({
   const checklistTitle = t('main_page_checklist_title');
   const extensions = useMemo(() => [
     StarterKit.configure({
-      heading: { levels: [1, 2, 3] },
+      paragraph: false,
+      heading: { levels: [1, 2, 3, 4, 5, 6] },
     }),
+    PageParagraph,
     Link.configure({
       openOnClick: false,
       HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
@@ -376,6 +450,11 @@ export function MainPageEditor({
       placeholder,
       showOnlyCurrent: true,
       showOnlyWhenEditable: true,
+    }),
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+      alignments: ['left', 'center', 'right'],
+      defaultAlignment: 'left',
     }),
     ...(includeMusicBlocks
       ? [ProjectSongNode, ProjectSongListNode, ProjectEventNode]
@@ -910,7 +989,8 @@ export function MainPageEditor({
   }, [canEdit]);
 
   useLayoutEffect(() => {
-    if (!editor || !frameRef.current) {
+    const frame = frameRef.current;
+    if (!editor || !frame) {
       return;
     }
     let view: EditorView;
@@ -919,14 +999,27 @@ export function MainPageEditor({
     } catch {
       return;
     }
-    const next = toolbarAnchor(view, frameRef.current);
+    const next = toolbarAnchor(view, frame);
     if (!next) {
       return;
     }
+    const barWidth = barRef.current?.offsetWidth ?? 0;
+    const frameWidth = frame.clientWidth;
+    let top = next.top;
+    let left = next.left;
+    let above = false;
+    if (barWidth > 0 && left + barWidth > frameWidth) {
+      above = true;
+      const edge = Math.min(next.blockRight, frameWidth);
+      left = Math.max(0, edge - barWidth);
+      top = next.blockTop;
+    }
     setBarPos(current => (
-      Math.abs(current.top - next.top) < 0.5 && Math.abs(current.left - next.left) < 0.5
+      current.above === above
+      && Math.abs(current.top - top) < 0.5
+      && Math.abs(current.left - left) < 0.5
         ? current
-        : next
+        : { top, left, above }
     ));
   }, [editor, selectionTick]);
 
@@ -941,29 +1034,20 @@ export function MainPageEditor({
     || createPopovers.openPopover != null;
   const showBar = canEdit && Boolean(editor) && (toolbarMenuOpen || (editorFocused && !typing));
 
-  const activeStyle = !editor
-    ? 'paragraph'
-    : editor.isActive('heading', { level: 1 })
-      ? 'h1'
-      : editor.isActive('heading', { level: 2 })
-        ? 'h2'
-        : editor.isActive('heading', { level: 3 })
-          ? 'h3'
-          : 'paragraph';
+  const activeStyle = activePageStyle(editor);
 
-  const setStyle = (style: 'paragraph' | 'h1' | 'h2' | 'h3') => {
+  const setStyle = (style: PageTextStyle) => {
     if (!editor) {
       return;
     }
     const chain = editor.chain().focus();
     if (style === 'paragraph') {
-      chain.setParagraph().run();
-    } else if (style === 'h1') {
-      chain.toggleHeading({ level: 1 }).run();
-    } else if (style === 'h2') {
-      chain.toggleHeading({ level: 2 }).run();
+      chain.setParagraph().updateAttributes('paragraph', { caption: false }).run();
+    } else if (style === 'caption') {
+      chain.setParagraph().updateAttributes('paragraph', { caption: true }).run();
     } else {
-      chain.toggleHeading({ level: 3 }).run();
+      const level = Number(style.slice(1)) as (typeof PAGE_HEADING_LEVELS)[number];
+      chain.toggleHeading({ level }).run();
     }
     setStyleAnchor(null);
   };
@@ -985,6 +1069,34 @@ export function MainPageEditor({
     insertBlockAtCursor(type.create({ url, title: null }));
     setLinkUrl('');
     setLinkOpen(false);
+  };
+
+  const alignLabels = {
+    left: t('main_page_align_left'),
+    center: t('main_page_align_center'),
+    right: t('main_page_align_right'),
+  };
+  const alignSelection = !editor
+    ? null
+    : editor.state.selection instanceof NodeSelection
+      ? selectedMediaAlign(editor.state.selection.node)
+      : editor.state.selection.$from.parent.type.name === 'paragraph'
+        || editor.state.selection.$from.parent.type.name === 'heading'
+        ? parseMediaAlign(editor.state.selection.$from.parent.attrs.textAlign)
+        : null;
+  const setPageAlign = (align: 'left' | 'center' | 'right') => {
+    if (!editor || alignSelection == null) {
+      return;
+    }
+    const { selection } = editor.state;
+    if (selection instanceof NodeSelection) {
+      editor.view.dispatch(editor.state.tr.setNodeMarkup(selection.from, undefined, {
+        ...selection.node.attrs,
+        align,
+      }));
+      return;
+    }
+    editor.chain().focus().setTextAlign(align).run();
   };
 
   const pageContext = useMemo(() => ({
@@ -1014,6 +1126,7 @@ export function MainPageEditor({
         {editor && (
           <Fade in={showBar} timeout={PAGE_BLOCK_MOTION_MS}>
             <Box
+              ref={barRef}
               onMouseDown={(event) => {
                 const target = event.target as HTMLElement;
                 if (target.closest('input, textarea')) {
@@ -1025,7 +1138,7 @@ export function MainPageEditor({
                 position: 'absolute',
                 left: barPos.left,
                 top: barPos.top,
-                transform: 'translateY(-50%)',
+                transform: barPos.above ? 'translateY(calc(-100% - 4px))' : 'translateY(-50%)',
                 zIndex: 3,
                 pointerEvents: showBar ? 'auto' : 'none',
                 display: 'flex',
@@ -1072,6 +1185,27 @@ export function MainPageEditor({
                       <FormatItalic sx={{ fontSize: 18 }} />
                     </ToggleButton>
                   </Tooltip>
+                  {(['left', 'center', 'right'] as const).map((align) => {
+                    const Icon = align === 'left'
+                      ? FormatAlignLeft
+                      : align === 'center'
+                        ? FormatAlignCenter
+                        : FormatAlignRight;
+                    return (
+                      <Tooltip key={align} title={alignLabels[align]}>
+                        <ToggleButton
+                          size="small"
+                          value={align}
+                          disabled={alignSelection == null}
+                          selected={alignSelection === align}
+                          onChange={() => setPageAlign(align)}
+                          sx={{ border: 'none', p: 0.75 }}
+                        >
+                          <Icon sx={{ fontSize: 18 }} />
+                        </ToggleButton>
+                      </Tooltip>
+                    );
+                  })}
                   <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
                   <Tooltip title={t('main_page_bullet_list')}>
                     <ToggleButton
@@ -1212,8 +1346,12 @@ export function MainPageEditor({
               '& h1': { fontSize: '1.5rem', fontWeight: 700, m: 0, mb: 0.25, lineHeight: 1.25 },
               '& h2': { fontSize: '1.125rem', fontWeight: 700, m: 0, mt: 0.5, mb: 0.25, lineHeight: 1.25 },
               '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mt: 0.25, mb: 0, lineHeight: 1.2 },
+              '& h4': { fontSize: '0.95rem', fontWeight: 600, m: 0, lineHeight: 1.3 },
+              '& h5': { fontSize: '0.875rem', fontWeight: 600, m: 0, lineHeight: 1.3 },
+              '& h6': { fontSize: '0.8125rem', fontWeight: 600, m: 0, lineHeight: 1.3 },
+              '& p[data-caption="true"]': { fontSize: '0.75rem', fontWeight: 400, color: 'text.secondary', lineHeight: 1.4 },
               '& h3:has(+ [data-project-checklist])': { mb: 0, mt: 0.25, lineHeight: 1.2 },
-              '& > p, & > h1, & > h2, & > h3': {
+              '& > p, & > h1, & > h2, & > h3, & > h4, & > h5, & > h6': {
                 'padding': '2px',
                 'borderRadius': 1,
                 'transition': 'background-color 0.15s ease',
@@ -1256,7 +1394,7 @@ export function MainPageEditor({
               },
               '& [data-project-checklist]': { mt: 0 },
               '&.page-hover-paused': {
-                '& > p:hover, & > h1:hover, & > h2:hover, & > h3:hover, & > ul:hover, & > ol:hover, & [data-project-checklist]:hover, & li:hover, & [data-node-view-wrapper]:not([data-project-checklist]):not(li):hover, & .music-list-table-row:hover': {
+                '& > p:hover, & > h1:hover, & > h2:hover, & > h3:hover, & > h4:hover, & > h5:hover, & > h6:hover, & > ul:hover, & > ol:hover, & [data-project-checklist]:hover, & li:hover, & [data-node-view-wrapper]:not([data-project-checklist]):not(li):hover, & .music-list-table-row:hover': {
                   bgcolor: 'transparent',
                 },
               },
@@ -1306,15 +1444,24 @@ export function MainPageEditor({
         slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
       >
         {([
-          ['paragraph', t('main_page_paragraph')],
-          ['h1', t('main_page_heading_1')],
-          ['h2', t('main_page_heading_2')],
-          ['h3', t('main_page_heading_3')],
-        ] as const).map(([id, label]) => (
+          ['paragraph', t('main_page_paragraph'), '0.875rem', 400],
+          ['h1', t('main_page_heading_1'), '1.5rem', 700],
+          ['h2', t('main_page_heading_2'), '1.125rem', 700],
+          ['h3', t('main_page_heading_3'), '1rem', 600],
+          ['h4', t('main_page_heading_4'), '0.95rem', 600],
+          ['h5', t('main_page_heading_5'), '0.875rem', 600],
+          ['h6', t('main_page_heading_6'), '0.8125rem', 600],
+          ['caption', t('main_page_caption'), '0.75rem', 400],
+        ] as const).map(([id, label, fontSize, fontWeight]) => (
           <MenuItem
             key={id}
             selected={activeStyle === id}
-            sx={glassMenuItemSx}
+            sx={{
+              ...glassMenuItemSx,
+              fontSize,
+              fontWeight,
+              color: id === 'caption' ? 'text.secondary' : 'text.primary',
+            }}
             onMouseDown={event => event.preventDefault()}
             onClick={() => setStyle(id)}
           >

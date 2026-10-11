@@ -17,7 +17,7 @@ import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/ma
 import { BlockShell } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import { MediaSizeFrame } from '@/components/MusicProjects/mainPage/mediaSizeFrame';
 import { acceptedPageImageFiles, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
-import { parseMediaSize, parsePageImages, PROJECT_IMAGES_NODE } from '@/utils/projectMainPage';
+import { parseMediaAlign, parseMediaSize, parsePageImages, PROJECT_IMAGES_NODE } from '@/utils/projectMainPage';
 
 const navButtonSx = (side: 'left' | 'right') => ({
   'position': 'absolute' as const,
@@ -63,6 +63,7 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const preview = previewIndex == null ? null : images[previewIndex] ?? null;
   const gallery = images.length + pending > 1;
+  const align = parseMediaAlign(node.attrs.align);
   const canAppend = canEdit && images.length > 0 && pending === 0;
 
   const closePreview = () => setPreviewIndex(null);
@@ -174,7 +175,8 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
       key={`pending-${index}`}
       variant="rounded"
       sx={{
-        width: '100%',
+        width: gallery ? 140 : '100%',
+        flex: gallery ? '0 0 140px' : undefined,
         height: gallery ? 'auto' : 240,
         aspectRatio: gallery ? '1' : undefined,
         borderRadius: gallery ? 2 : 1,
@@ -205,8 +207,9 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
             ? (
                 <Box
                   sx={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
                     gap: 2,
                   }}
                 >
@@ -215,6 +218,8 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
                       key={image.id}
                       sx={{
                         'position': 'relative',
+                        'width': 140,
+                        'flex': '0 0 140px',
                         '&:hover [data-image-delete]': { opacity: 1 },
                       }}
                     >
@@ -272,6 +277,7 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
                   {images[0] && (
                     <MediaSizeFrame
                       size={parseMediaSize(node.attrs.size)}
+                      align={align}
                       canResize={canEdit}
                       onSize={size => updateAttributes({ size })}
                     >
@@ -400,6 +406,7 @@ export const ProjectImagesNode = Node.create({
       pending: { default: 0 },
       batchId: { default: null as string | null },
       size: { default: 4 },
+      align: { default: 'left' },
     };
   },
   parseHTML() {

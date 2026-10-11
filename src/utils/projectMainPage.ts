@@ -12,6 +12,13 @@ export const PROJECT_SONG_LIST_NODE = 'projectSongList';
 export const PROJECT_EVENT_NODE = 'projectEvent';
 export const PROJECT_ALBUM_LIST_NODE = 'projectAlbumList';
 export const PROJECT_EMBED_NODE = 'projectEmbed';
+export const PROJECT_IMAGES_NODE = 'projectImages';
+
+export type PageImage = {
+  id: string;
+  url: string;
+  name: string;
+};
 
 export type PageBlockView = 'row' | 'card';
 export type PageListMode = 'recent' | 'custom';
@@ -36,6 +43,7 @@ const ALLOWED_NODES = new Set([
   PROJECT_ALBUM_LIST_NODE,
   PROJECT_EVENT_NODE,
   PROJECT_EMBED_NODE,
+  PROJECT_IMAGES_NODE,
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -263,6 +271,38 @@ function parseItemIds(value: unknown): number[] {
   return ids;
 }
 
+function isStoredImageUrl(value: string): boolean {
+  if (value.startsWith('/') && !value.startsWith('//')) {
+    return true;
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+export function parsePageImages(value: unknown): PageImage[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const images: PageImage[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) {
+      continue;
+    }
+    const id = typeof item.id === 'string' ? item.id.trim() : '';
+    const url = typeof item.url === 'string' ? item.url.trim() : '';
+    const name = typeof item.name === 'string' ? item.name.trim() : '';
+    if (!id || !isStoredImageUrl(url)) {
+      continue;
+    }
+    images.push({ id, url, name });
+  }
+  return images;
+}
+
 function parseBlockView(value: unknown): PageBlockView {
   return value === 'card' ? 'card' : 'row';
 }
@@ -323,6 +363,14 @@ function normalizeNode(raw: unknown): JSONContent | null {
   }
   if (raw.type === PROJECT_SONG_LIST_NODE || raw.type === PROJECT_ALBUM_LIST_NODE) {
     return musicListNode(raw.type, isRecord(raw.attrs) ? raw.attrs : {});
+  }
+  if (raw.type === PROJECT_IMAGES_NODE) {
+    const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+    const images = parsePageImages(attrs.images);
+    if (images.length === 0) {
+      return null;
+    }
+    return { type: PROJECT_IMAGES_NODE, attrs: { images } };
   }
   if (raw.type === PROJECT_EMBED_NODE) {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
@@ -520,7 +568,7 @@ function walkContent(node: JSONContent, visit: (node: JSONContent) => boolean): 
 
 export function mainPageHasEditableContent(doc: JSONContent): boolean {
   return walkContent(doc, (node) => {
-    if (node.type === PROJECT_EMBED_NODE) {
+    if (node.type === PROJECT_EMBED_NODE || node.type === PROJECT_IMAGES_NODE) {
       return true;
     }
     if (node.type === 'text') {

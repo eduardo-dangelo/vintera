@@ -3,6 +3,7 @@
 import type { Editor, JSONContent } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
+import type { ChangeEvent } from 'react';
 import type { ProjectTabName } from '@/components/MusicProjects/tabs/projectTabVisibility';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import Add from '@mui/icons-material/Add';
@@ -14,6 +15,7 @@ import FormatItalic from '@mui/icons-material/FormatItalic';
 import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
 import FormatListNumbered from '@mui/icons-material/FormatListNumbered';
 import History from '@mui/icons-material/History';
+import ImageOutlined from '@mui/icons-material/ImageOutlined';
 import LibraryMusic from '@mui/icons-material/LibraryMusic';
 import LinkIcon from '@mui/icons-material/Link';
 import LockOpenOutlined from '@mui/icons-material/LockOpenOutlined';
@@ -47,6 +49,8 @@ import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/m
 import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import { markPageBlockEntering, PAGE_BLOCK_MOTION_MS, requestPageBlockExit } from '@/components/MusicProjects/mainPage/pageBlockMotion';
+import { ProjectImagesNode } from '@/components/MusicProjects/mainPage/pageImageBlock';
+import { PAGE_IMAGE_ACCEPT, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
 import {
   ProjectEventNode,
   ProjectSongListNode,
@@ -64,12 +68,25 @@ import {
   pageHasRecentCollection,
   pastedSingleUrl,
   PROJECT_EVENT_NODE,
+  PROJECT_IMAGES_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
 } from '@/utils/projectMainPage';
 
 const TOOLBAR_IDLE_MS = 2000;
 const TOOLBAR_TEXT_GAP = 12;
+
+function findImageBatchPos(doc: ProseMirrorNode, batchId: string): number | null {
+  let found: number | null = null;
+  doc.descendants((node, pos) => {
+    if (node.type.name === PROJECT_IMAGES_NODE && node.attrs.batchId === batchId) {
+      found = pos;
+      return false;
+    }
+    return undefined;
+  });
+  return found;
+}
 
 function textWidth(text: string, style: CSSStyleDeclaration): number {
   const probe = document.createElement('span');
@@ -161,6 +178,7 @@ const PAGE_MUSIC_BLOCK_TYPES = new Set([
   PROJECT_SONG_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_EVENT_NODE,
+  PROJECT_IMAGES_NODE,
 ]);
 
 function selectedMusicBlockPos(state: EditorView['state']): number | null {
@@ -281,6 +299,8 @@ export function MainPageEditor({
   const [selectionTick, setSelectionTick] = useState(0);
   const [barPos, setBarPos] = useState({ top: 0, left: 0 });
   const frameRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const idleTimerRef = useRef<number | null>(null);
   const editorFocusedRef = useRef(false);
   const toolbarHoldRef = useRef(true);
@@ -359,6 +379,7 @@ export function MainPageEditor({
       ? [ProjectSongNode, ProjectSongListNode, ProjectEventNode]
       : []),
     ProjectEmbedNode,
+    ProjectImagesNode,
     ProjectTaskList,
     createProjectTaskItem(checklistTitle).extend({
       addNodeView() {
@@ -561,6 +582,50 @@ export function MainPageEditor({
     markPageBlockEntering(insertPos);
     editor.view.dispatch(tr.scrollIntoView());
     return insertPos;
+  };
+
+  const onImageFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0 || !editor) {
+      return;
+    }
+    const type = editor.schema.nodes[PROJECT_IMAGES_NODE];
+    if (!type) {
+      return;
+    }
+    const batchId = crypto.randomUUID();
+    setUploadingImages(true);
+    try {
+      insertBlockAtCursor(type.create({
+        images: [],
+        pending: files.length,
+        batchId,
+      }));
+      const uploaded = (await Promise.all(
+        files.map(file => uploadPageImage(locale, projectId, file)),
+      )).filter(image => image != null);
+      const pos = findImageBatchPos(editor.state.doc, batchId);
+      if (pos == null) {
+        return;
+      }
+      const current = editor.state.doc.nodeAt(pos);
+      if (!current) {
+        return;
+      }
+      if (uploaded.length === 0) {
+        editor.view.dispatch(editor.state.tr.delete(pos, pos + current.nodeSize));
+        return;
+      }
+      editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, {
+        ...current.attrs,
+        images: uploaded,
+        pending: 0,
+        batchId: null,
+      }));
+    } finally {
+      setUploadingImages(false);
+    }
   };
 
   insertEventRef.current = (eventId) => {
@@ -1024,6 +1089,28 @@ export function MainPageEditor({
                       <LinkIcon sx={{ fontSize: 18 }} />
                     </IconButton>
                   </Tooltip>
+                  <Tooltip title={t('page_add_images')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('page_add_images')}
+                      disabled={uploadingImages}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        cursorRef.current = editor.state.selection.from;
+                      }}
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <ImageOutlined sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept={PAGE_IMAGE_ACCEPT}
+                    multiple
+                    hidden
+                    onChange={event => void onImageFiles(event)}
+                  />
                   <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
                 </>
               )}

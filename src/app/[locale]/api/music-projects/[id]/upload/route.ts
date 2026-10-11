@@ -42,14 +42,14 @@ export async function POST(
 
     if (!file || !type) {
       return NextResponse.json(
-        { error: 'Missing file or type (logo | hero)' },
+        { error: 'Missing file or type (logo | hero | page)' },
         { status: 400 },
       );
     }
 
-    if (type !== 'logo' && type !== 'hero') {
+    if (type !== 'logo' && type !== 'hero' && type !== 'page') {
       return NextResponse.json(
-        { error: 'Invalid type. Must be logo or hero' },
+        { error: 'Invalid type. Must be logo, hero, or page' },
         { status: 400 },
       );
     }

@@ -1,7 +1,9 @@
 import type { SystemStyleObject, Theme } from '@mui/system';
-import { alpha } from '@mui/material/styles';
 
-const CHECKED_MARK = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3E%3Cpath fill=\'none\' stroke=\'white\' stroke-width=\'1.8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M3.5 8.2 6.4 11 12.5 4.5\'/%3E%3C/svg%3E")';
+function checkedMark(stroke: string): string {
+  const color = encodeURIComponent(stroke);
+  return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='${color}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.2 6.4 11 12.5 4.5'/%3E%3C/svg%3E")`;
+}
 
 export function richTextContentSx(accent: string): SystemStyleObject<Theme> {
   return {
@@ -41,19 +43,19 @@ export function richTextContentSx(accent: string): SystemStyleObject<Theme> {
       'p': 0,
       'borderRadius': '4px',
       'border': '1.5px solid',
-      'borderColor': alpha(accent, 0.5),
+      'borderColor': 'text.secondary',
       'bgcolor': 'transparent',
       'cursor': 'pointer',
       'backgroundRepeat': 'no-repeat',
       'backgroundPosition': 'center',
       'backgroundSize': '16px 16px',
       '&:hover': {
-        borderColor: accent,
+        borderColor: 'text.primary',
       },
       '&:checked': {
-        bgcolor: accent,
-        borderColor: accent,
-        backgroundImage: CHECKED_MARK,
+        bgcolor: 'primary.main',
+        borderColor: 'primary.main',
+        backgroundImage: (theme: Theme) => checkedMark(theme.palette.primary.contrastText),
       },
     },
     '& a': { color: accent, textDecoration: 'underline' },

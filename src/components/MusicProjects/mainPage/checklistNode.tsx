@@ -5,7 +5,7 @@ import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { ReactNodeViewProps } from '@tiptap/react';
 import { VisibilityOffOutlined as HideIcon, MoreHoriz, VisibilityOutlined as ShowIcon } from '@mui/icons-material';
 import { Box, Collapse, IconButton, Menu, MenuItem, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { TaskList } from '@tiptap/extension-list/task-list';
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,11 @@ import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/ma
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 
 const CHECKLIST_COLLAPSE_MS = 250;
+
+function checkedMark(stroke: string): string {
+  const color = encodeURIComponent(stroke);
+  return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='${color}' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.2 6.4 11 12.5 4.5'/%3E%3C/svg%3E")`;
+}
 
 function listHidesCompleted(editor: Editor, getPos: ReactNodeViewProps['getPos']) {
   if (typeof getPos !== 'function') {
@@ -68,6 +73,7 @@ function setHideCompleted(editor: Editor, getPos: ReactNodeViewProps['getPos'], 
 }
 
 export function ChecklistItemView({ node, editor, getPos }: ReactNodeViewProps) {
+  const theme = useTheme();
   const checked = node.attrs.checked === true;
   const hideCompleted = useSyncExternalStore(
     (onStoreChange) => {
@@ -110,11 +116,35 @@ export function ChecklistItemView({ node, editor, getPos }: ReactNodeViewProps) 
                 contentEditable={false}
                 sx={{ flex: '0 0 auto', mt: '0.2rem', userSelect: 'none' }}
               >
-                <input
+                <Box
+                  component="input"
                   type="checkbox"
                   checked={checked}
                   onMouseDown={event => event.preventDefault()}
                   onChange={toggleChecked}
+                  sx={{
+                    'appearance': 'none',
+                    'WebkitAppearance': 'none',
+                    'width': 16,
+                    'height': 16,
+                    'm': 0,
+                    'p': 0,
+                    'display': 'block',
+                    'borderRadius': '4px',
+                    'border': '1.5px solid',
+                    'borderColor': 'text.secondary',
+                    'bgcolor': 'transparent',
+                    'cursor': 'pointer',
+                    'backgroundRepeat': 'no-repeat',
+                    'backgroundPosition': 'center',
+                    'backgroundSize': '16px 16px',
+                    '&:hover': { borderColor: 'text.primary' },
+                    '&:checked': {
+                      bgcolor: 'primary.main',
+                      borderColor: 'primary.main',
+                      backgroundImage: checkedMark(theme.palette.primary.contrastText),
+                    },
+                  }}
                 />
               </Box>
               <NodeViewContent style={{ flex: 1, minWidth: 0 }} />
@@ -128,7 +158,7 @@ export function ChecklistItemView({ node, editor, getPos }: ReactNodeViewProps) 
 
 function ChecklistView({ node, editor, getPos }: ReactNodeViewProps) {
   const t = useTranslations('MusicProjects');
-  const { accent, canEdit } = useMainPageEditorContext();
+  const { canEdit } = useMainPageEditorContext();
   const { total, checked } = countTasks(node);
   const percent = total === 0 ? 0 : Math.round((checked / total) * 100);
   const hideCompleted = node.attrs.hideCompleted === true;
@@ -172,7 +202,7 @@ function ChecklistView({ node, editor, getPos }: ReactNodeViewProps) {
               mt: 0.5,
               overflow: 'hidden',
               borderRadius: 99,
-              bgcolor: alpha(accent, 0.16),
+              bgcolor: 'action.hover',
             }}
           >
             <Box
@@ -180,7 +210,7 @@ function ChecklistView({ node, editor, getPos }: ReactNodeViewProps) {
                 width: `${percent}%`,
                 height: '100%',
                 borderRadius: 99,
-                bgcolor: alpha(accent, 0.5),
+                bgcolor: 'primary.main',
                 transition: 'width 400ms cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             />

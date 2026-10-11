@@ -312,6 +312,86 @@ function rowSlots(view: EditorView, parentFrom: number | null): RowSlot[] {
   return slots;
 }
 
+const MERGE_EDGE = 12;
+
+function taskListPos(view: EditorView, start: number): number | null {
+  const node = view.state.doc.nodeAt(start);
+  if (node?.type.name === 'taskList') {
+    return start;
+  }
+  if (!node || !isChecklistTitle(node)) {
+    return null;
+  }
+  const list = view.state.doc.nodeAt(start + node.nodeSize);
+  if (list?.type.name !== 'taskList') {
+    return null;
+  }
+  return start + node.nodeSize;
+}
+
+function rangeIsChecklist(view: EditorView, from: number, end: number): boolean {
+  let pos = from;
+  while (pos < end) {
+    const node = view.state.doc.nodeAt(pos);
+    if (!node) {
+      return false;
+    }
+    if (node.type.name === 'taskList') {
+      return true;
+    }
+    pos += node.nodeSize;
+  }
+  return false;
+}
+
+function checklistMergeTarget(
+  view: EditorView,
+  slots: RowSlot[],
+  clientY: number,
+  dragStart: number,
+  dragEnd: number,
+): { listFrom: number; top: number; bottom: number } | null {
+  if (!rangeIsChecklist(view, dragStart, dragEnd)) {
+    return null;
+  }
+  for (const slot of slots) {
+    const overlaps = slot.start < dragEnd && slot.end > dragStart;
+    if (overlaps || clientY <= slot.top + MERGE_EDGE || clientY >= slot.bottom - MERGE_EDGE) {
+      continue;
+    }
+    const listFrom = taskListPos(view, slot.start);
+    if (listFrom == null) {
+      continue;
+    }
+    return { listFrom, top: slot.top, bottom: slot.bottom };
+  }
+  return null;
+}
+
+function mergeChecklist(view: EditorView, from: number, end: number, listFrom: number) {
+  let items = null as EditorView['state']['doc']['content'] | null;
+  let pos = from;
+  while (pos < end) {
+    const node = view.state.doc.nodeAt(pos);
+    if (!node) {
+      return;
+    }
+    if (node.type.name === 'taskList') {
+      items = node.content;
+      break;
+    }
+    pos += node.nodeSize;
+  }
+  const target = view.state.doc.nodeAt(listFrom);
+  if (!items || target?.type.name !== 'taskList') {
+    return;
+  }
+  const tr = view.state.tr;
+  tr.insert(listFrom + 1 + target.content.size, items);
+  tr.delete(tr.mapping.map(from), tr.mapping.map(end));
+  view.dispatch(tr);
+}
+
 function dropInsertAt(
   slots: RowSlot[],
   clientY: number,
@@ -492,6 +572,7 @@ export function PageRowDragLayer({
 }: PageRowDragLayerProps) {
   const [handles, setHandles] = useState<HoverHandles>({ item: null, block: null });
   const [dropTop, setDropTop] = useState<number | null>(null);
+  const [mergeBox, setMergeBox] = useState<{ top: number; height: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const theme = useTheme();
   const paper = theme.palette.background.paper;
@@ -500,6 +581,7 @@ export function PageRowDragLayer({
     end: number;
     parentFrom: number | null;
     insertAt: number | null;
+    mergeListFrom: number | null;
     sources: HTMLElement[];
     preview: HTMLElement | null;
     originY: number;
@@ -642,6 +724,7 @@ export function PageRowDragLayer({
       end: handle.to,
       parentFrom: handle.parentFrom,
       insertAt: null,
+      mergeListFrom: null,
       sources,
       preview,
       originY: event.clientY,
@@ -660,13 +743,32 @@ export function PageRowDragLayer({
       drag.preview.style.transform = `translateY(${event.clientY - drag.originY}px)`;
     }
     const slots = rowSlots(editor.view, drag.parentFrom);
+    const frameTop = frame.getBoundingClientRect().top;
+    const merge = drag.parentFrom == null
+      ? checklistMergeTarget(editor.view, slots, event.clientY, drag.from, drag.end)
+      : null;
+    if (merge) {
+      drag.mergeListFrom = merge.listFrom;
+      drag.insertAt = null;
+      setDropTop(current => (current == null ? current : null));
+      const top = merge.top - frameTop;
+      const height = merge.bottom - merge.top;
+      setMergeBox(current => (
+        current != null && Math.abs(current.top - top) < 0.5 && Math.abs(current.height - height) < 0.5
+          ? current
+          : { top, height }
+      ));
+      return;
+    }
+    drag.mergeListFrom = null;
+    setMergeBox(current => (current == null ? current : null));
     const drop = dropInsertAt(slots, event.clientY, drag.from, drag.end);
     drag.insertAt = drop?.insertAt ?? null;
     if (!drop) {
       setDropTop(current => (current == null ? current : null));
       return;
     }
-    const next = drop.line - frame.getBoundingClientRect().top;
+    const next = drop.line - frameTop;
     setDropTop(current => (current != null && Math.abs(current - next) < 0.5 ? current : next));
   };
 
@@ -676,10 +778,18 @@ export function PageRowDragLayer({
     clearPreview(drag?.sources ?? [], drag?.preview ?? null);
     setDragging(false);
     setDropTop(null);
-    if (!drag || drag.insertAt == null || !editor || editor.isDestroyed) {
+    setMergeBox(null);
+    if (!drag || !editor || editor.isDestroyed) {
       return;
     }
     try {
+      if (drag.mergeListFrom != null) {
+        mergeChecklist(editor.view, drag.from, drag.end, drag.mergeListFrom);
+        return;
+      }
+      if (drag.insertAt == null) {
+        return;
+      }
       moveRange(editor.view, drag.from, drag.end, drag.insertAt);
     } catch {
       // The view can unmount while the pointer is down.
@@ -696,6 +806,22 @@ export function PageRowDragLayer({
 
   return (
     <>
+      {mergeBox != null && (
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: mergeBox.top,
+            height: mergeBox.height,
+            borderRadius: 1,
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            zIndex: 5,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       {dropTop != null && (
         <Box
           sx={{

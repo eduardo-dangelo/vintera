@@ -1,9 +1,8 @@
 'use client';
 
 import type { ReactNodeViewProps } from '@tiptap/react';
-import type { ChangeEvent } from 'react';
+import type { DragEvent } from 'react';
 import type { PageImage } from '@/utils/projectMainPage';
-import Add from '@mui/icons-material/Add';
 import ChevronLeft from '@mui/icons-material/ChevronLeft';
 import ChevronRight from '@mui/icons-material/ChevronRight';
 import Close from '@mui/icons-material/Close';
@@ -16,7 +15,7 @@ import { useRef, useState } from 'react';
 import { ConfirmPopover } from '@/components/common/ConfirmPopover';
 import { useMainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { BlockShell } from '@/components/MusicProjects/mainPage/mainPageNodes';
-import { PAGE_IMAGE_ACCEPT, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
+import { acceptedPageImageFiles, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
 import { parsePageImages, PROJECT_IMAGES_NODE } from '@/utils/projectMainPage';
 
 const navButtonSx = (side: 'left' | 'right') => ({
@@ -39,6 +38,7 @@ const deleteButtonSx = {
   'bgcolor': 'rgba(0,0,0,0.5)',
   'color': 'white',
   'opacity': 0,
+  'borderRadius': 1,
   '&:hover': {
     bgcolor: 'rgba(0,0,0,0.7)',
   },
@@ -55,13 +55,14 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
   const { canEdit, locale, projectId } = useMainPageEditorContext();
   const images = parsePageImages(node.attrs.images);
   const pending = readPending(node.attrs.pending);
-  const addInputRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
+  const [dropActive, setDropActive] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [deleteAnchor, setDeleteAnchor] = useState<HTMLElement | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const preview = previewIndex == null ? null : images[previewIndex] ?? null;
   const gallery = images.length + pending > 1;
-  const showAdd = canEdit && images.length > 0;
+  const canAppend = canEdit && images.length > 0 && pending === 0;
 
   const closePreview = () => setPreviewIndex(null);
   const goToPrev = () => {
@@ -93,10 +94,8 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
     updateAttributes({ images: next });
   };
 
-  const onAddFiles = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
-    if (files.length === 0 || pending > 0) {
+  const appendFiles = async (files: File[]) => {
+    if (files.length === 0 || pending > 0 || images.length === 0) {
       return;
     }
     updateAttributes({ pending: files.length });
@@ -112,6 +111,56 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
       images: [...parsePageImages(current.attrs.images), ...uploaded],
       pending: 0,
     });
+  };
+
+  const fileDrag = (event: DragEvent<HTMLElement>) => (
+    canEdit && (event.dataTransfer?.types.includes('Files') ?? false)
+  );
+
+  const onDragEnter = (event: DragEvent<HTMLElement>) => {
+    if (!fileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepth.current += 1;
+    if (canAppend) {
+      setDropActive(true);
+    }
+  };
+
+  const onDragOver = (event: DragEvent<HTMLElement>) => {
+    if (!fileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const onDragLeave = (event: DragEvent<HTMLElement>) => {
+    if (!fileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) {
+      setDropActive(false);
+    }
+  };
+
+  const onDrop = (event: DragEvent<HTMLElement>) => {
+    if (!fileDrag(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepth.current = 0;
+    setDropActive(false);
+    if (!canAppend) {
+      return;
+    }
+    void appendFiles(acceptedPageImageFiles(event.dataTransfer?.files ?? []));
   };
 
   const askRemove = (anchor: HTMLElement, id: string) => {
@@ -133,40 +182,22 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
     />
   ));
 
-  const addTile = showAdd
-    ? (
-        <Box
-          component="button"
-          type="button"
-          aria-label={t('page_image_add')}
-          disabled={pending > 0}
-          onMouseDown={event => event.preventDefault()}
-          onClick={() => addInputRef.current?.click()}
-          sx={{
-            'display': 'flex',
-            'alignItems': 'center',
-            'justifyContent': 'center',
-            'width': gallery ? '100%' : 140,
-            'aspectRatio': '1',
-            'mt': gallery ? 0 : 1,
-            'p': 0,
-            'border': '1px dashed',
-            'borderColor': 'divider',
-            'borderRadius': 2,
-            'bgcolor': 'transparent',
-            'color': 'text.secondary',
-            'cursor': 'pointer',
-            '&:disabled': { cursor: 'default', opacity: 0.5 },
-          }}
-        >
-          <Add />
-        </Box>
-      )
-    : null;
-
   return (
     <BlockShell getPos={getPos}>
-      <Box contentEditable={false}>
+      <Box
+        contentEditable={false}
+        data-project-images=""
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        sx={{
+          borderRadius: 1,
+          outline: dropActive ? '1px dashed' : '1px solid transparent',
+          outlineColor: dropActive ? 'primary.main' : 'transparent',
+          bgcolor: dropActive ? 'action.hover' : 'transparent',
+        }}
+      >
         {images.length === 0 && pending <= 1
           ? skeletons
           : gallery
@@ -233,7 +264,6 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
                     </Box>
                   ))}
                   {skeletons}
-                  {addTile}
                 </Box>
               )
             : (
@@ -270,19 +300,8 @@ function PageImagesView({ node, editor, updateAttributes, deleteNode, getPos }: 
                       )}
                     </Box>
                   )}
-                  {addTile}
                 </Box>
               )}
-        {showAdd && (
-          <input
-            ref={addInputRef}
-            type="file"
-            accept={PAGE_IMAGE_ACCEPT}
-            multiple
-            hidden
-            onChange={event => void onAddFiles(event)}
-          />
-        )}
       </Box>
       <ConfirmPopover
         open={deleteAnchor != null}

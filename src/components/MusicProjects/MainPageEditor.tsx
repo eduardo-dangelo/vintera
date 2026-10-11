@@ -50,7 +50,7 @@ import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainP
 import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import { markPageBlockEntering, PAGE_BLOCK_MOTION_MS, requestPageBlockExit } from '@/components/MusicProjects/mainPage/pageBlockMotion';
 import { ProjectImagesNode } from '@/components/MusicProjects/mainPage/pageImageBlock';
-import { PAGE_IMAGE_ACCEPT, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
+import { acceptedPageImageFiles, PAGE_IMAGE_ACCEPT, uploadPageImage } from '@/components/MusicProjects/mainPage/pageImageUpload';
 import {
   ProjectEventNode,
   ProjectSongListNode,
@@ -243,6 +243,7 @@ export function MainPageEditor({
   const tCal = useTranslations('Calendar');
   const linkButtonRef = useRef<HTMLButtonElement>(null);
   const pasteRef = useRef<(view: EditorView, event: ClipboardEvent) => boolean>(() => false);
+  const dropRef = useRef<(view: EditorView, event: DragEvent) => boolean>(() => false);
   const keyRef = useRef<(view: EditorView, event: KeyboardEvent) => boolean>(() => false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -351,6 +352,7 @@ export function MainPageEditor({
   };
   const editing = canEdit && !locked;
   const cursorRef = useRef<number | null>(null);
+  const imageInsertsRef = useRef(0);
   const insertCreatedRef = useRef<(kind: 'song' | 'album', id: number) => void>(() => {});
   const insertEventRef = useRef<(eventId: number) => void>(() => {});
   const freshEventIdsRef = useRef(new Set<number>());
@@ -396,6 +398,9 @@ export function MainPageEditor({
     editorProps: {
       handlePaste: (view, event) => pasteRef.current(view, event),
       handleKeyDown: (view, event) => keyRef.current(view, event),
+      handleDrop: (view, event, _slice, moved) => (
+        moved ? false : dropRef.current(view, event)
+      ),
     },
     onUpdate: ({ editor: ed }) => {
       onChangeRef.current(ed.getJSON());
@@ -554,11 +559,11 @@ export function MainPageEditor({
     setSlash(null);
   };
 
-  const insertBlockAtCursor = (block: ProseMirrorNode) => {
+  const insertBlockAtCursor = (block: ProseMirrorNode, at?: number) => {
     if (!editor) {
       return null;
     }
-    const stored = cursorRef.current;
+    const stored = at ?? cursorRef.current;
     const pos = stored == null
       ? editor.state.doc.content.size
       : Math.max(0, Math.min(stored, editor.state.doc.content.size));
@@ -584,9 +589,7 @@ export function MainPageEditor({
     return insertPos;
   };
 
-  const onImageFiles = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = '';
+  const insertPageImages = async (files: File[], at?: number) => {
     if (files.length === 0 || !editor) {
       return;
     }
@@ -595,13 +598,14 @@ export function MainPageEditor({
       return;
     }
     const batchId = crypto.randomUUID();
+    imageInsertsRef.current += 1;
     setUploadingImages(true);
     try {
       insertBlockAtCursor(type.create({
         images: [],
         pending: files.length,
         batchId,
-      }));
+      }), at);
       const uploaded = (await Promise.all(
         files.map(file => uploadPageImage(locale, projectId, file)),
       )).filter(image => image != null);
@@ -624,8 +628,35 @@ export function MainPageEditor({
         batchId: null,
       }));
     } finally {
-      setUploadingImages(false);
+      imageInsertsRef.current = Math.max(0, imageInsertsRef.current - 1);
+      if (imageInsertsRef.current === 0) {
+        setUploadingImages(false);
+      }
     }
+  };
+
+  const onImageFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    void insertPageImages(files);
+  };
+
+  dropRef.current = (view, event) => {
+    if (!canEdit || lockedRef.current) {
+      return false;
+    }
+    const target = event.target;
+    if (target instanceof Element && target.closest('[data-project-images]')) {
+      return true;
+    }
+    const files = acceptedPageImageFiles(event.dataTransfer?.files ?? []);
+    if (files.length === 0) {
+      return false;
+    }
+    event.preventDefault();
+    const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+    void insertPageImages(files, coords?.pos ?? view.state.selection.from);
+    return true;
   };
 
   insertEventRef.current = (eventId) => {

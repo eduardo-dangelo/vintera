@@ -2,6 +2,12 @@ import type { PageImage } from '@/utils/projectMainPage';
 
 export const PAGE_IMAGE_ACCEPT = 'image/png,image/jpeg,image/jpg,image/gif,image/webp';
 
+const PAGE_IMAGE_TYPES = new Set(PAGE_IMAGE_ACCEPT.split(','));
+
+export function acceptedPageImageFiles(files: FileList | File[]): File[] {
+  return Array.from(files).filter(file => PAGE_IMAGE_TYPES.has(file.type));
+}
+
 export async function uploadPageImage(
   locale: string,
   projectId: number,

@@ -4,7 +4,7 @@ import type { MusicItemMenuTarget } from './musicItemMenuTypes';
 import { DriveFileRenameOutline as RenameIcon } from '@mui/icons-material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Popover,
   POSITION_BELOW_ANCHOR_ORIGIN,
@@ -46,12 +46,13 @@ export function MusicItemRenamePopover({
   const updateSong = useUpdateSongById(locale);
   const updateAlbum = useUpdateAlbumById(locale);
   const [name, setName] = useState('');
-
-  useEffect(() => {
-    if (open && target) {
-      setName(target.name);
-    }
-  }, [open, target]);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const targetKey = open && target ? `${target.kind}:${target.id}` : null;
+  const [syncedKey, setSyncedKey] = useState(targetKey);
+  if (targetKey !== syncedKey) {
+    setSyncedKey(targetKey);
+    setName(target?.name ?? '');
+  }
 
   const isPending = updateProject.isPending || updateSong.isPending || updateAlbum.isPending;
   const canSave = Boolean(name.trim()) && Boolean(target);
@@ -93,6 +94,7 @@ export function MusicItemRenamePopover({
       anchorOrigin={isPositionAnchored ? POSITION_BELOW_ANCHOR_ORIGIN : undefined}
       transformOrigin={isPositionAnchored ? POSITION_BELOW_TRANSFORM_ORIGIN : undefined}
       onClose={onClose}
+      onEntered={() => nameInputRef.current?.focus()}
       minWidth={240}
       maxWidth={280}
       showArrow={false}
@@ -109,7 +111,7 @@ export function MusicItemRenamePopover({
           </Typography>
         </Box>
         <TextField
-          autoFocus
+          inputRef={nameInputRef}
           fullWidth
           size="small"
           label={target?.kind === 'song' ? t('field_title') : t('field_name')}

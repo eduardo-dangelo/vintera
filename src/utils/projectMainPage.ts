@@ -13,6 +13,9 @@ export const PROJECT_EVENT_NODE = 'projectEvent';
 export const PROJECT_ALBUM_LIST_NODE = 'projectAlbumList';
 export const PROJECT_EMBED_NODE = 'projectEmbed';
 export const PROJECT_IMAGES_NODE = 'projectImages';
+export const COLUMN_LAYOUT_NODE = 'columnLayout';
+export const COLUMN_NODE = 'column';
+export const TOGGLE_HEADING_NODE = 'toggleHeading';
 
 export type PageImage = {
   id: string;
@@ -74,6 +77,9 @@ const ALLOWED_NODES = new Set([
   PROJECT_EVENT_NODE,
   PROJECT_EMBED_NODE,
   PROJECT_IMAGES_NODE,
+  COLUMN_LAYOUT_NODE,
+  COLUMN_NODE,
+  TOGGLE_HEADING_NODE,
 ]);
 
 const TEXT_COLOR = /^#[0-9a-f]{6}$/i;
@@ -388,6 +394,9 @@ function normalizeNode(raw: unknown): JSONContent | null {
   if (raw.type === PROJECT_ALBUMS_NODE) {
     return recentMusicList(PROJECT_ALBUM_LIST_NODE);
   }
+  if (raw.type === COLUMN_LAYOUT_NODE || raw.type === COLUMN_NODE || raw.type === TOGGLE_HEADING_NODE) {
+    return null;
+  }
   if (!ALLOWED_NODES.has(raw.type)) {
     return null;
   }
@@ -460,9 +469,7 @@ function normalizeNode(raw: unknown): JSONContent | null {
     return { type: raw.type };
   }
 
-  const content = Array.isArray(raw.content)
-    ? raw.content.map(normalizeNode).filter((node): node is JSONContent => node != null)
-    : [];
+  const content = Array.isArray(raw.content) ? raw.content.flatMap(normalizeFlow) : [];
   const node: JSONContent = { type: raw.type };
   if (raw.type === 'heading' || raw.type === 'paragraph') {
     const attrs = isRecord(raw.attrs) ? raw.attrs : {};
@@ -497,17 +504,80 @@ function normalizeNode(raw: unknown): JSONContent | null {
   return node;
 }
 
+function collectColumns(raw: unknown): JSONContent[] {
+  if (!isRecord(raw)) {
+    return [];
+  }
+  if (raw.type === COLUMN_LAYOUT_NODE) {
+    return Array.isArray(raw.content) ? raw.content.flatMap(collectColumns) : [];
+  }
+  if (raw.type !== COLUMN_NODE) {
+    return [];
+  }
+  const blocks: JSONContent[] = [];
+  const nested: JSONContent[] = [];
+  for (const child of Array.isArray(raw.content) ? raw.content : []) {
+    if (isRecord(child) && (child.type === COLUMN_LAYOUT_NODE || child.type === COLUMN_NODE)) {
+      nested.push(...collectColumns(child));
+      continue;
+    }
+    blocks.push(...normalizeFlow(child));
+  }
+  const content = collapseCollectionNodes(blocks);
+  const own = content.length > 0 ? [{ type: COLUMN_NODE, content }] : [];
+  return [...own, ...nested];
+}
+
+function normalizeToggle(raw: Record<string, unknown>): JSONContent[] {
+  const attrs = isRecord(raw.attrs) ? raw.attrs : {};
+  const level = attrs.level === 1 || attrs.level === 2 || attrs.level === 3 ? attrs.level : null;
+  const children = Array.isArray(raw.content) ? raw.content.flatMap(normalizeFlow) : [];
+  const [first, ...rest] = children;
+  if (level == null || first?.type !== 'heading' || first.attrs?.level !== level) {
+    return children;
+  }
+  return [{
+    type: TOGGLE_HEADING_NODE,
+    attrs: { level, collapsed: attrs.collapsed === true },
+    content: [first, ...rest],
+  }];
+}
+
+function normalizeFlow(raw: unknown): JSONContent[] {
+  if (!isRecord(raw) || typeof raw.type !== 'string') {
+    return [];
+  }
+  if (raw.type === TOGGLE_HEADING_NODE) {
+    return normalizeToggle(raw);
+  }
+  if (raw.type === COLUMN_LAYOUT_NODE || raw.type === COLUMN_NODE) {
+    return normalizeTopLevel(raw);
+  }
+  const node = normalizeNode(raw);
+  return node ? [node] : [];
+}
+
+function normalizeTopLevel(raw: unknown): JSONContent[] {
+  if (!isRecord(raw) || typeof raw.type !== 'string') {
+    return [];
+  }
+  if (raw.type === COLUMN_LAYOUT_NODE || raw.type === COLUMN_NODE) {
+    const columns = collectColumns(raw);
+    if (columns.length >= 2) {
+      return [{ type: COLUMN_LAYOUT_NODE, content: columns }];
+    }
+    return columns.flatMap(column => column.content ?? []);
+  }
+  return normalizeFlow(raw);
+}
+
 export function normalizeMainPage(raw: unknown): JSONContent | null {
   if (!isRecord(raw) || raw.type !== 'doc' || !Array.isArray(raw.content)) {
     return null;
   }
   const content: JSONContent[] = [];
   for (const item of raw.content) {
-    const node = normalizeNode(item);
-    if (!node) {
-      continue;
-    }
-    content.push(node);
+    content.push(...normalizeTopLevel(item));
   }
   const collections = collapseCollectionNodes(content);
   if (collections.length === 0) {

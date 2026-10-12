@@ -1,11 +1,14 @@
 'use client';
 
 import type { Editor } from '@tiptap/core';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import DragIndicator from '@mui/icons-material/DragIndicator';
 import { Box, useTheme } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { moveBlockBeside } from '@/components/MusicProjects/mainPage/columnLayout';
+import { COLUMN_LAYOUT_NODE, COLUMN_NODE, TOGGLE_HEADING_NODE } from '@/utils/projectMainPage';
 
 const HANDLE_SIZE = 22;
 const EXTRA_REACH = 14;
@@ -75,7 +78,12 @@ function blockRange(desc: PageViewDesc): Extent | null {
 
 function blockExtent(view: EditorView, dom: HTMLElement): Extent | null {
   let desc = pageViewDesc(dom);
-  while (desc?.parent?.node && desc.parent.node.type.name !== 'doc') {
+  while (
+    desc?.parent?.node
+    && desc.parent.node.type.name !== 'doc'
+    && desc.parent.node.type.name !== COLUMN_NODE
+    && desc.parent.node.type.name !== TOGGLE_HEADING_NODE
+  ) {
     desc = desc.parent;
   }
   const fromDesc = desc ? blockRange(desc) : null;
@@ -145,6 +153,37 @@ function itemExtent(view: EditorView, dom: HTMLElement): (Extent & { parentFrom:
   }
 }
 
+function columnBlockExtent(dom: HTMLElement): (Extent & { parentFrom: null }) | null {
+  let desc = pageViewDesc(dom);
+  while (
+    desc?.parent?.node
+    && desc.parent.node.type.name !== COLUMN_NODE
+    && desc.parent.node.type.name !== TOGGLE_HEADING_NODE
+  ) {
+    if (desc.parent.node.type.name === 'doc') {
+      return null;
+    }
+    desc = desc.parent;
+  }
+  const parentName = desc?.parent?.node?.type.name;
+  if (!desc || (parentName !== COLUMN_NODE && parentName !== TOGGLE_HEADING_NODE)) {
+    return null;
+  }
+  const range = blockRange(desc);
+  if (!range) {
+    return null;
+  }
+  return { ...range, parentFrom: null };
+}
+
+function parentChild(target: Element, parent: HTMLElement): HTMLElement | null {
+  let node: Element | null = target;
+  while (node && node.parentElement !== parent) {
+    node = node.parentElement;
+  }
+  return node instanceof HTMLElement ? node : null;
+}
+
 function directChild(target: Element, prose: HTMLElement): HTMLElement | null {
   let node: Element | null = target;
   while (node && node.parentElement !== prose) {
@@ -191,6 +230,21 @@ function checklistTitleElement(checklist: HTMLElement): HTMLElement | null {
   return prev instanceof HTMLElement && prev.tagName === 'H3' ? prev : null;
 }
 
+function toggleBlocksRoot(toggle: HTMLElement): HTMLElement | null {
+  const content = toggle.querySelector('[data-node-view-content]');
+  if (!(content instanceof HTMLElement) || content.closest('[data-toggle-heading]') !== toggle) {
+    return null;
+  }
+  const reactContent = content.firstElementChild;
+  if (
+    reactContent instanceof HTMLElement
+    && reactContent.hasAttribute('data-node-view-content-react')
+  ) {
+    return reactContent;
+  }
+  return content;
+}
+
 function hoverTargets(target: Element, prose: HTMLElement): { item: HTMLElement | null; block: HTMLElement | null } {
   const checklist = target.closest('[data-project-checklist]');
   if (checklist instanceof HTMLElement && prose.contains(checklist)) {
@@ -204,6 +258,49 @@ function hoverTargets(target: Element, prose: HTMLElement): { item: HTMLElement 
   const item = target.closest('li');
   if (list && item instanceof HTMLElement && list.contains(item)) {
     return { item, block: list };
+  }
+  const toggle = target.closest('[data-toggle-heading]');
+  if (toggle instanceof HTMLElement && prose.contains(toggle)) {
+    const toggleContent = toggleBlocksRoot(toggle);
+    const inner = toggleContent ? parentChild(target, toggleContent) : null;
+    if (inner?.matches('[data-column-layout]')) {
+      const column = target.closest('[data-column]');
+      if (column instanceof HTMLElement && inner.contains(column)) {
+        const columnBlock = parentChild(target, column);
+        if (columnBlock) {
+          const grouped = checklistAfterHeading(columnBlock);
+          if (grouped) {
+            return { item: null, block: grouped };
+          }
+          return { item: columnBlock, block: inner };
+        }
+      }
+      return { item: null, block: inner };
+    }
+    const heading = toggleContent?.firstElementChild;
+    if (inner && heading && inner !== heading) {
+      const grouped = checklistAfterHeading(inner);
+      if (grouped) {
+        return { item: null, block: grouped };
+      }
+      return { item: inner, block: toggle };
+    }
+    return { item: null, block: toggle };
+  }
+  const layout = target.closest('[data-column-layout]');
+  if (layout instanceof HTMLElement && prose.contains(layout)) {
+    const column = target.closest('[data-column]');
+    if (column instanceof HTMLElement && layout.contains(column)) {
+      const inner = parentChild(target, column);
+      if (inner) {
+        const grouped = checklistAfterHeading(inner);
+        if (grouped) {
+          return { item: null, block: grouped };
+        }
+        return { item: inner, block: layout };
+      }
+    }
+    return { item: null, block: layout };
   }
   if (list && list.parentElement === prose) {
     return { item: null, block: list };
@@ -346,7 +443,8 @@ function rangeIsChecklist(view: EditorView, from: number, end: number): boolean 
 
 function checklistMergeTarget(
   view: EditorView,
-  slots: RowSlot[],
+  slots: Array<RowSlot & { left?: number; right?: number }>,
+  clientX: number,
   clientY: number,
   dragStart: number,
   dragEnd: number,
@@ -357,6 +455,9 @@ function checklistMergeTarget(
   for (const slot of slots) {
     const overlaps = slot.start < dragEnd && slot.end > dragStart;
     if (overlaps || clientY <= slot.top + MERGE_EDGE || clientY >= slot.bottom - MERGE_EDGE) {
+      continue;
+    }
+    if (slot.left != null && slot.right != null && (clientX < slot.left || clientX > slot.right)) {
       continue;
     }
     const listFrom = taskListPos(view, slot.start);
@@ -416,6 +517,196 @@ function dropInsertAt(
     return null;
   }
   return { insertAt, line };
+}
+
+type ColumnSlot = RowSlot & {
+  left: number;
+  right: number;
+  depth: number;
+  columnFrom: number | null;
+  kind: 'layout' | 'block' | 'toggle';
+  toggleFrom: number | null;
+  toggleEnd: number | null;
+  bodyFrom: number | null;
+  collapsed: boolean;
+};
+
+type DropLine = { top: number; left: number; width: number };
+type SplitBox = { top: number; left: number; width: number; height: number };
+
+function measureSlot(view: EditorView, start: number, end: number) {
+  const first = rowDom(view, start);
+  if (!first) {
+    return null;
+  }
+  const rect = first.getBoundingClientRect();
+  let top = rect.top;
+  let bottom = rect.bottom;
+  let left = rect.left;
+  let right = rect.right;
+  const node = view.state.doc.nodeAt(start);
+  if (node && start + node.nodeSize < end) {
+    const rest = rowDom(view, start + node.nodeSize);
+    if (rest) {
+      const next = rest.getBoundingClientRect();
+      top = Math.min(top, next.top);
+      bottom = Math.max(bottom, next.bottom);
+      left = Math.min(left, next.left);
+      right = Math.max(right, next.right);
+    }
+  }
+  return { top, bottom, left, right };
+}
+
+function pushMeasured(
+  view: EditorView,
+  slots: ColumnSlot[],
+  start: number,
+  end: number,
+  depth: number,
+  columnFrom: number | null,
+  kind: ColumnSlot['kind'],
+  toggle?: Pick<ColumnSlot, 'toggleFrom' | 'toggleEnd' | 'bodyFrom' | 'collapsed'>,
+) {
+  const box = measureSlot(view, start, end);
+  if (!box) {
+    return;
+  }
+  slots.push({
+    start,
+    end,
+    depth,
+    columnFrom,
+    kind,
+    toggleFrom: toggle?.toggleFrom ?? null,
+    toggleEnd: toggle?.toggleEnd ?? null,
+    bodyFrom: toggle?.bodyFrom ?? null,
+    collapsed: toggle?.collapsed ?? false,
+    ...box,
+  });
+}
+
+function appendColumnSlots(
+  view: EditorView,
+  parent: ProseMirrorNode,
+  base: number,
+  depth: number,
+  columnFrom: number | null,
+  slots: ColumnSlot[],
+  skipFirst = false,
+) {
+  const entries: { child: ProseMirrorNode; start: number }[] = [];
+  parent.forEach((child, offset) => {
+    entries.push({ child, start: base + offset });
+  });
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    if (!entry || (skipFirst && index === 0)) {
+      continue;
+    }
+    if (entry.child.type.name === COLUMN_LAYOUT_NODE) {
+      pushMeasured(view, slots, entry.start, entry.start + entry.child.nodeSize, depth, null, 'layout');
+      entry.child.forEach((column, columnOffset) => {
+        const columnPos = entry.start + 1 + columnOffset;
+        appendColumnSlots(view, column, columnPos + 1, depth + 1, columnPos, slots);
+      });
+      continue;
+    }
+    if (entry.child.type.name === TOGGLE_HEADING_NODE) {
+      const heading = entry.child.firstChild;
+      const headingStart = entry.start + 1;
+      if (heading) {
+        pushMeasured(
+          view,
+          slots,
+          headingStart,
+          headingStart + heading.nodeSize,
+          depth,
+          columnFrom,
+          'toggle',
+          {
+            toggleFrom: entry.start,
+            toggleEnd: entry.start + entry.child.nodeSize,
+            bodyFrom: headingStart + heading.nodeSize,
+            collapsed: entry.child.attrs.collapsed === true,
+          },
+        );
+      }
+      if (entry.child.attrs.collapsed !== true) {
+        appendColumnSlots(view, entry.child, entry.start + 1, depth + 1, columnFrom, slots, true);
+      }
+      continue;
+    }
+    const next = entries[index + 1];
+    if (isChecklistTitle(entry.child) && next?.child.type.name === 'taskList') {
+      pushMeasured(view, slots, entry.start, next.start + next.child.nodeSize, depth, columnFrom, 'block');
+      index += 1;
+      continue;
+    }
+    pushMeasured(view, slots, entry.start, entry.start + entry.child.nodeSize, depth, columnFrom, 'block');
+  }
+}
+
+function columnSlots(view: EditorView): ColumnSlot[] {
+  const slots: ColumnSlot[] = [];
+  appendColumnSlots(view, view.state.doc, 0, 0, null, slots);
+  return slots;
+}
+
+function isColumnLayoutDrag(view: EditorView, from: number, end: number) {
+  const node = view.state.doc.nodeAt(from);
+  return node?.type.name === COLUMN_LAYOUT_NODE && from + node.nodeSize === end;
+}
+
+const SPLIT_BAND = 0.28;
+
+function slotAction(slot: ColumnSlot, clientX: number, clientY: number): 'before' | 'after' | 'left' | 'right' {
+  const height = Math.max(slot.bottom - slot.top, 1);
+  const edge = Math.max(8, height * SPLIT_BAND);
+  if (clientY <= slot.top + edge) {
+    return 'before';
+  }
+  if (clientY >= slot.bottom - edge) {
+    return 'after';
+  }
+  return clientX < (slot.left + slot.right) / 2 ? 'left' : 'right';
+}
+
+function pickColumnSlot(
+  slots: ColumnSlot[],
+  clientX: number,
+  clientY: number,
+  dragStart: number,
+  dragEnd: number,
+) {
+  const hits = slots.filter(slot => (
+    clientX >= slot.left
+    && clientX <= slot.right
+    && clientY >= slot.top
+    && clientY <= slot.bottom
+    && !(slot.start < dragEnd && slot.end > dragStart)
+  ));
+  hits.sort((a, b) => b.depth - a.depth);
+  return hits[0] ?? null;
+}
+
+function sameDropLine(current: DropLine | null, next: DropLine | null) {
+  if (current == null || next == null) {
+    return current === next;
+  }
+  return Math.abs(current.top - next.top) < 0.5
+    && Math.abs(current.left - next.left) < 0.5
+    && Math.abs(current.width - next.width) < 0.5;
+}
+
+function sameSplitBox(current: SplitBox | null, next: SplitBox | null) {
+  if (current == null || next == null) {
+    return current === next;
+  }
+  return Math.abs(current.top - next.top) < 0.5
+    && Math.abs(current.left - next.left) < 0.5
+    && Math.abs(current.width - next.width) < 0.5
+    && Math.abs(current.height - next.height) < 0.5;
 }
 
 function rowDom(view: EditorView, from: number): HTMLElement | null {
@@ -512,7 +803,8 @@ function clearPreview(sources: HTMLElement[], preview: HTMLElement | null) {
 function previewSources(view: EditorView, handle: PlacedHandle): HTMLElement[] {
   const node = view.state.doc.nodeAt(handle.from);
   if (node && handle.to === handle.from + node.nodeSize) {
-    const hovered = handle.dom.isConnected ? handle.dom : rowDom(view, handle.from);
+    const matches = pageViewDesc(handle.dom)?.node === node;
+    const hovered = matches && handle.dom.isConnected ? handle.dom : rowDom(view, handle.from);
     return hovered ? [hovered] : [];
   }
   const sources: HTMLElement[] = [];
@@ -535,6 +827,27 @@ function moveRange(view: EditorView, from: number, to: number, insertAt: number)
   const slice = view.state.doc.slice(from, to);
   const tr = view.state.tr.delete(from, to);
   tr.insert(tr.mapping.map(insertAt), slice.content);
+  view.dispatch(tr);
+}
+
+function appendInsideToggle(view: EditorView, from: number, end: number, toggleFrom: number) {
+  const toggle = view.state.doc.nodeAt(toggleFrom);
+  if (!toggle || toggle.type.name !== TOGGLE_HEADING_NODE) {
+    return;
+  }
+  if (from <= toggleFrom && end >= toggleFrom + toggle.nodeSize) {
+    return;
+  }
+  const slice = view.state.doc.slice(from, end);
+  const at = toggleFrom + toggle.nodeSize - 1;
+  const tr = view.state.tr;
+  if (end <= at) {
+    tr.delete(from, end);
+    tr.insert(tr.mapping.map(at), slice.content);
+  } else {
+    tr.insert(at, slice.content);
+    tr.delete(tr.mapping.map(from), tr.mapping.map(end));
+  }
   view.dispatch(tr);
 }
 
@@ -571,7 +884,8 @@ export function PageRowDragLayer({
   onHoverResume,
 }: PageRowDragLayerProps) {
   const [handles, setHandles] = useState<HoverHandles>({ item: null, block: null });
-  const [dropTop, setDropTop] = useState<number | null>(null);
+  const [dropLine, setDropLine] = useState<DropLine | null>(null);
+  const [splitBox, setSplitBox] = useState<SplitBox | null>(null);
   const [mergeBox, setMergeBox] = useState<{ top: number; height: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const theme = useTheme();
@@ -582,6 +896,8 @@ export function PageRowDragLayer({
     parentFrom: number | null;
     insertAt: number | null;
     mergeListFrom: number | null;
+    nestFrom: number | null;
+    split: { side: 'left' | 'right'; kind: 'layout' | 'block'; start: number; columnFrom: number | null } | null;
     sources: HTMLElement[];
     preview: HTMLElement | null;
     originY: number;
@@ -641,24 +957,31 @@ export function PageRowDragLayer({
           const edge = found.block.getBoundingClientRect().left - frameRect.left;
           const itemLeft = edge - HANDLE_SIZE;
           if (found.item) {
-            const itemExtentValue = itemExtent(view, found.item);
+            const listExtent = itemExtent(view, found.item);
+            const columnExtent = listExtent ? null : columnBlockExtent(found.item);
+            const itemExtentValue = listExtent ?? columnExtent;
             if (itemExtentValue) {
+              const anchorEdge = (columnExtent ? found.item : found.block).getBoundingClientRect().left - frameRect.left;
               item = placeHandle(
                 found.item,
                 frameRect,
                 itemExtentValue,
-                itemLeft,
-                edge + ROW_OVERLAP,
+                anchorEdge - HANDLE_SIZE,
+                anchorEdge + ROW_OVERLAP,
                 ROW_OVERLAP,
                 itemExtentValue.parentFrom,
               );
             }
           }
           if (!item) {
+            const heading = found.block.matches('[data-toggle-heading]')
+              ? toggleBlocksRoot(found.block)?.firstElementChild
+              : null;
+            const handleDom = heading instanceof HTMLElement ? heading : found.block;
             const grouped = includeChecklistTitle(view, extent);
             block = stretchOverTitle(
               placeHandle(
-                found.block,
+                handleDom,
                 frameRect,
                 grouped,
                 itemLeft - EXTRA_REACH,
@@ -725,12 +1048,15 @@ export function PageRowDragLayer({
       parentFrom: handle.parentFrom,
       insertAt: null,
       mergeListFrom: null,
+      nestFrom: null,
+      split: null,
       sources,
       preview,
       originY: event.clientY,
     };
     setDragging(true);
-    setDropTop(null);
+    setDropLine(null);
+    setSplitBox(null);
   };
 
   const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
@@ -742,34 +1068,134 @@ export function PageRowDragLayer({
     if (drag.preview) {
       drag.preview.style.transform = `translateY(${event.clientY - drag.originY}px)`;
     }
-    const slots = rowSlots(editor.view, drag.parentFrom);
-    const frameTop = frame.getBoundingClientRect().top;
-    const merge = drag.parentFrom == null
-      ? checklistMergeTarget(editor.view, slots, event.clientY, drag.from, drag.end)
-      : null;
-    if (merge) {
-      drag.mergeListFrom = merge.listFrom;
-      drag.insertAt = null;
-      setDropTop(current => (current == null ? current : null));
-      const top = merge.top - frameTop;
-      const height = merge.bottom - merge.top;
-      setMergeBox(current => (
-        current != null && Math.abs(current.top - top) < 0.5 && Math.abs(current.height - height) < 0.5
-          ? current
-          : { top, height }
-      ));
+    const frameRect = frame.getBoundingClientRect();
+    const clearSplit = () => {
+      drag.split = null;
+      drag.nestFrom = null;
+      setSplitBox(current => (current == null ? current : null));
+    };
+    const showLine = (line: DropLine | null) => {
+      setDropLine(current => (sameDropLine(current, line) ? current : line));
+    };
+    if (drag.parentFrom != null) {
+      clearSplit();
+      drag.mergeListFrom = null;
+      setMergeBox(current => (current == null ? current : null));
+      const drop = dropInsertAt(rowSlots(editor.view, drag.parentFrom), event.clientY, drag.from, drag.end);
+      drag.insertAt = drop?.insertAt ?? null;
+      showLine(drop
+        ? { top: drop.line - frameRect.top, left: 0, width: frameRect.width }
+        : null);
       return;
     }
+    const draggingLayout = isColumnLayoutDrag(editor.view, drag.from, drag.end);
+    const slots = columnSlots(editor.view);
+    if (!draggingLayout) {
+      const merge = checklistMergeTarget(
+        editor.view,
+        slots,
+        event.clientX,
+        event.clientY,
+        drag.from,
+        drag.end,
+      );
+      if (merge) {
+        clearSplit();
+        drag.mergeListFrom = merge.listFrom;
+        drag.insertAt = null;
+        showLine(null);
+        const top = merge.top - frameRect.top;
+        const height = merge.bottom - merge.top;
+        setMergeBox(current => (
+          current != null && Math.abs(current.top - top) < 0.5 && Math.abs(current.height - height) < 0.5
+            ? current
+            : { top, height }
+        ));
+        return;
+      }
+      const hit = pickColumnSlot(slots, event.clientX, event.clientY, drag.from, drag.end);
+      if (hit?.kind === 'toggle' && hit.toggleFrom != null && hit.toggleEnd != null && hit.bodyFrom != null) {
+        const action = slotAction(hit, event.clientX, event.clientY);
+        clearSplit();
+        drag.mergeListFrom = null;
+        setMergeBox(current => (current == null ? current : null));
+        if (hit.collapsed && (action === 'left' || action === 'right')) {
+          drag.nestFrom = hit.toggleFrom;
+          drag.insertAt = null;
+          showLine(null);
+          const next = {
+            top: hit.top - frameRect.top,
+            left: hit.left - frameRect.left,
+            width: Math.max(hit.right - hit.left, 0),
+            height: Math.max(hit.bottom - hit.top, 0),
+          };
+          setSplitBox(current => (sameSplitBox(current, next) ? current : next));
+          return;
+        }
+        const before = action === 'before';
+        const insertAt = before ? hit.toggleFrom : hit.collapsed ? hit.toggleEnd : hit.bodyFrom;
+        if (insertAt >= drag.from && insertAt <= drag.end) {
+          drag.insertAt = null;
+          showLine(null);
+          return;
+        }
+        drag.insertAt = insertAt;
+        showLine({
+          top: (before ? hit.top : hit.bottom) - frameRect.top,
+          left: hit.left - frameRect.left,
+          width: Math.max(hit.right - hit.left, 0),
+        });
+        return;
+      }
+      if (hit && hit.kind !== 'toggle') {
+        const action = slotAction(hit, event.clientX, event.clientY);
+        if (action === 'left' || action === 'right') {
+          drag.nestFrom = null;
+          drag.split = {
+            side: action,
+            kind: hit.kind,
+            start: hit.start,
+            columnFrom: hit.columnFrom,
+          };
+          drag.insertAt = null;
+          drag.mergeListFrom = null;
+          showLine(null);
+          setMergeBox(current => (current == null ? current : null));
+          const half = (hit.right - hit.left) / 2;
+          const next = {
+            top: hit.top - frameRect.top,
+            left: (action === 'left' ? hit.left : hit.left + half) - frameRect.left,
+            width: half,
+            height: hit.bottom - hit.top,
+          };
+          setSplitBox(current => (sameSplitBox(current, next) ? current : next));
+          return;
+        }
+        clearSplit();
+        drag.mergeListFrom = null;
+        drag.insertAt = action === 'before' ? hit.start : hit.end;
+        setMergeBox(current => (current == null ? current : null));
+        showLine({
+          top: (action === 'before' ? hit.top : hit.bottom) - frameRect.top,
+          left: hit.left - frameRect.left,
+          width: hit.right - hit.left,
+        });
+        return;
+      }
+    }
+    clearSplit();
     drag.mergeListFrom = null;
     setMergeBox(current => (current == null ? current : null));
-    const drop = dropInsertAt(slots, event.clientY, drag.from, drag.end);
+    const drop = dropInsertAt(
+      slots.filter(slot => slot.depth === 0 && slot.kind !== 'toggle'),
+      event.clientY,
+      drag.from,
+      drag.end,
+    );
     drag.insertAt = drop?.insertAt ?? null;
-    if (!drop) {
-      setDropTop(current => (current == null ? current : null));
-      return;
-    }
-    const next = drop.line - frameTop;
-    setDropTop(current => (current != null && Math.abs(current - next) < 0.5 ? current : next));
+    showLine(drop
+      ? { top: drop.line - frameRect.top, left: 0, width: frameRect.width }
+      : null);
   };
 
   const finishDrag = () => {
@@ -777,7 +1203,8 @@ export function PageRowDragLayer({
     dragRef.current = null;
     clearPreview(drag?.sources ?? [], drag?.preview ?? null);
     setDragging(false);
-    setDropTop(null);
+    setDropLine(null);
+    setSplitBox(null);
     setMergeBox(null);
     if (!drag || !editor || editor.isDestroyed) {
       return;
@@ -785,6 +1212,14 @@ export function PageRowDragLayer({
     try {
       if (drag.mergeListFrom != null) {
         mergeChecklist(editor.view, drag.from, drag.end, drag.mergeListFrom);
+        return;
+      }
+      if (drag.nestFrom != null) {
+        appendInsideToggle(editor.view, drag.from, drag.end, drag.nestFrom);
+        return;
+      }
+      if (drag.split) {
+        moveBlockBeside(editor.view, drag.from, drag.end, drag.split, drag.split.side);
         return;
       }
       if (drag.insertAt == null) {
@@ -822,13 +1257,29 @@ export function PageRowDragLayer({
           }}
         />
       )}
-      {dropTop != null && (
+      {splitBox != null && (
         <Box
           sx={{
             position: 'absolute',
-            left: 0,
-            right: 0,
-            top: dropTop,
+            top: splitBox.top,
+            left: splitBox.left,
+            width: splitBox.width,
+            height: splitBox.height,
+            borderRadius: 1,
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            zIndex: 5,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+      {dropLine != null && (
+        <Box
+          sx={{
+            position: 'absolute',
+            left: dropLine.left,
+            width: dropLine.width,
+            top: dropLine.top,
             height: 2,
             bgcolor: 'primary.main',
             zIndex: 5,

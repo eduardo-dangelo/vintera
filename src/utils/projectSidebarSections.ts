@@ -41,12 +41,12 @@ export type TextSidebarSection = {
   body: string;
 };
 
-export type ProjectSidebarSection =
-  | MembersSidebarSection
-  | CalendarSidebarSection
-  | VideoSidebarSection
-  | LinkSidebarSection
-  | TextSidebarSection;
+export type ProjectSidebarSection
+  = | MembersSidebarSection
+    | CalendarSidebarSection
+    | VideoSidebarSection
+    | LinkSidebarSection
+    | TextSidebarSection;
 
 export const SIDEBAR_SECTION_KINDS: SidebarSectionKind[] = [
   'members',

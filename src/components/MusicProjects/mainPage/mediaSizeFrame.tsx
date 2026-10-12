@@ -109,7 +109,8 @@ export function MediaSizeFrame({ size, align, canResize, onSize, children }: Med
                 width: 4,
                 height: 28,
                 borderRadius: 1,
-                bgcolor: 'text.primary',
+                bgcolor: 'common.white',
+                boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.35)',
               }}
             />
           </Box>

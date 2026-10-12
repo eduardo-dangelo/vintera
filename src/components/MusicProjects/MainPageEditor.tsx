@@ -4,6 +4,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 import type { ChangeEvent } from 'react';
+import type { PageTextStyle } from '@/components/MusicProjects/mainPage/toggleHeading';
 import type { ProjectTabName } from '@/components/MusicProjects/tabs/projectTabVisibility';
 import type { MusicProjectDetail } from '@/queries/hooks/music-projects/useMusicProject';
 import Add from '@mui/icons-material/Add';
@@ -28,6 +29,7 @@ import PlaylistAdd from '@mui/icons-material/PlaylistAdd';
 import QueueMusic from '@mui/icons-material/QueueMusic';
 import TitleIcon from '@mui/icons-material/Title';
 import Tune from '@mui/icons-material/Tune';
+import ViewColumn from '@mui/icons-material/ViewColumn';
 import {
   Box,
   Divider,
@@ -57,6 +59,7 @@ import { EventColorPickerPopover } from '@/components/common/EventColorPickerPop
 import { GradientIcon } from '@/components/MusicProjects/GradientIcon';
 import { createProjectTaskItem, toggleChecklist } from '@/components/MusicProjects/mainPage/checklistCommands';
 import { ChecklistItemView, ProjectTaskList } from '@/components/MusicProjects/mainPage/checklistNode';
+import { addPageColumn, Column, ColumnLayout } from '@/components/MusicProjects/mainPage/columnLayout';
 import { MainPageEditorContext } from '@/components/MusicProjects/mainPage/mainPageContext';
 import { ProjectEmbedNode } from '@/components/MusicProjects/mainPage/mainPageNodes';
 import { markPageBlockEntering, PAGE_BLOCK_MOTION_MS, requestPageBlockExit } from '@/components/MusicProjects/mainPage/pageBlockMotion';
@@ -68,6 +71,7 @@ import {
   ProjectSongNode,
 } from '@/components/MusicProjects/mainPage/pageMusicBlocks';
 import { PageRowDragLayer } from '@/components/MusicProjects/mainPage/pageRowDrag';
+import { activeToggleStyle, applyPageTextStyle, ToggleHeading } from '@/components/MusicProjects/mainPage/toggleHeading';
 import { ProjectCreatePopovers } from '@/components/MusicProjects/ProjectCreatePopovers';
 import { useProjectCreatePopovers } from '@/components/MusicProjects/useProjectCreatePopovers';
 import { richTextContentSx } from '@/components/RichTextEditor/richTextContentSx';
@@ -75,6 +79,7 @@ import { useGetCalendarEventsByProject } from '@/queries/hooks/calendar-events/u
 import { detectExternalLinkKind, normalizeExternalLinkUrl } from '@/utils/externalLinkEmbed';
 import { getGlassMenuSlotProps, glassMenuItemSx } from '@/utils/glassPaperStyles';
 import {
+  COLUMN_NODE,
   pageEventIds,
   pageHasRecentCollection,
   parseMediaAlign,
@@ -84,11 +89,10 @@ import {
   PROJECT_IMAGES_NODE,
   PROJECT_SONG_LIST_NODE,
   PROJECT_SONG_NODE,
+  TOGGLE_HEADING_NODE,
 } from '@/utils/projectMainPage';
 
 const PAGE_HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
-
-type PageTextStyle = 'paragraph' | 'caption' | `h${(typeof PAGE_HEADING_LEVELS)[number]}`;
 
 const PageParagraph = Paragraph.extend({
   addAttributes() {
@@ -106,6 +110,10 @@ const PageParagraph = Paragraph.extend({
 });
 
 function activePageStyle(editor: Editor | null): PageTextStyle {
+  const toggleStyle = activeToggleStyle(editor);
+  if (toggleStyle) {
+    return toggleStyle;
+  }
   if (!editor) {
     return 'paragraph';
   }
@@ -471,6 +479,9 @@ export function MainPageEditor({
       : []),
     ProjectEmbedNode,
     ProjectImagesNode,
+    ColumnLayout,
+    Column,
+    ToggleHeading,
     ProjectTaskList,
     createProjectTaskItem(checklistTitle).extend({
       addNodeView() {
@@ -659,17 +670,48 @@ export function MainPageEditor({
     const $pos = editor.state.doc.resolve(pos);
     let tr = editor.state.tr;
     let insertPos = pos;
-    if ($pos.depth >= 1 && $pos.node(1).isTextblock) {
-      const from = $pos.before(1);
-      const textblock = $pos.node(1);
-      const to = from + textblock.nodeSize;
-      if (textblock.type.name === 'paragraph' && textblock.textContent.trim() === '') {
+    const inFlow = $pos.depth === 0
+      || $pos.parent.type.name === COLUMN_NODE
+      || $pos.parent.type.name === TOGGLE_HEADING_NODE;
+    const selected = $pos.nodeAfter?.isBlock === true && inFlow
+      ? { from: $pos.pos, to: $pos.pos + $pos.nodeAfter.nodeSize, node: $pos.nodeAfter }
+      : null;
+    let depth = 0;
+    if (!selected) {
+      for (let current = $pos.depth; current >= 1; current -= 1) {
+        const parentName = $pos.node(current - 1).type.name;
+        if (parentName === 'doc' || parentName === COLUMN_NODE || parentName === TOGGLE_HEADING_NODE) {
+          depth = current;
+          break;
+        }
+      }
+    }
+    const from = selected?.from ?? (depth > 0 ? $pos.before(depth) : null);
+    const node = selected?.node ?? (depth > 0 ? $pos.node(depth) : null);
+    const to = selected?.to ?? (depth > 0 ? $pos.after(depth) : null);
+    const beforeToggleTitle = selected != null
+      && node?.type.name === 'heading'
+      && $pos.parent.type.name === TOGGLE_HEADING_NODE
+      && $pos.index() === 0;
+    const insideToggleTitle = node?.type.name === 'heading'
+      && depth > 0
+      && $pos.node(depth - 1).type.name === TOGGLE_HEADING_NODE
+      && $pos.index(depth - 1) === 0;
+    const toggleTitle = beforeToggleTitle || insideToggleTitle;
+    if (toggleTitle && to != null) {
+      insertPos = to;
+      tr = tr.insert(to, block);
+    } else if (from != null && to != null && node?.isTextblock) {
+      if (node.type.name === 'paragraph' && node.textContent.trim() === '') {
         insertPos = from;
         tr = tr.replaceWith(from, to, block);
       } else {
         insertPos = to;
         tr = tr.insert(to, block);
       }
+    } else if (from != null) {
+      insertPos = from;
+      tr = tr.insert(from, block);
     } else {
       tr = tr.insert(pos, block);
     }
@@ -837,8 +879,16 @@ export function MainPageEditor({
     const embed = embedType.create({ url, title: null });
     const { $from } = view.state.selection;
     const tr = view.state.tr;
-    if ($from.parent.isTextblock && $from.depth === 1 && $from.parent.textContent.trim() === '') {
+    const toggleTitle = $from.parent.type.name === 'heading'
+      && $from.depth > 1
+      && $from.node($from.depth - 1).type.name === TOGGLE_HEADING_NODE
+      && $from.index($from.depth - 1) === 0;
+    if (toggleTitle) {
+      tr.insert($from.after(), embed);
+    } else if ($from.parent.isTextblock && $from.parent.textContent.trim() === '') {
       tr.replaceWith($from.before(), $from.after(), embed);
+    } else if ($from.parent.isTextblock) {
+      tr.insert($from.after(), embed);
     } else if ($from.depth >= 1) {
       tr.insert($from.after(1), embed);
     } else {
@@ -853,6 +903,20 @@ export function MainPageEditor({
       markTypingRef.current();
     }
     if ((event.key === 'Backspace' || event.key === 'Delete') && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      const { $from, empty } = view.state.selection;
+      if (
+        empty
+        && $from.parent.type.name === 'paragraph'
+        && $from.parent.content.size === 0
+        && $from.depth > 1
+        && $from.node($from.depth - 1).type.name === COLUMN_NODE
+        && $from.node($from.depth - 1).childCount === 1
+      ) {
+        const column = $from.node($from.depth - 1);
+        const columnPos = $from.before($from.depth - 1);
+        view.dispatch(view.state.tr.delete(columnPos, columnPos + column.nodeSize));
+        return true;
+      }
       const pos = selectedMusicBlockPos(view.state);
       if (pos != null) {
         requestPageBlockExit([pos], () => {
@@ -1078,15 +1142,7 @@ export function MainPageEditor({
     if (!editor) {
       return;
     }
-    const chain = editor.chain().focus();
-    if (style === 'paragraph') {
-      chain.setParagraph().updateAttributes('paragraph', { caption: false }).run();
-    } else if (style === 'caption') {
-      chain.setParagraph().updateAttributes('paragraph', { caption: true }).run();
-    } else {
-      const level = Number(style.slice(1)) as (typeof PAGE_HEADING_LEVELS)[number];
-      chain.toggleHeading({ level }).run();
-    }
+    applyPageTextStyle(editor, style);
     setStyleAnchor(null);
   };
 
@@ -1320,6 +1376,16 @@ export function MainPageEditor({
                       <ImageOutlined sx={{ fontSize: 18 }} />
                     </IconButton>
                   </Tooltip>
+                  <Tooltip title={t('main_page_add_column')}>
+                    <IconButton
+                      size="small"
+                      aria-label={t('main_page_add_column')}
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={() => addPageColumn(editor)}
+                    >
+                      <ViewColumn sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
                   <input
                     ref={imageInputRef}
                     type="file"
@@ -1395,6 +1461,44 @@ export function MainPageEditor({
               'lineHeight': 1.4,
               '& p': { m: 0 },
               '& > * + *': { mt: 0.5 },
+              '& [data-column-layout]': {
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                padding: '2px',
+              },
+              '& [data-column]': {
+                flex: '1 1 0',
+                minWidth: 0,
+              },
+              '& [data-column] > * + *': { mt: 0.5 },
+              '& [data-toggle-heading] [data-node-view-content-react] > :not(:first-child)': {
+                '@media (prefers-reduced-motion: no-preference)': {
+                  height: 'auto',
+                  interpolateSize: 'allow-keywords',
+                  transition: `height ${PAGE_BLOCK_MOTION_MS}ms ease, opacity ${PAGE_BLOCK_MOTION_MS}ms ease, margin-top ${PAGE_BLOCK_MOTION_MS}ms ease`,
+                },
+              },
+              '& [data-toggle-heading][data-collapsed="true"] [data-node-view-content-react] > :not(:first-child)': {
+                height: 0,
+                opacity: 0,
+                marginTop: 0,
+                overflow: 'hidden',
+                pointerEvents: 'none',
+              },
+              '& [data-toggle-heading] [data-node-view-content-react] > :first-child': { mt: 0 },
+              '& [data-toggle-heading] [data-node-view-content-react] > * + *': { mt: 0.5 },
+              '& [data-toggle-heading] [data-node-view-content-react] > :is(p, h1, h2, h3, h4, h5, h6, ul, ol)': {
+                'padding': '2px',
+                'borderRadius': 1,
+                'transition': 'background-color 0.15s ease',
+                '@media (prefers-reduced-motion: no-preference)': {
+                  transition: `background-color 0.15s ease, height ${PAGE_BLOCK_MOTION_MS}ms ease, opacity ${PAGE_BLOCK_MOTION_MS}ms ease, margin-top ${PAGE_BLOCK_MOTION_MS}ms ease`,
+                },
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              },
               '& h1': { fontSize: '1.5rem', fontWeight: 700, m: 0, mb: 0.25, lineHeight: 1.25 },
               '& h2': { fontSize: '1.125rem', fontWeight: 700, m: 0, mt: 0.5, mb: 0.25, lineHeight: 1.25 },
               '& h3': { fontSize: '1rem', fontWeight: 600, m: 0, mt: 0.25, mb: 0, lineHeight: 1.2 },
@@ -1403,7 +1507,7 @@ export function MainPageEditor({
               '& h6': { fontSize: '0.8125rem', fontWeight: 600, m: 0, lineHeight: 1.3 },
               '& p[data-caption="true"]': { fontSize: '0.75rem', fontWeight: 400, color: 'text.secondary', lineHeight: 1.4 },
               '& h3:has(+ [data-project-checklist])': { mb: 0, mt: 0.25, lineHeight: 1.2 },
-              '& > p, & > h1, & > h2, & > h3, & > h4, & > h5, & > h6': {
+              '& > p, & > h1, & > h2, & > h3, & > h4, & > h5, & > h6, & [data-column] > p, & [data-column] > h1, & [data-column] > h2, & [data-column] > h3, & [data-column] > h4, & [data-column] > h5, & [data-column] > h6': {
                 'padding': '2px',
                 'borderRadius': 1,
                 'transition': 'background-color 0.15s ease',
@@ -1411,7 +1515,7 @@ export function MainPageEditor({
                   bgcolor: 'action.hover',
                 },
               },
-              '& > ul, & > ol, & [data-project-checklist]': {
+              '& > ul, & > ol, & [data-project-checklist], & [data-column] > ul, & [data-column] > ol': {
                 'padding': '2px',
                 'borderRadius': 1,
                 'transition': 'background-color 0.15s ease',
@@ -1419,7 +1523,7 @@ export function MainPageEditor({
                   bgcolor: 'action.hover',
                 },
               },
-              '& > ul:has(li:hover), & > ol:has(li:hover), & [data-project-checklist]:has(li:hover)': {
+              '& > ul:has(li:hover), & > ol:has(li:hover), & [data-column] > ul:has(li:hover), & [data-column] > ol:has(li:hover), & [data-project-checklist]:has(li:hover)': {
                 bgcolor: 'transparent',
               },
               '& li': {
@@ -1433,7 +1537,10 @@ export function MainPageEditor({
               '& li:has(li:hover), & li p:hover, & li label:hover, & [data-node-view-content] p:hover': {
                 bgcolor: 'transparent',
               },
-              '& [data-node-view-wrapper]:not([data-project-checklist]):not(li)': {
+              '& [data-toggle-heading] [data-node-view-content-react] > p:hover': {
+                bgcolor: 'action.hover',
+              },
+              '& [data-node-view-wrapper]:not([data-project-checklist]):not([data-toggle-heading]):not(li)': {
                 'padding': '2px',
                 'borderRadius': 1,
                 'transition': 'background-color 0.15s ease',
@@ -1445,8 +1552,11 @@ export function MainPageEditor({
                 },
               },
               '& [data-project-checklist]': { mt: 0 },
+              '&.page-hover-paused [data-toggle-heading] [data-node-view-content-react] > :is(p, h1, h2, h3, h4, h5, h6, ul, ol):hover': {
+                bgcolor: 'transparent',
+              },
               '&.page-hover-paused': {
-                '& > p:hover, & > h1:hover, & > h2:hover, & > h3:hover, & > h4:hover, & > h5:hover, & > h6:hover, & > ul:hover, & > ol:hover, & [data-project-checklist]:hover, & li:hover, & [data-node-view-wrapper]:not([data-project-checklist]):not(li):hover, & .music-list-table-row:hover': {
+                '& > p:hover, & > h1:hover, & > h2:hover, & > h3:hover, & > h4:hover, & > h5:hover, & > h6:hover, & [data-column] > p:hover, & [data-column] > h1:hover, & [data-column] > h2:hover, & [data-column] > h3:hover, & [data-column] > h4:hover, & [data-column] > h5:hover, & [data-column] > h6:hover, & > ul:hover, & > ol:hover, & [data-column] > ul:hover, & [data-column] > ol:hover, & [data-project-checklist]:hover, & li:hover, & [data-node-view-wrapper]:not([data-project-checklist]):not([data-toggle-heading]):not(li):hover, & .music-list-table-row:hover': {
                   bgcolor: 'transparent',
                 },
               },
@@ -1496,22 +1606,23 @@ export function MainPageEditor({
         slotProps={getGlassMenuSlotProps({ minWidth: 160 })}
       >
         {([
-          ['paragraph', t('main_page_paragraph'), '0.875rem', 400],
-          ['h1', t('main_page_heading_1'), '1.5rem', 700],
-          ['h2', t('main_page_heading_2'), '1.125rem', 700],
-          ['h3', t('main_page_heading_3'), '1rem', 600],
-          ['h4', t('main_page_heading_4'), '0.95rem', 600],
-          ['h5', t('main_page_heading_5'), '0.875rem', 600],
-          ['h6', t('main_page_heading_6'), '0.8125rem', 600],
-          ['caption', t('main_page_caption'), '0.75rem', 400],
-        ] as const).map(([id, label, fontSize, fontWeight]) => (
+          ['paragraph', t('main_page_paragraph')],
+          ['h1', t('main_page_heading_1')],
+          ['h2', t('main_page_heading_2')],
+          ['h3', t('main_page_heading_3')],
+          ['h4', t('main_page_heading_4')],
+          ['h5', t('main_page_heading_5')],
+          ['h6', t('main_page_heading_6')],
+          ['caption', t('main_page_caption')],
+          ['toggle1', t('main_page_toggle_heading_1')],
+          ['toggle2', t('main_page_toggle_heading_2')],
+          ['toggle3', t('main_page_toggle_heading_3')],
+        ] as const).map(([id, label]) => (
           <MenuItem
             key={id}
             selected={activeStyle === id}
             sx={{
               ...glassMenuItemSx,
-              fontSize,
-              fontWeight,
               color: id === 'caption' ? 'text.secondary' : 'text.primary',
             }}
             onMouseDown={event => event.preventDefault()}

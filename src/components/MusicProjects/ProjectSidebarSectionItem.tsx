@@ -3,12 +3,12 @@
 import type { MemberPermission, MusicProjectMember } from '@/types/musicPeople';
 import type { ProjectSidebarSection } from '@/utils/projectSidebarSections';
 import {
-  ArrowDownward as MoveDownIcon,
-  ArrowUpward as MoveUpIcon,
   DeleteOutline as DeleteIcon,
   DriveFileRenameOutline as EditIcon,
-  MoreHoriz,
   VisibilityOffOutlined as HideIcon,
+  MoreHoriz,
+  ArrowDownward as MoveDownIcon,
+  ArrowUpward as MoveUpIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -137,17 +137,17 @@ export function ProjectSidebarSectionItem({
               aria-label={t('context_menu_actions')}
               onClick={e => setMenuAnchor(e.currentTarget)}
               sx={{
-                'width': 24,
-                'height': 24,
-                'borderRadius': 1,
-                'pointerEvents': 'auto',
-                'opacity': showActions ? 1 : 0,
-                'transition': 'opacity 0.15s ease',
+                width: 24,
+                height: 24,
+                borderRadius: 1,
+                pointerEvents: 'auto',
+                opacity: showActions ? 1 : 0,
+                transition: 'opacity 0.15s ease',
                 ...(!displayTitle
                   ? {
-                      bgcolor: theme => alpha(theme.palette.background.default, 0.82),
-                      color: 'text.primary',
-                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.18)',
+                      'bgcolor': theme => alpha(theme.palette.background.default, 0.82),
+                      'color': 'text.primary',
+                      'boxShadow': '0 1px 2px rgba(0, 0, 0, 0.18)',
                       '&:hover': {
                         bgcolor: theme => alpha(theme.palette.background.default, 0.92),
                       },

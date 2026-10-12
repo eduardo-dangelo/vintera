@@ -9,7 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { RichTextContent } from '@/components/RichTextEditor/RichTextContent';
 import { RichTextEditor } from '@/components/RichTextEditor/RichTextEditor';
 import { useUpdateMusicProject } from '@/queries/hooks/music-projects/useUpdateMusicProject';
@@ -83,6 +83,13 @@ export function ProjectDetailGeneralInfoSection({
   const [draftGenres, setDraftGenres] = useState<string[]>(() => parseGenres(genre));
   const [genreInput, setGenreInput] = useState('');
   const [draftDescription, setDraftDescription] = useState(description ?? '');
+  const genreInputRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => {
+    if (editingField === 'genre') {
+      genreInputRef.current?.focus();
+    }
+  }, [editingField]);
 
   useEffect(() => {
     if (editingField !== 'genre') {
@@ -165,8 +172,8 @@ export function ProjectDetailGeneralInfoSection({
   const clickableSx = readOnly
     ? {}
     : {
-        cursor: 'pointer',
-        borderRadius: 1,
+        'cursor': 'pointer',
+        'borderRadius': 1,
         '@media (prefers-reduced-motion: no-preference)': {
           transition: 'opacity 0.15s ease',
         },
@@ -209,7 +216,7 @@ export function ProjectDetailGeneralInfoSection({
           ? (
               <>
                 <TextField
-                  autoFocus
+                  inputRef={genreInputRef}
                   label={t('genre')}
                   placeholder={draftGenres.length === 0 ? t('genre_placeholder') : undefined}
                   value={genreInput}

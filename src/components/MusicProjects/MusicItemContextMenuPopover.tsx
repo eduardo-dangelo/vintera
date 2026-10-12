@@ -3,9 +3,9 @@
 import {
   Check as CheckIcon,
   DeleteOutline as DeleteOutlineIcon,
-  DriveFileRenameOutline as RenameIcon,
   FilterNone as DuplicateIcon,
   LinkOutlined as LinkOutlinedIcon,
+  DriveFileRenameOutline as RenameIcon,
 } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import { useTranslations } from 'next-intl';

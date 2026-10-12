@@ -1,5 +1,6 @@
 'use client';
 
+import type { ShareKind } from '@/utils/shareUrls';
 import {
   Album as AlbumIcon,
   LibraryMusic as ProjectIcon,
@@ -10,7 +11,6 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { MusicCoverImage } from '@/components/MusicProjects/MusicCoverImage';
-import type { ShareKind } from '@/utils/shareUrls';
 
 export type ShareLightCardProps = {
   kind: ShareKind;

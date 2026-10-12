@@ -21,12 +21,12 @@ export type SongsMainSection = {
   kind: 'songs';
 };
 
-export type ProjectMainSection =
-  | AlbumsMainSection
-  | SongsMainSection
-  | VideoSidebarSection
-  | LinkSidebarSection
-  | TextSidebarSection;
+export type ProjectMainSection
+  = | AlbumsMainSection
+    | SongsMainSection
+    | VideoSidebarSection
+    | LinkSidebarSection
+    | TextSidebarSection;
 
 export const MAIN_SECTION_KINDS: MainSectionKind[] = [
   'albums',

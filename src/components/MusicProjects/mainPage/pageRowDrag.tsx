@@ -736,6 +736,27 @@ function styleClone(source: HTMLElement, preview: HTMLElement, paper: string) {
   preview.style.letterSpacing = style.letterSpacing;
 }
 
+const PREVIEW_MOTION = '180ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+function armPreview(preview: HTMLElement) {
+  preview.style.transformOrigin = 'center';
+  preview.style.scale = '1';
+  preview.style.opacity = '1';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+  preview.style.transition = `scale ${PREVIEW_MOTION}, opacity ${PREVIEW_MOTION}`;
+}
+
+function placePreview(preview: HTMLElement | null, dy: number, snapped: boolean) {
+  if (!preview) {
+    return;
+  }
+  preview.style.transform = `translateY(${dy}px)`;
+  preview.style.scale = snapped ? '0.92' : '1';
+  preview.style.opacity = snapped ? '0.75' : '1';
+}
+
 function paintPreview(sources: HTMLElement[], frame: HTMLElement, paper: string): HTMLElement | null {
   const first = sources[0];
   if (!first) {
@@ -758,6 +779,7 @@ function paintPreview(sources: HTMLElement[], frame: HTMLElement, paper: string)
     preview.style.zIndex = '6';
     preview.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
     styleClone(first, preview, paper);
+    armPreview(preview);
     frame.appendChild(preview);
     first.style.opacity = '0.35';
     return preview;
@@ -789,6 +811,7 @@ function paintPreview(sources: HTMLElement[], frame: HTMLElement, paper: string)
     source.style.opacity = '0.35';
   }
   wrapper.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+  armPreview(wrapper);
   frame.appendChild(wrapper);
   return wrapper;
 }
@@ -1065,9 +1088,6 @@ export function PageRowDragLayer({
     if (!drag || !editor || editor.isDestroyed || !frame) {
       return;
     }
-    if (drag.preview) {
-      drag.preview.style.transform = `translateY(${event.clientY - drag.originY}px)`;
-    }
     const frameRect = frame.getBoundingClientRect();
     const clearSplit = () => {
       drag.split = null;
@@ -1076,6 +1096,13 @@ export function PageRowDragLayer({
     };
     const showLine = (line: DropLine | null) => {
       setDropLine(current => (sameDropLine(current, line) ? current : line));
+    };
+    const posePreview = () => {
+      const snapped = drag.split != null
+        || drag.nestFrom != null
+        || drag.mergeListFrom != null
+        || drag.insertAt != null;
+      placePreview(drag.preview, event.clientY - drag.originY, snapped);
     };
     if (drag.parentFrom != null) {
       clearSplit();
@@ -1086,6 +1113,7 @@ export function PageRowDragLayer({
       showLine(drop
         ? { top: drop.line - frameRect.top, left: 0, width: frameRect.width }
         : null);
+      posePreview();
       return;
     }
     const draggingLayout = isColumnLayoutDrag(editor.view, drag.from, drag.end);
@@ -1111,6 +1139,7 @@ export function PageRowDragLayer({
             ? current
             : { top, height }
         ));
+        posePreview();
         return;
       }
       const hit = pickColumnSlot(slots, event.clientX, event.clientY, drag.from, drag.end);
@@ -1130,6 +1159,7 @@ export function PageRowDragLayer({
             height: Math.max(hit.bottom - hit.top, 0),
           };
           setSplitBox(current => (sameSplitBox(current, next) ? current : next));
+          posePreview();
           return;
         }
         const before = action === 'before';
@@ -1137,6 +1167,7 @@ export function PageRowDragLayer({
         if (insertAt >= drag.from && insertAt <= drag.end) {
           drag.insertAt = null;
           showLine(null);
+          posePreview();
           return;
         }
         drag.insertAt = insertAt;
@@ -1145,6 +1176,7 @@ export function PageRowDragLayer({
           left: hit.left - frameRect.left,
           width: Math.max(hit.right - hit.left, 0),
         });
+        posePreview();
         return;
       }
       if (hit && hit.kind !== 'toggle') {
@@ -1169,6 +1201,7 @@ export function PageRowDragLayer({
             height: hit.bottom - hit.top,
           };
           setSplitBox(current => (sameSplitBox(current, next) ? current : next));
+          posePreview();
           return;
         }
         clearSplit();
@@ -1180,6 +1213,7 @@ export function PageRowDragLayer({
           left: hit.left - frameRect.left,
           width: hit.right - hit.left,
         });
+        posePreview();
         return;
       }
     }
@@ -1196,6 +1230,7 @@ export function PageRowDragLayer({
     showLine(drop
       ? { top: drop.line - frameRect.top, left: 0, width: frameRect.width }
       : null);
+    posePreview();
   };
 
   const finishDrag = () => {
